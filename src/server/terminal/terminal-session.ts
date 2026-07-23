@@ -133,6 +133,12 @@ export class TerminalSession {
     }
   }
 
+  execute(command: string): void {
+    if (!this.closed) {
+      this.terminalProcess.write(`${command}\r`);
+    }
+  }
+
   resize(cols: number, rows: number): void {
     if (!this.closed && (cols !== this.cols || rows !== this.rows)) {
       this.terminalProcess.resize(cols, rows);

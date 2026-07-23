@@ -7,6 +7,8 @@ type CommandCardPanelProps = {
   isLoading: boolean;
   loadError: string | null;
   onSelectCard: (commandId: string) => void;
+  onRunAgain: (command: string) => boolean;
+  onDeleteCard: (commandId: string) => Promise<void>;
 };
 
 export function CommandCardPanel({
@@ -15,6 +17,8 @@ export function CommandCardPanel({
   isLoading,
   loadError,
   onSelectCard,
+  onRunAgain,
+  onDeleteCard,
 }: CommandCardPanelProps) {
   return (
     <aside
@@ -68,6 +72,8 @@ export function CommandCardPanel({
                 card={card}
                 isSelected={card.commandId === selectedCardId}
                 onSelect={onSelectCard}
+                onRunAgain={onRunAgain}
+                onDelete={onDeleteCard}
               />
             ))}
           </div>

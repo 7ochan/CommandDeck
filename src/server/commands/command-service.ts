@@ -27,6 +27,10 @@ export class CommandService {
     return this.repository.listNewestFirst();
   }
 
+  deleteCommandCard(commandId: string): boolean {
+    return this.repository.deleteById(commandId);
+  }
+
   close(): void {
     this.unsubscribe();
   }

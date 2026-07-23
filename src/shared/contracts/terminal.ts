@@ -21,6 +21,7 @@ type TerminalMessage<TType extends string, TPayload> = {
 
 export type TerminalClientMessage =
   | TerminalMessage<'terminal.input', { data: string }>
+  | TerminalMessage<'terminal.execute', { command: string }>
   | TerminalMessage<'terminal.resize', { cols: number; rows: number }>
   | TerminalMessage<'terminal.close', Record<string, never>>;
 
@@ -54,6 +55,19 @@ export function parseTerminalClientMessage(
     return typeof payload.data === 'string' &&
       payload.data.length <= MAX_INPUT_LENGTH
       ? { version, type, sessionId, payload: { data: payload.data } }
+      : null;
+  }
+
+  if (type === 'terminal.execute') {
+    return typeof payload.command === 'string' &&
+      payload.command.trim().length > 0 &&
+      payload.command.length <= MAX_INPUT_LENGTH
+      ? {
+          version,
+          type,
+          sessionId,
+          payload: { command: payload.command },
+        }
       : null;
   }
 

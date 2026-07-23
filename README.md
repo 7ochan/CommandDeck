@@ -4,9 +4,9 @@ CommandDeck is a local-first visual terminal workspace where every executed comm
 
 ## Project status
 
-The terminal, shell-integration, and persistent Command Card MVP are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events, persist to SQLite, and appear live as selectable cards beside the responsive xterm.js terminal.
+The terminal, shell-integration, and persistent Command Card MVP are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events, persist to SQLite, and appear live as selectable cards beside the responsive xterm.js terminal. Cards can rerun their exact command in the active terminal, copy command text, or be deleted from local history.
 
-Card actions, Zustand, search, Electron, and AI functionality have not been implemented.
+Zustand, search, Electron, and AI functionality have not been implemented.
 
 ## Local development
 

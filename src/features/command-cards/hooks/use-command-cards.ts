@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { CommandCompletedPayload } from '@/shared/types';
 
-import { loadCommandCards } from '../api';
+import { deleteCommandCard, loadCommandCards } from '../api';
 import type { CommandCard } from '../types';
 
 type CommandCardsState = {
@@ -14,6 +14,7 @@ type CommandCardsState = {
   loadError: string | null;
   addCompletedCommand: (command: CommandCompletedPayload) => void;
   selectCard: (commandId: string) => void;
+  deleteCard: (commandId: string) => Promise<void>;
 };
 
 export function useCommandCards(): CommandCardsState {
@@ -63,7 +64,19 @@ export function useCommandCards(): CommandCardsState {
   );
 
   const selectCard = useCallback((commandId: string) => {
-    setSelectedCardId(commandId);
+    setSelectedCardId((currentId) =>
+      currentId === commandId ? null : commandId,
+    );
+  }, []);
+
+  const deleteCard = useCallback(async (commandId: string) => {
+    await deleteCommandCard(commandId);
+    setCards((currentCards) =>
+      currentCards.filter((card) => card.commandId !== commandId),
+    );
+    setSelectedCardId((currentId) =>
+      currentId === commandId ? null : currentId,
+    );
   }, []);
 
   return {
@@ -73,6 +86,7 @@ export function useCommandCards(): CommandCardsState {
     loadError,
     addCompletedCommand,
     selectCard,
+    deleteCard,
   };
 }
 

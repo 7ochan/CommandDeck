@@ -1,10 +1,16 @@
 'use client';
 
+import { useCallback, useRef } from 'react';
+
 import { CommandCardPanel } from '@/features/command-cards/components/command-card-panel';
 import { useCommandCards } from '@/features/command-cards/hooks/use-command-cards';
-import { Terminal } from '@/features/terminal/components/terminal';
+import {
+  Terminal,
+  type TerminalHandle,
+} from '@/features/terminal/components/terminal';
 
 export function TerminalWorkspace() {
+  const terminalRef = useRef<TerminalHandle>(null);
   const {
     cards,
     selectedCardId,
@@ -12,17 +18,24 @@ export function TerminalWorkspace() {
     loadError,
     addCompletedCommand,
     selectCard,
+    deleteCard,
   } = useCommandCards();
+  const runCommandAgain = useCallback(
+    (command: string) => terminalRef.current?.runCommand(command) ?? false,
+    [],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 gap-3">
-      <Terminal onCommandCompleted={addCompletedCommand} />
+      <Terminal ref={terminalRef} onCommandCompleted={addCompletedCommand} />
       <CommandCardPanel
         cards={cards}
         selectedCardId={selectedCardId}
         isLoading={isLoading}
         loadError={loadError}
         onSelectCard={selectCard}
+        onRunAgain={runCommandAgain}
+        onDeleteCard={deleteCard}
       />
     </div>
   );

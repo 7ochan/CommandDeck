@@ -75,7 +75,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Command, output, cwd, timestamp, duration, exit code, and status
 - Interrupted and capture-unavailable states
 - Copy command and copy output
-- Re-run by inserting the command into an active terminal
+- Deliberate re-run through the active managed terminal session
 - Initial SQLite schema, migrations, and repositories
 - Persist cards and load them after restart
 - Basic card-list virtualization

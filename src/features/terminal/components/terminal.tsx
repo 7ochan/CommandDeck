@@ -1,13 +1,21 @@
 'use client';
 
 import type { IDisposable, Terminal as XtermTerminal } from '@xterm/xterm';
-import { useEffect, useRef, useState } from 'react';
+import type { ForwardedRef } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 
 import { parseTerminalServerMessage } from '@/shared/contracts';
 import type { CommandCompletedPayload } from '@/shared/types';
 
 import {
   createTerminalWebSocket,
+  executeTerminalCommand,
   sendTerminalInput,
   sendTerminalResize,
 } from '../terminal-client';
@@ -27,11 +35,36 @@ type TerminalProps = {
   onCommandCompleted?: (command: CommandCompletedPayload) => void;
 };
 
-export function Terminal({ onCommandCompleted }: TerminalProps) {
+export type TerminalHandle = {
+  runCommand: (command: string) => boolean;
+};
+
+export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
+
+function TerminalView(
+  { onCommandCompleted }: TerminalProps,
+  ref: ForwardedRef<TerminalHandle>,
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onCommandCompletedRef = useRef(onCommandCompleted);
+  const socketRef = useRef<WebSocket | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [shellName, setShellName] = useState('Local shell');
+
+  useImperativeHandle(ref, () => ({
+    runCommand: (command: string) => {
+      const socket = socketRef.current;
+      const sessionId = sessionIdRef.current;
+
+      if (!socket || !sessionId || socket.readyState !== WebSocket.OPEN) {
+        return false;
+      }
+
+      executeTerminalCommand(socket, sessionId, command);
+      return true;
+    },
+  }));
 
   useEffect(() => {
     onCommandCompletedRef.current = onCommandCompleted;
@@ -146,6 +179,7 @@ export function Terminal({ onCommandCompleted }: TerminalProps) {
       void document.fonts.ready.then(scheduleFit);
 
       socket = createTerminalWebSocket();
+      socketRef.current = socket;
       socket.addEventListener('message', (event) => {
         if (typeof event.data !== 'string' || !terminal) {
           return;
@@ -160,6 +194,7 @@ export function Terminal({ onCommandCompleted }: TerminalProps) {
 
         if (message.type === 'terminal.started') {
           sessionId = message.sessionId;
+          sessionIdRef.current = sessionId;
           setShellName(
             message.payload.shell.split(/[\\/]/).pop() ?? 'Local shell',
           );
@@ -226,6 +261,12 @@ export function Terminal({ onCommandCompleted }: TerminalProps) {
 
     return () => {
       disposed = true;
+      sessionIdRef.current = null;
+
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
+
       inputSubscription?.dispose();
       resizeSubscription?.dispose();
       resizeObserver?.disconnect();

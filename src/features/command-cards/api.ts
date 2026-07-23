@@ -17,3 +17,16 @@ export async function loadCommandCards(
   const payload: unknown = await response.json();
   return commandCardsResponseSchema.parse(payload).cards;
 }
+
+export async function deleteCommandCard(commandId: string): Promise<void> {
+  const response = await fetch(
+    `/api/commands/${encodeURIComponent(commandId)}`,
+    { method: 'DELETE' },
+  );
+
+  if (response.ok || response.status === 404) {
+    return;
+  }
+
+  throw new Error(`Unable to delete command card (${response.status}).`);
+}

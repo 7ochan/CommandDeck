@@ -144,11 +144,11 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Status:** Accepted
 
-**Decision:** Quick actions declare whether they insert or execute a command. Workflows preview resolved variables and execute through visible managed terminal sessions. Re-run defaults to inserting the command for review during the early MVP.
+**Decision:** Quick actions declare whether they insert or execute a command. Workflows preview resolved variables and execute through visible managed terminal sessions. The explicit Command Card Run Again action executes the exact stored command through the active managed terminal session.
 
 **Reason:** Stored command execution has the same permissions and risk as manual terminal input.
 
-**Consequences:** There is no hidden background execution. The UI and protocol must preserve a clear distinction between editing, inserting, and executing commands.
+**Consequences:** There is no hidden background execution. The UI and protocol must preserve a clear distinction between editing, inserting, and executing commands. Re-run remains an explicit labeled action and never bypasses the terminal session architecture.
 
 ## TD-015 — Test at protocol and process boundaries
 

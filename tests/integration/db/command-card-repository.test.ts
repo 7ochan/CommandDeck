@@ -104,6 +104,31 @@ describe('command card persistence', () => {
 
     expect(reopenedRepository.listNewestFirst()).toEqual([newer, older]);
   });
+
+  it('deletes a card durably through the command service', () => {
+    const { database, databasePath } = createTemporaryDatabase();
+    const repository = new SqliteCommandCardRepository(database.orm);
+    const commandEvents = new CommandEventBus();
+    const commandService = new CommandService(repository, commandEvents);
+    const card = persistedCommand({ commandId: 'delete-me' });
+
+    repository.insert(card);
+
+    expect(commandService.deleteCommandCard(card.commandId)).toBe(true);
+    expect(commandService.deleteCommandCard(card.commandId)).toBe(false);
+    expect(commandService.listCommandCards()).toEqual([]);
+    commandService.close();
+
+    database.close();
+    openDatabases.splice(openDatabases.indexOf(database), 1);
+
+    const reopened = openCommandDeckDatabase(databasePath);
+    openDatabases.push(reopened);
+
+    expect(
+      new SqliteCommandCardRepository(reopened.orm).listNewestFirst(),
+    ).toEqual([]);
+  });
 });
 
 function createTemporaryDatabase(): {

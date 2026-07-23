@@ -25,6 +25,19 @@ export function sendTerminalInput(
   });
 }
 
+export function executeTerminalCommand(
+  socket: WebSocket,
+  sessionId: string,
+  command: string,
+): void {
+  send(socket, {
+    version: TERMINAL_PROTOCOL_VERSION,
+    type: 'terminal.execute',
+    sessionId,
+    payload: { command },
+  });
+}
+
 export function sendTerminalResize(
   socket: WebSocket,
   sessionId: string,

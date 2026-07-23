@@ -169,6 +169,7 @@ Client-to-server event families:
 
 - `terminal.create`
 - `terminal.input`
+- `terminal.execute`
 - `terminal.resize`
 - `terminal.close`
 - `terminal.reconnect`

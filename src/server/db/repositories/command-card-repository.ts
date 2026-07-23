@@ -1,4 +1,4 @@
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { CommandCard } from '../../../shared/types/command.js';
@@ -8,6 +8,7 @@ import type * as schema from '../schema.js';
 export interface CommandCardRepository {
   insert(card: CommandCard): boolean;
   listNewestFirst(): CommandCard[];
+  deleteById(commandId: string): boolean;
 }
 
 export class SqliteCommandCardRepository implements CommandCardRepository {
@@ -35,5 +36,14 @@ export class SqliteCommandCardRepository implements CommandCardRepository {
         desc(commandCards.startedAt),
       )
       .all();
+  }
+
+  deleteById(commandId: string): boolean {
+    const result = this.database
+      .delete(commandCards)
+      .where(eq(commandCards.commandId, commandId))
+      .run();
+
+    return result.changes === 1;
   }
 }

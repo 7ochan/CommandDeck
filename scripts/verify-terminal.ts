@@ -141,6 +141,24 @@ try {
   );
   assertCommandPair(failedStarted, failedCompleted, 1);
 
+  sendExecute(socket, sessionId, failedCompleted.payload.command);
+  const rerunFailedStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) =>
+      message.payload.command === failedCompleted.payload.command &&
+      message.payload.commandId !== failedCompleted.payload.commandId,
+    'rerun failed command start',
+  );
+  const rerunFailedCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === rerunFailedStarted.payload.commandId,
+    'rerun failed command completion',
+  );
+  assertCommandPair(rerunFailedStarted, rerunFailedCompleted, 1);
+
   sendInput(socket, sessionId, 'if true; then\r');
   sendInput(socket, sessionId, "  printf '__MULTILINE__\\n'\r");
   sendInput(socket, sessionId, 'fi\r');
@@ -162,6 +180,24 @@ try {
     'multiline command completion',
   );
   assertCommandPair(multilineStarted, multilineCompleted, 0);
+
+  sendExecute(socket, sessionId, multilineCompleted.payload.command);
+  const rerunMultilineStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) =>
+      message.payload.command === multilineCompleted.payload.command &&
+      message.payload.commandId !== multilineCompleted.payload.commandId,
+    'rerun multiline command start',
+  );
+  const rerunMultilineCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === rerunMultilineStarted.payload.commandId,
+    'rerun multiline command completion',
+  );
+  assertCommandPair(rerunMultilineStarted, rerunMultilineCompleted, 0);
 
   sendInput(socket, sessionId, "printf '\\033[31m__COLOR__\\033[0m\\n'\r");
   await waitForOutput(
@@ -223,18 +259,33 @@ try {
     firstCompleted.payload.commandId,
     secondCompleted.payload.commandId,
     failedCompleted.payload.commandId,
+    rerunFailedCompleted.payload.commandId,
     multilineCompleted.payload.commandId,
+    rerunMultilineCompleted.payload.commandId,
     interruptedCompleted.payload.commandId,
     afterInterruptCompleted.payload.commandId,
   ];
   const cardsBeforeRestart = await loadCommandCards();
   assertCommandCardsPersisted(cardsBeforeRestart, expectedCommandIds);
 
+  await deleteCommandCard(firstCompleted.payload.commandId);
+  const expectedIdsAfterDelete = expectedCommandIds.filter(
+    (commandId) => commandId !== firstCompleted.payload.commandId,
+  );
+  const cardsAfterDelete = await loadCommandCards();
+  assertCommandCardsPersisted(cardsAfterDelete, expectedIdsAfterDelete);
+  assert.ok(
+    cardsAfterDelete.every(
+      ({ commandId }) => commandId !== firstCompleted.payload.commandId,
+    ),
+    'Deleted card should disappear from the Command Card API immediately',
+  );
+
   const cardsAfterRefresh = await loadCommandCards();
   assert.deepEqual(
     cardsAfterRefresh,
-    cardsBeforeRestart,
-    'Repeated page data loads should return the same persisted cards',
+    cardsAfterDelete,
+    'Deleted cards should remain absent after a repeated data load',
   );
 
   await stopServer(server);
@@ -242,10 +293,16 @@ try {
   await waitForServer(server);
 
   const cardsAfterRestart = await loadCommandCards();
-  assertCommandCardsPersisted(cardsAfterRestart, expectedCommandIds);
+  assertCommandCardsPersisted(cardsAfterRestart, expectedIdsAfterDelete);
+  assert.ok(
+    cardsAfterRestart.every(
+      ({ commandId }) => commandId !== firstCompleted.payload.commandId,
+    ),
+    'Deleted cards should remain absent after server restart',
+  );
 
   console.log(
-    'Terminal verification passed: lifecycle events, persistence, refresh/restart recovery, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: lifecycle events, reruns, deletion persistence, refresh/restart recovery, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
@@ -274,6 +331,14 @@ async function loadCommandCards(): Promise<CommandCard[]> {
   );
   const payload: unknown = await response.json();
   return commandCardsResponseSchema.parse(payload).cards;
+}
+
+async function deleteCommandCard(commandId: string): Promise<void> {
+  const response = await fetch(
+    `${origin}/api/commands/${encodeURIComponent(commandId)}`,
+    { method: 'DELETE' },
+  );
+  assert.equal(response.status, 204, 'Command Card delete should succeed');
 }
 
 function assertCommandCardsPersisted(
@@ -341,6 +406,21 @@ function sendInput(socket: WebSocket, sessionId: string, data: string): void {
       type: 'terminal.input',
       sessionId,
       payload: { data },
+    }),
+  );
+}
+
+function sendExecute(
+  socket: WebSocket,
+  sessionId: string,
+  command: string,
+): void {
+  socket.send(
+    serializeTerminalMessage({
+      version: TERMINAL_PROTOCOL_VERSION,
+      type: 'terminal.execute',
+      sessionId,
+      payload: { command },
     }),
   );
 }

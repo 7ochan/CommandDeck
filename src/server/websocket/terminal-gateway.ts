@@ -139,6 +139,11 @@ export class TerminalGateway {
         return;
       }
 
+      if (message.type === 'terminal.execute') {
+        session.execute(message.payload.command);
+        return;
+      }
+
       if (message.type === 'terminal.resize') {
         session.resize(message.payload.cols, message.payload.rows);
         send({
