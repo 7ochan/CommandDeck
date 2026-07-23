@@ -5,14 +5,15 @@ export type CommandStartedPayload = {
   startedAt: number;
 };
 
-export type CommandCard = CommandStartedPayload & {
-  finishedAt: number;
+export type CommandCompletedPayload = CommandStartedPayload & {
+  endedAt: number;
   durationMs: number;
   exitCode: number;
+  completionReason: 'shell' | 'session-exit';
 };
 
-export type CommandCompletedPayload = CommandCard & {
-  completionReason: 'shell' | 'session-exit';
+export type CommandCard = CommandCompletedPayload & {
+  createdAt: number;
 };
 
 export type CommandLifecycleEvent =

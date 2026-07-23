@@ -1,14 +1,17 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { CommandCompletedPayload } from '@/shared/types';
 
+import { loadCommandCards } from '../api';
 import type { CommandCard } from '../types';
 
 type CommandCardsState = {
   cards: CommandCard[];
   selectedCardId: string | null;
+  isLoading: boolean;
+  loadError: string | null;
   addCompletedCommand: (command: CommandCompletedPayload) => void;
   selectCard: (commandId: string) => void;
 };
@@ -16,27 +19,45 @@ type CommandCardsState = {
 export function useCommandCards(): CommandCardsState {
   const [cards, setCards] = useState<CommandCard[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void loadCommandCards(controller.signal)
+      .then((persistedCards) => {
+        setCards((currentCards) =>
+          mergeCommandCards(currentCards, persistedCards),
+        );
+        setLoadError(null);
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setLoadError(
+            error instanceof Error
+              ? error.message
+              : 'Unable to load command cards.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   const addCompletedCommand = useCallback(
     (command: CommandCompletedPayload) => {
       const card: CommandCard = {
-        commandId: command.commandId,
-        command: command.command,
-        cwd: command.cwd,
-        exitCode: command.exitCode,
-        durationMs: command.durationMs,
-        startedAt: command.startedAt,
-        finishedAt: command.finishedAt,
+        ...command,
+        createdAt: Date.now(),
       };
 
-      setCards((currentCards) =>
-        [
-          ...currentCards.filter(
-            ({ commandId }) => commandId !== card.commandId,
-          ),
-          card,
-        ].sort(compareByCompletionTime),
-      );
+      setCards((currentCards) => mergeCommandCards(currentCards, [card]));
     },
     [],
   );
@@ -45,7 +66,27 @@ export function useCommandCards(): CommandCardsState {
     setSelectedCardId(commandId);
   }, []);
 
-  return { cards, selectedCardId, addCompletedCommand, selectCard };
+  return {
+    cards,
+    selectedCardId,
+    isLoading,
+    loadError,
+    addCompletedCommand,
+    selectCard,
+  };
+}
+
+function mergeCommandCards(
+  currentCards: CommandCard[],
+  incomingCards: CommandCard[],
+): CommandCard[] {
+  const cardsById = new Map(currentCards.map((card) => [card.commandId, card]));
+
+  for (const card of incomingCards) {
+    cardsById.set(card.commandId, card);
+  }
+
+  return [...cardsById.values()].sort(compareByCompletionTime);
 }
 
 function compareByCompletionTime(
@@ -53,7 +94,8 @@ function compareByCompletionTime(
   right: CommandCard,
 ): number {
   return (
-    right.finishedAt - left.finishedAt ||
+    right.endedAt - left.endedAt ||
+    right.createdAt - left.createdAt ||
     right.startedAt - left.startedAt ||
     left.commandId.localeCompare(right.commandId)
   );

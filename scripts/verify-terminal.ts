@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import WebSocket, { type RawData } from 'ws';
 
@@ -11,15 +14,24 @@ import {
   type TerminalServerMessage,
 } from '../src/shared/contracts/terminal.js';
 import { OscShellIntegrationParser } from '../src/server/shell-integration/parsers/osc-parser.js';
+import { commandCardsResponseSchema } from '../src/shared/schemas/command-card.js';
+import type { CommandCard } from '../src/shared/types/command.js';
 
 const port = Number.parseInt(process.env.COMMANDDECK_VERIFY_PORT ?? '3210', 10);
 const hostname = '127.0.0.1';
 const origin = `http://${hostname}:${port}`;
-const server = startServer();
+const dataDirectory = mkdtempSync(
+  join(tmpdir(), 'commanddeck-terminal-verification-'),
+);
+let server = startServer(dataDirectory);
 
 try {
   verifyStreamingParser();
   await waitForServer(server);
+  assert.ok(
+    existsSync(join(dataDirectory, 'commanddeck.db')),
+    'The database should initialize automatically on first launch',
+  );
 
   const response = await fetch(origin);
   assert.equal(response.status, 200, 'Homepage should respond successfully');
@@ -207,23 +219,82 @@ try {
   );
   await once(socket, 'close');
 
+  const expectedCommandIds = [
+    firstCompleted.payload.commandId,
+    secondCompleted.payload.commandId,
+    failedCompleted.payload.commandId,
+    multilineCompleted.payload.commandId,
+    interruptedCompleted.payload.commandId,
+    afterInterruptCompleted.payload.commandId,
+  ];
+  const cardsBeforeRestart = await loadCommandCards();
+  assertCommandCardsPersisted(cardsBeforeRestart, expectedCommandIds);
+
+  const cardsAfterRefresh = await loadCommandCards();
+  assert.deepEqual(
+    cardsAfterRefresh,
+    cardsBeforeRestart,
+    'Repeated page data loads should return the same persisted cards',
+  );
+
+  await stopServer(server);
+  server = startServer(dataDirectory);
+  await waitForServer(server);
+
+  const cardsAfterRestart = await loadCommandCards();
+  assertCommandCardsPersisted(cardsAfterRestart, expectedCommandIds);
+
   console.log(
-    'Terminal verification passed: lifecycle events, empty input, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: lifecycle events, persistence, refresh/restart recovery, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
+  rmSync(dataDirectory, { recursive: true, force: true });
 }
 
-function startServer(): ChildProcess {
+function startServer(commandDeckDataDirectory: string): ChildProcess {
   return spawn(process.execPath, ['.server/server.js', '--production'], {
     cwd: process.cwd(),
     env: {
       ...process.env,
       COMMANDDECK_HOST: hostname,
+      COMMANDDECK_DATA_DIR: commandDeckDataDirectory,
       PORT: String(port),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+}
+
+async function loadCommandCards(): Promise<CommandCard[]> {
+  const response = await fetch(`${origin}/api/commands`, { cache: 'no-store' });
+  assert.equal(
+    response.status,
+    200,
+    'Command Card API should respond successfully',
+  );
+  const payload: unknown = await response.json();
+  return commandCardsResponseSchema.parse(payload).cards;
+}
+
+function assertCommandCardsPersisted(
+  cards: CommandCard[],
+  expectedCommandIds: string[],
+): void {
+  const persistedIds = new Set(cards.map(({ commandId }) => commandId));
+
+  for (const commandId of expectedCommandIds) {
+    assert.ok(
+      persistedIds.has(commandId),
+      `Completed command ${commandId} should be persisted`,
+    );
+  }
+
+  for (let index = 1; index < cards.length; index += 1) {
+    assert.ok(
+      cards[index - 1].endedAt >= cards[index].endedAt,
+      'Persisted cards should remain newest-first',
+    );
+  }
 }
 
 async function waitForServer(serverProcess: ChildProcess): Promise<void> {
@@ -351,10 +422,10 @@ function assertCommandPair(
   assert.equal(completed.payload.startedAt, started.payload.startedAt);
   assert.equal(completed.payload.exitCode, expectedExitCode);
   assert.equal(completed.payload.completionReason, 'shell');
-  assert.ok(completed.payload.finishedAt >= started.payload.startedAt);
+  assert.ok(completed.payload.endedAt >= started.payload.startedAt);
   assert.equal(
     completed.payload.durationMs,
-    completed.payload.finishedAt - started.payload.startedAt,
+    completed.payload.endedAt - started.payload.startedAt,
   );
 }
 

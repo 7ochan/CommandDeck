@@ -164,17 +164,17 @@ function parseCommandCompletedPayload(
   payload: Record<string, unknown>,
 ): CommandCompletedPayload | null {
   const started = parseCommandStartedPayload(payload);
-  const { completionReason, durationMs, exitCode, finishedAt } = payload;
+  const { completionReason, durationMs, endedAt, exitCode } = payload;
 
   return started &&
-    isNonNegativeInteger(finishedAt) &&
+    isNonNegativeInteger(endedAt) &&
     isNonNegativeInteger(durationMs) &&
     typeof exitCode === 'number' &&
     Number.isInteger(exitCode) &&
     (completionReason === 'shell' || completionReason === 'session-exit')
     ? {
         ...started,
-        finishedAt,
+        endedAt,
         durationMs,
         exitCode,
         completionReason,

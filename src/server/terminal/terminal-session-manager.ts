@@ -1,12 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
+import type { CommandEventBus } from '../commands/command-events.js';
 import { PtyAdapter } from './pty-adapter.js';
 import { TerminalSession } from './terminal-session.js';
 
 export class TerminalSessionManager {
   private readonly sessions = new Map<string, TerminalSession>();
 
-  constructor(private readonly ptyAdapter = new PtyAdapter()) {}
+  constructor(
+    private readonly ptyAdapter = new PtyAdapter(),
+    private readonly commandEvents?: CommandEventBus,
+  ) {}
 
   create(): TerminalSession {
     const id = randomUUID();
@@ -16,7 +20,13 @@ export class TerminalSessionManager {
     );
 
     this.sessions.set(id, session);
-    session.onExit(() => this.sessions.delete(id));
+    const stopPublishingCommands = this.commandEvents
+      ? session.onCommand((event) => this.commandEvents?.publish(event))
+      : () => undefined;
+    session.onExit(() => {
+      stopPublishingCommands();
+      this.sessions.delete(id);
+    });
 
     return session;
   }

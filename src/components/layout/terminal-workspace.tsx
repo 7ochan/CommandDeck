@@ -5,8 +5,14 @@ import { useCommandCards } from '@/features/command-cards/hooks/use-command-card
 import { Terminal } from '@/features/terminal/components/terminal';
 
 export function TerminalWorkspace() {
-  const { cards, selectedCardId, addCompletedCommand, selectCard } =
-    useCommandCards();
+  const {
+    cards,
+    selectedCardId,
+    isLoading,
+    loadError,
+    addCompletedCommand,
+    selectCard,
+  } = useCommandCards();
 
   return (
     <div className="flex min-h-0 flex-1 gap-3">
@@ -14,6 +20,8 @@ export function TerminalWorkspace() {
       <CommandCardPanel
         cards={cards}
         selectedCardId={selectedCardId}
+        isLoading={isLoading}
+        loadError={loadError}
         onSelectCard={selectCard}
       />
     </div>

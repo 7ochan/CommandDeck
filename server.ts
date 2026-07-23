@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { loadEnvFile } from 'node:process';
 import next from 'next';
 
+import { initializeServerContainer } from './src/server/runtime/server-container.js';
 import {
   TerminalWebSocketServer,
   createTerminalSessionCookie,
@@ -29,6 +30,7 @@ if (isProduction) {
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 const terminalSessionToken = randomBytes(32).toString('base64url');
+const runtime = initializeServerContainer();
 
 await app.prepare();
 
@@ -51,6 +53,7 @@ const server = createServer((request, response) => {
 const terminalWebSocketServer = new TerminalWebSocketServer({
   httpServer: server,
   sessionToken: terminalSessionToken,
+  gateway: runtime.terminalGateway,
 });
 
 server.on('error', (error) => {
@@ -67,6 +70,8 @@ function shutdown(signal: NodeJS.Signals) {
   terminalWebSocketServer.close();
 
   server.close((error) => {
+    runtime.close();
+
     if (error) {
       console.error('CommandDeck shutdown error:', error);
       process.exitCode = 1;

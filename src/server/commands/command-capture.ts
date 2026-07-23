@@ -78,11 +78,11 @@ export class CommandCapture {
       return;
     }
 
-    const finishedAt = this.clock();
+    const endedAt = this.clock();
     const payload: CommandCompletedPayload = {
       ...this.activeCommand,
-      finishedAt,
-      durationMs: Math.max(0, finishedAt - this.activeCommand.startedAt),
+      endedAt,
+      durationMs: Math.max(0, endedAt - this.activeCommand.startedAt),
       exitCode,
       completionReason,
     };

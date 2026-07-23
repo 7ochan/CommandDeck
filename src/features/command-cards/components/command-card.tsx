@@ -51,10 +51,10 @@ export function CommandCard({ card, isSelected, onSelect }: CommandCardProps) {
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/6 pt-3 font-mono text-[10px] text-slate-500">
         <span>{formatDuration(card.durationMs)}</span>
         <span
-          title={`Started ${new Date(card.startedAt).toLocaleString()} · Finished ${new Date(card.finishedAt).toLocaleString()}`}
+          title={`Started ${new Date(card.startedAt).toLocaleString()} · Finished ${new Date(card.endedAt).toLocaleString()}`}
         >
           {TIME_FORMATTER.format(card.startedAt)} →{' '}
-          {TIME_FORMATTER.format(card.finishedAt)}
+          {TIME_FORMATTER.format(card.endedAt)}
         </span>
       </div>
     </button>
