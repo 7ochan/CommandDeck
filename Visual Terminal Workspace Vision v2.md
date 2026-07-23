@@ -1,97 +1,95 @@
 # Vision v2 — Visual Terminal Workspace
 
-## Core Identity
+## Core identity
 
 > **A terminal where every command becomes a reusable visual object instead of disappearing into scrollback.**
 
 Everything else exists to support this idea.
 
----
+## Product principles
 
-## MVP (Build These First)
+1. **Command cards are the product.** The terminal, timeline, actions, and workflows exist to make executed commands easier to understand, find, and reuse.
+2. **Terminal reliability comes first.** Visual features must not weaken normal shell behavior, resize handling, interactive programs, or process lifecycle management.
+3. **Local-first by default.** Terminal processes and command history remain on the user's machine.
+4. **The user remains in control.** Re-running commands and triggering quick actions must be deliberate and visible.
+5. **Build depth before breadth.** The core terminal-to-card experience must be complete before plugins, collaboration, remote access, or desktop packaging are considered.
 
-### 1. Browser Terminal (Foundation)
+## MVP
+
+### 1. Browser terminal foundation
+
 - Fully functional terminal in the browser
-- Connects to the user's local shell
-- Multiple tabs
-- Resize support
+- Connects to the user's local shell through the local Node.js server
+- Multiple terminal tabs
+- Reliable resize and process lifecycle handling
 
-**Nothing fancy yet. Just make it reliable.**
+Nothing decorative should take priority over terminal reliability.
 
----
+### 2. Visual command cards
 
-### 2. Visual Command Cards ⭐ (Main Feature)
+Every detected command becomes a card containing:
 
-Every executed command becomes its own card.
-
-Each card contains:
-- Command
+- Command text
 - Output
 - Exit status
-- Execution time
+- Execution duration
 - Timestamp
+- Working directory or project context
 
-Actions:
+Card actions:
+
 - Pin
 - Bookmark
 - Copy
-- Search
 - Re-run
-- Add Note
-- Convert to Workflow
+- Add a note
+- Add tags
+- Convert to a workflow
 
-This is the product's identity.
+This is the product's defining feature.
 
----
+### 3. Quick-action sidebar
 
-### 3. Quick Action Sidebar
+A customizable sidebar provides deliberate, reusable terminal actions such as:
 
-A customizable sidebar with one-click actions.
+- Git status, pull, push, and commit
+- Dependency installation
+- Development server commands
+- Docker Compose start and stop
 
-Examples:
-- Git Status
-- Git Pull
-- Git Push
-- Git Commit
-- npm install
-- npm run dev
-- docker compose up
-- docker compose down
+Users can add, edit, reorder, group, and assign icons to actions. Actions must clearly distinguish between inserting a command and immediately executing it.
 
-Users can:
-- Add buttons
-- Reorder buttons
-- Group buttons
-- Choose icons
+### 4. Searchable timeline
 
----
+Command history becomes a structured timeline that can:
 
-### 4. Searchable Timeline
+- Search commands, output, and notes
+- Filter by workspace or project
+- Filter by date and execution status
+- Filter by tags, pins, and bookmarks
+- Restore the context of a previous command quickly
 
-Instead of terminal history:
+### 5. Reusable workflows
 
-- Search commands
-- Filter by project
-- Filter by date
-- Filter by tags
-- Jump back instantly
+Users can turn repeated command sequences into simple ordered workflows. Initial workflows should remain understandable: ordered steps, optional variables, and explicit stop-on-failure behavior.
 
----
+## Current delivery model
 
-### 5. AI Assistant (Only Where Useful)
+The first complete version is a locally served web application:
 
-AI should never be a chatbot.
+- Next.js and TypeScript provide the browser interface.
+- A long-running local Node.js process owns terminal processes and server-side services.
+- xterm.js renders terminal sessions.
+- node-pty connects Node.js to the local shell.
+- WebSockets carry live terminal traffic.
+- SQLite stores durable application data and searchable command history.
+- Zustand manages transient client-side workspace state.
 
-Useful actions:
-- Explain this error
-- Summarize long logs
-- Suggest next command
-- Convert repeated commands into a reusable workflow
-- Explain unfamiliar terminal output
+The server binds to the loopback interface and is intended for use only on the same machine. It is not a hosted terminal service.
 
----
+Electron is postponed until the web product is stable and feature-complete. AI functionality is outside the MVP and current roadmap and may only be reconsidered after the core product is complete.
 
-## Future Features
+## Future possibilities
 
 - Workspace snapshots
 - Project notes
@@ -99,38 +97,20 @@ Useful actions:
 - Plugins
 - Collaboration
 - Remote terminals
+- Desktop packaging
 
----
+These are not allowed to delay or complicate the core command-card product.
 
-## Suggested Build Order
+## Success criteria
 
-Phase 1
-- Browser terminal
-- PTY backend
-- WebSocket communication
+The core product is successful when a user can:
 
-Phase 2
-- Command detection
-- Command cards
-- Persistence
+1. Open reliable local terminal sessions in the browser.
+2. See normal commands captured accurately as durable cards.
+3. Find a past command or error faster than by searching raw scrollback.
+4. Reuse commands safely through cards, quick actions, and simple workflows.
+5. Restart CommandDeck without losing saved command history or organization.
 
-Phase 3
-- Sidebar buttons
-- Timeline
-- Search
+## Product pitch
 
-Phase 4
-- AI actions
-
-Phase 5
-- Polish
-- Themes
-- Animations
-- Deploy
-
----
-
-## Product Pitch
-
-A browser-based terminal workspace where commands become searchable,
-reusable, and AI-assisted workflow objects instead of disappearing forever.
+A local browser-based terminal workspace where commands become searchable, reusable workflow objects instead of disappearing forever.
