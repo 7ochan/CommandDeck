@@ -137,15 +137,15 @@ Dependencies point inward toward domain contracts and application services. Infr
 
 ## State ownership
 
-| State | Owner |
-|---|---|
-| Active node-pty process | Server terminal manager |
-| Command-capture state machine | Server terminal session |
-| Durable cards, actions, workflows | SQLite through repositories |
-| WebSocket connection status | Zustand terminal store |
-| Open tabs and selected tab | Zustand terminal store, reconciled with server |
-| xterm.js instance and live buffer | Terminal React component/ref |
-| Timeline filters and selected card | Feature-level Zustand store or URL state |
+| State                              | Owner                                          |
+| ---------------------------------- | ---------------------------------------------- |
+| Active node-pty process            | Server terminal manager                        |
+| Command-capture state machine      | Server terminal session                        |
+| Durable cards, actions, workflows  | SQLite through repositories                    |
+| WebSocket connection status        | Zustand terminal store                         |
+| Open tabs and selected tab         | Zustand terminal store, reconciled with server |
+| xterm.js instance and live buffer  | Terminal React component/ref                   |
+| Timeline filters and selected card | Feature-level Zustand store or URL state       |
 
 The raw xterm.js buffer must not be copied into Zustand. High-frequency PTY output should travel directly from the terminal client adapter to the relevant xterm.js instance.
 

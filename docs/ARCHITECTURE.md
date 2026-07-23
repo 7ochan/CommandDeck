@@ -204,18 +204,18 @@ SQLite is the only durable store. Use `better-sqlite3` as the Node.js driver and
 
 Initial domain model:
 
-| Entity | Purpose |
-|---|---|
-| `workspaces` | Named project roots and workspace metadata |
-| `terminal_sessions` | Historical lifecycle metadata for terminal tabs |
-| `command_runs` | Command text, output, cwd, timing, status, and exit code |
-| `tags` / `command_tags` | User organization and filtering |
-| `quick_action_groups` | Ordered sidebar groups |
-| `quick_actions` | Reusable commands and insert/execute behavior |
-| `workflows` | Workflow identity, description, and version |
-| `workflow_steps` | Ordered commands and stop-on-failure rules |
-| `workflow_runs` | Execution history and outcome |
-| `settings` | Application-level preferences |
+| Entity                  | Purpose                                                  |
+| ----------------------- | -------------------------------------------------------- |
+| `workspaces`            | Named project roots and workspace metadata               |
+| `terminal_sessions`     | Historical lifecycle metadata for terminal tabs          |
+| `command_runs`          | Command text, output, cwd, timing, status, and exit code |
+| `tags` / `command_tags` | User organization and filtering                          |
+| `quick_action_groups`   | Ordered sidebar groups                                   |
+| `quick_actions`         | Reusable commands and insert/execute behavior            |
+| `workflows`             | Workflow identity, description, and version              |
+| `workflow_steps`        | Ordered commands and stop-on-failure rules               |
+| `workflow_runs`         | Execution history and outcome                            |
+| `settings`              | Application-level preferences                            |
 
 An FTS5 index covers command text, searchable output, and notes. Workspace, date, status, tags, pins, and bookmarks remain structured filters rather than encoded search text.
 

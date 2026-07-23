@@ -27,14 +27,17 @@ export default function Home() {
         </div>
 
         <div className="max-w-3xl">
-          <p className="mb-4 font-mono text-sm text-emerald-300">$ build the workspace</p>
+          <p className="mb-4 font-mono text-sm text-emerald-300">
+            $ build the workspace
+          </p>
           <h1 className="text-4xl font-semibold tracking-tight text-balance text-white sm:text-6xl">
             Your commands deserve more than scrollback.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
-            CommandDeck is a local-first visual terminal workspace where executed commands become
-            searchable, reusable objects. The project foundation is configured; terminal
-            development begins in the next phase.
+            CommandDeck is a local-first visual terminal workspace where
+            executed commands become searchable, reusable objects. The project
+            foundation is configured; terminal development begins in the next
+            phase.
           </p>
         </div>
 

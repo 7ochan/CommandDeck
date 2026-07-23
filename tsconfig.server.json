@@ -3,8 +3,8 @@
   "compilerOptions": {
     "noEmit": false,
     "incremental": false,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "outDir": ".server",
     "rootDir": ".",
     "sourceMap": true

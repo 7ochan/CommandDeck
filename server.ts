@@ -1,15 +1,24 @@
 import { createServer } from 'node:http';
+import { loadEnvFile } from 'node:process';
+import next from 'next';
+
+try {
+  loadEnvFile();
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+    throw error;
+  }
+}
 
 const isProduction = process.argv.includes('--production');
 const dev = !isProduction;
-const hostname = process.env.HOSTNAME ?? '127.0.0.1';
+const hostname = process.env.COMMANDDECK_HOST ?? '127.0.0.1';
 const port = Number.parseInt(process.env.PORT ?? '3000', 10);
 
 if (isProduction) {
-  process.env.NODE_ENV = 'production';
+  Reflect.set(process.env, 'NODE_ENV', 'production');
 }
 
-const { default: next } = await import('next');
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
