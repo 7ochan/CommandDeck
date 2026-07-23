@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Compiled custom server
+.server/
+
+# Tests and tooling
+coverage/
+*.tsbuildinfo
+
+# Runtime data
+.commanddeck/
+.local-data/
+*.db
+*.db-shm
+*.db-wal
+
+# Environment files
+.env*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Operating systems and editors
+.DS_Store
+.idea/
+.vscode/
