@@ -4,9 +4,9 @@ CommandDeck is a local-first visual terminal workspace where every executed comm
 
 ## Project status
 
-The terminal foundation is initialized and verified. It includes the Next.js App Router, TypeScript, Tailwind CSS, a loopback-only custom Node.js server, a server-owned PTY session, an authenticated same-origin WebSocket bridge, and a responsive xterm.js client.
+The terminal, shell-integration, and in-memory Command Card MVP are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events and appear live as selectable cards beside the responsive xterm.js terminal.
 
-Command history, command cards, persistence, Zustand, SQLite, Electron, and AI functionality have not been implemented.
+Persistence, card actions, Zustand, SQLite, Electron, and AI functionality have not been implemented.
 
 ## Local development
 

@@ -4,6 +4,7 @@ import type { IDisposable, Terminal as XtermTerminal } from '@xterm/xterm';
 import { useEffect, useRef, useState } from 'react';
 
 import { parseTerminalServerMessage } from '@/shared/contracts';
+import type { CommandCompletedPayload } from '@/shared/types';
 
 import {
   createTerminalWebSocket,
@@ -22,10 +23,19 @@ const STATUS_LABELS: Record<ConnectionStatus, string> = {
   exited: 'Shell exited',
 };
 
-export function Terminal() {
+type TerminalProps = {
+  onCommandCompleted?: (command: CommandCompletedPayload) => void;
+};
+
+export function Terminal({ onCommandCompleted }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const onCommandCompletedRef = useRef(onCommandCompleted);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [shellName, setShellName] = useState('Local shell');
+
+  useEffect(() => {
+    onCommandCompletedRef.current = onCommandCompleted;
+  }, [onCommandCompleted]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -171,6 +181,11 @@ export function Terminal() {
 
         if (message.type === 'terminal.output') {
           terminal.write(message.payload.data);
+          return;
+        }
+
+        if (message.type === 'command.completed') {
+          onCommandCompletedRef.current?.(message.payload);
           return;
         }
 

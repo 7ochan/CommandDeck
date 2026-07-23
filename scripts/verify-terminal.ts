@@ -10,6 +10,7 @@ import {
   serializeTerminalMessage,
   type TerminalServerMessage,
 } from '../src/shared/contracts/terminal.js';
+import { OscShellIntegrationParser } from '../src/server/shell-integration/parsers/osc-parser.js';
 
 const port = Number.parseInt(process.env.COMMANDDECK_VERIFY_PORT ?? '3210', 10);
 const hostname = '127.0.0.1';
@@ -17,6 +18,7 @@ const origin = `http://${hostname}:${port}`;
 const server = startServer();
 
 try {
+  verifyStreamingParser();
   await waitForServer(server);
 
   const response = await fetch(origin);
@@ -73,17 +75,81 @@ try {
     'terminal.resized(100x40)',
   );
 
-  sendInput(socket, sessionId, "printf '__COMMAND_ONE__\\n'\r");
-  await waitForOutput(
-    () => output.includes('__COMMAND_ONE__'),
-    'first command',
+  const lifecycleCountBeforeEmptyCommand = commandMessages(messages).length;
+  sendInput(socket, sessionId, '\r');
+  await delay(250);
+  assert.equal(
+    commandMessages(messages).length,
+    lifecycleCountBeforeEmptyCommand,
+    'Empty commands must not emit lifecycle events',
   );
 
-  sendInput(socket, sessionId, "printf '__COMMAND_TWO__\\n'\r");
-  await waitForOutput(
-    () => output.includes('__COMMAND_TWO__'),
-    'second command',
+  sendInput(socket, sessionId, "printf '__COMMAND_ONE__\\n'\r");
+  const firstStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command.includes('__COMMAND_ONE__'),
+    'first command start',
   );
+  const firstCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) => message.payload.commandId === firstStarted.payload.commandId,
+    'first command completion',
+  );
+  assertCommandPair(firstStarted, firstCompleted, 0);
+
+  sendInput(socket, sessionId, "printf '__COMMAND_TWO__\\n'\r");
+  const secondStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command.includes('__COMMAND_TWO__'),
+    'second command start',
+  );
+  const secondCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) => message.payload.commandId === secondStarted.payload.commandId,
+    'second command completion',
+  );
+  assertCommandPair(secondStarted, secondCompleted, 0);
+
+  sendInput(socket, sessionId, 'false\r');
+  const failedStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command === 'false',
+    'failed command start',
+  );
+  const failedCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) => message.payload.commandId === failedStarted.payload.commandId,
+    'failed command completion',
+  );
+  assertCommandPair(failedStarted, failedCompleted, 1);
+
+  sendInput(socket, sessionId, 'if true; then\r');
+  sendInput(socket, sessionId, "  printf '__MULTILINE__\\n'\r");
+  sendInput(socket, sessionId, 'fi\r');
+  const multilineStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command.includes('__MULTILINE__'),
+    'multiline command start',
+  );
+  assert.ok(
+    multilineStarted.payload.command.includes('\n'),
+    'Multiline command text should preserve newlines',
+  );
+  const multilineCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === multilineStarted.payload.commandId,
+    'multiline command completion',
+  );
+  assertCommandPair(multilineStarted, multilineCompleted, 0);
 
   sendInput(socket, sessionId, "printf '\\033[31m__COLOR__\\033[0m\\n'\r");
   await waitForOutput(
@@ -98,14 +164,38 @@ try {
   );
 
   sendInput(socket, sessionId, 'sleep 5\r');
+  const interruptedStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command === 'sleep 5',
+    'interrupted command start',
+  );
   await delay(250);
   sendInput(socket, sessionId, '\u0003');
-  await delay(150);
-  sendInput(socket, sessionId, "printf '__CTRL_C_OK__\\n'\r");
-  await waitForOutput(
-    () => output.includes('__CTRL_C_OK__'),
-    'shell responsiveness after Ctrl+C',
+  const interruptedCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === interruptedStarted.payload.commandId,
+    'interrupted command completion',
   );
+  assertCommandPair(interruptedStarted, interruptedCompleted, 130);
+
+  sendInput(socket, sessionId, "printf '__CTRL_C_OK__\\n'\r");
+  const afterInterruptStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command.includes('__CTRL_C_OK__'),
+    'command start after Ctrl+C',
+  );
+  const afterInterruptCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === afterInterruptStarted.payload.commandId,
+    'command completion after Ctrl+C',
+  );
+  assertCommandPair(afterInterruptStarted, afterInterruptCompleted, 0);
 
   socket.send(
     serializeTerminalMessage({
@@ -118,7 +208,7 @@ try {
   await once(socket, 'close');
 
   console.log(
-    'Terminal verification passed: commands, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: lifecycle events, empty input, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
@@ -198,6 +288,102 @@ async function waitForMessage(
 
   assert.ok(match);
   return match;
+}
+
+type CommandStartedMessage = Extract<
+  TerminalServerMessage,
+  { type: 'command.started' }
+>;
+type CommandCompletedMessage = Extract<
+  TerminalServerMessage,
+  { type: 'command.completed' }
+>;
+
+async function waitForCommandMessage(
+  messages: TerminalServerMessage[],
+  type: 'command.started',
+  predicate: (message: CommandStartedMessage) => boolean,
+  description: string,
+): Promise<CommandStartedMessage>;
+async function waitForCommandMessage(
+  messages: TerminalServerMessage[],
+  type: 'command.completed',
+  predicate: (message: CommandCompletedMessage) => boolean,
+  description: string,
+): Promise<CommandCompletedMessage>;
+async function waitForCommandMessage(
+  messages: TerminalServerMessage[],
+  type: 'command.started' | 'command.completed',
+  predicate: (message: never) => boolean,
+  description: string,
+): Promise<CommandStartedMessage | CommandCompletedMessage> {
+  let match: CommandStartedMessage | CommandCompletedMessage | undefined;
+
+  await waitFor(() => {
+    match = commandMessages(messages).find(
+      (message) => message.type === type && predicate(message as never),
+    );
+    return Boolean(match);
+  }, description);
+
+  assert.ok(match);
+  return match;
+}
+
+function commandMessages(
+  messages: TerminalServerMessage[],
+): Array<CommandStartedMessage | CommandCompletedMessage> {
+  return messages.filter(
+    (message): message is CommandStartedMessage | CommandCompletedMessage =>
+      message.type === 'command.started' ||
+      message.type === 'command.completed',
+  );
+}
+
+function assertCommandPair(
+  started: CommandStartedMessage,
+  completed: CommandCompletedMessage,
+  expectedExitCode: number,
+): void {
+  assert.equal(completed.payload.commandId, started.payload.commandId);
+  assert.equal(completed.payload.command, started.payload.command);
+  assert.equal(completed.payload.cwd, started.payload.cwd);
+  assert.equal(completed.payload.startedAt, started.payload.startedAt);
+  assert.equal(completed.payload.exitCode, expectedExitCode);
+  assert.equal(completed.payload.completionReason, 'shell');
+  assert.ok(completed.payload.finishedAt >= started.payload.startedAt);
+  assert.equal(
+    completed.payload.durationMs,
+    completed.payload.finishedAt - started.payload.startedAt,
+  );
+}
+
+function verifyStreamingParser(): void {
+  const nonce = 'parser-test-nonce';
+  const parser = new OscShellIntegrationParser({ shell: 'zsh', nonce });
+  const stream = [
+    'before',
+    `\u001b]633;E;printf \\x27hello\\x27\\x0a;${nonce}\u0007`,
+    `\u001b]633;C;${nonce}\u0007`,
+    'output',
+    `\u001b]633;D;7;${nonce}\u0007`,
+    'after',
+  ].join('');
+  const tokens = [...stream].flatMap((character) => parser.push(character));
+  const visibleOutput = tokens
+    .filter((token) => token.type === 'output')
+    .map((token) => token.data)
+    .join('');
+  const markers = tokens
+    .filter((token) => token.type === 'marker')
+    .map((token) => token.marker);
+
+  assert.equal(visibleOutput, 'beforeoutputafter');
+  assert.deepEqual(markers, [
+    { type: 'command.line', command: "printf 'hello'\n" },
+    { type: 'command.start' },
+    { type: 'command.end', exitCode: 7 },
+  ]);
 }
 
 async function waitForOutput(

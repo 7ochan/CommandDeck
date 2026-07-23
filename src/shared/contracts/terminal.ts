@@ -1,3 +1,8 @@
+import type {
+  CommandCompletedPayload,
+  CommandStartedPayload,
+} from '../types/command';
+
 export const TERMINAL_PROTOCOL_VERSION = 1 as const;
 export const TERMINAL_WEBSOCKET_PATH = '/ws/terminal';
 
@@ -30,7 +35,9 @@ export type TerminalServerMessage =
       'terminal.exited',
       { exitCode: number; signal: number | null }
     >
-  | TerminalMessage<'terminal.error', { message: string }>;
+  | TerminalMessage<'terminal.error', { message: string }>
+  | TerminalMessage<'command.started', CommandStartedPayload>
+  | TerminalMessage<'command.completed', CommandCompletedPayload>;
 
 export function parseTerminalClientMessage(
   value: string,
@@ -125,7 +132,54 @@ export function parseTerminalServerMessage(
       : null;
   }
 
+  if (type === 'command.started') {
+    const command = parseCommandStartedPayload(payload);
+    return command ? { version, type, sessionId, payload: command } : null;
+  }
+
+  if (type === 'command.completed') {
+    const command = parseCommandCompletedPayload(payload);
+    return command ? { version, type, sessionId, payload: command } : null;
+  }
+
   return null;
+}
+
+function parseCommandStartedPayload(
+  payload: Record<string, unknown>,
+): CommandStartedPayload | null {
+  const { command, commandId, cwd, startedAt } = payload;
+
+  return typeof commandId === 'string' &&
+    commandId.length > 0 &&
+    typeof command === 'string' &&
+    command.length > 0 &&
+    typeof cwd === 'string' &&
+    isNonNegativeInteger(startedAt)
+    ? { commandId, command, cwd, startedAt }
+    : null;
+}
+
+function parseCommandCompletedPayload(
+  payload: Record<string, unknown>,
+): CommandCompletedPayload | null {
+  const started = parseCommandStartedPayload(payload);
+  const { completionReason, durationMs, exitCode, finishedAt } = payload;
+
+  return started &&
+    isNonNegativeInteger(finishedAt) &&
+    isNonNegativeInteger(durationMs) &&
+    typeof exitCode === 'number' &&
+    Number.isInteger(exitCode) &&
+    (completionReason === 'shell' || completionReason === 'session-exit')
+    ? {
+        ...started,
+        finishedAt,
+        durationMs,
+        exitCode,
+        completionReason,
+      }
+    : null;
 }
 
 export function serializeTerminalMessage(
@@ -180,4 +234,8 @@ function isIntegerInRange(
     value >= minimum &&
     value <= maximum
   );
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 }

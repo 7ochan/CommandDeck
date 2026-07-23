@@ -1,4 +1,4 @@
-import { Terminal } from '@/features/terminal/components/terminal';
+import { TerminalWorkspace } from '@/components/layout/terminal-workspace';
 
 export default function Home() {
   return (
@@ -12,7 +12,9 @@ export default function Home() {
             <h1 className="font-mono text-sm tracking-[0.18em] text-slate-200 uppercase">
               CommandDeck
             </h1>
-            <p className="text-[11px] text-slate-500">Terminal foundation</p>
+            <p className="text-[11px] text-slate-500">
+              Visual command workspace
+            </p>
           </div>
         </div>
 
@@ -21,7 +23,7 @@ export default function Home() {
         </span>
       </header>
 
-      <Terminal />
+      <TerminalWorkspace />
     </main>
   );
 }

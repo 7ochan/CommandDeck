@@ -71,6 +71,25 @@ export class TerminalGateway {
     };
 
     const removeDataListener = session.onData(queueOutput);
+    const removeCommandListener = session.onCommand((event) => {
+      flushOutput();
+
+      if (event.type === 'command.started') {
+        send({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'command.started',
+          sessionId,
+          payload: event.payload,
+        });
+      } else {
+        send({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'command.completed',
+          sessionId,
+          payload: event.payload,
+        });
+      }
+    });
     const removeExitListener = session.onExit(({ exitCode, signal }) => {
       flushOutput();
       send({
@@ -89,6 +108,7 @@ export class TerminalGateway {
 
       cleanedUp = true;
       removeDataListener();
+      removeCommandListener();
       removeExitListener();
 
       if (flushTimer) {

@@ -3,6 +3,11 @@ import { homedir, platform } from 'node:os';
 import { basename, isAbsolute } from 'node:path';
 import * as pty from 'node-pty';
 
+import {
+  createShellLaunchProfile,
+  type ShellIntegrationConfiguration,
+} from '../shell-integration/shell-profiles.js';
+
 export const DEFAULT_TERMINAL_COLUMNS = 80;
 export const DEFAULT_TERMINAL_ROWS = 24;
 
@@ -12,6 +17,8 @@ export type PtyLaunch = {
   cwd: string;
   cols: number;
   rows: number;
+  integration: ShellIntegrationConfiguration | null;
+  dispose: () => void;
 };
 
 export class PtyAdapter {
@@ -21,22 +28,31 @@ export class PtyAdapter {
   ): PtyLaunch {
     const shell = resolveDefaultShell();
     const cwd = resolveStartingDirectory();
+    const shellProfile = createShellLaunchProfile(shell);
     const environment: Record<string, string | undefined> = {
       ...process.env,
+      ...shellProfile.environment,
       COLORTERM: 'truecolor',
       TERM: 'xterm-256color',
       TERM_PROGRAM: 'CommandDeck',
       TERM_PROGRAM_VERSION: '0.1.0',
     };
 
-    const terminalProcess = pty.spawn(shell, shellArguments(shell), {
-      name: 'xterm-256color',
-      cols,
-      rows,
-      cwd,
-      env: environment,
-      encoding: 'utf8',
-    });
+    let terminalProcess: pty.IPty;
+
+    try {
+      terminalProcess = pty.spawn(shell, shellArguments(shell), {
+        name: 'xterm-256color',
+        cols,
+        rows,
+        cwd,
+        env: environment,
+        encoding: 'utf8',
+      });
+    } catch (error) {
+      shellProfile.dispose();
+      throw error;
+    }
 
     return {
       process: terminalProcess,
@@ -44,6 +60,8 @@ export class PtyAdapter {
       cwd,
       cols,
       rows,
+      integration: shellProfile.integration,
+      dispose: shellProfile.dispose,
     };
   }
 }
