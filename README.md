@@ -4,9 +4,9 @@ CommandDeck is a local-first visual terminal workspace where every executed comm
 
 ## Project status
 
-The foundation scaffold is initialized and verified. It includes the Next.js App Router, TypeScript, Tailwind CSS, linting, formatting, the documented directory boundaries, and a loopback-only custom Node.js server.
+The terminal foundation is initialized and verified. It includes the Next.js App Router, TypeScript, Tailwind CSS, a loopback-only custom Node.js server, a server-owned PTY session, an authenticated same-origin WebSocket bridge, and a responsive xterm.js client.
 
-Terminal transport and product functionality have not been implemented. xterm.js, node-pty, WebSockets, Zustand, and SQLite will be added only when their roadmap phases begin. Electron and AI functionality are outside the current implementation scope.
+Command history, command cards, persistence, Zustand, SQLite, Electron, and AI functionality have not been implemented.
 
 ## Local development
 
@@ -24,17 +24,18 @@ The custom server listens on `http://127.0.0.1:3000` by default. Copy `.env.exam
 
 ## Available scripts
 
-| Command                | Purpose                                                  |
-| ---------------------- | -------------------------------------------------------- |
-| `npm run dev`          | Start the local custom server in development/watch mode. |
-| `npm run build`        | Build Next.js and compile the custom Node.js server.     |
-| `npm start`            | Start the compiled production server.                    |
-| `npm run lint`         | Run the Next.js ESLint configuration.                    |
-| `npm run lint:fix`     | Apply safe ESLint fixes.                                 |
-| `npm run format`       | Format supported files with Prettier.                    |
-| `npm run format:check` | Check formatting without changing files.                 |
-| `npm run typecheck`    | Run TypeScript without emitting output.                  |
-| `npm run check`        | Run formatting, linting, types, and the full build.      |
+| Command                   | Purpose                                                    |
+| ------------------------- | ---------------------------------------------------------- |
+| `npm run dev`             | Start the local custom server in development/watch mode.   |
+| `npm run build`           | Build Next.js and compile the custom Node.js server.       |
+| `npm start`               | Start the compiled production server.                      |
+| `npm run lint`            | Run the Next.js ESLint configuration.                      |
+| `npm run lint:fix`        | Apply safe ESLint fixes.                                   |
+| `npm run format`          | Format supported files with Prettier.                      |
+| `npm run format:check`    | Check formatting without changing files.                   |
+| `npm run typecheck`       | Run TypeScript without emitting output.                    |
+| `npm run check`           | Run formatting, linting, types, and the full build.        |
+| `npm run verify:terminal` | Build and verify commands, ANSI color, resize, and Ctrl+C. |
 
 ## Documentation
 
