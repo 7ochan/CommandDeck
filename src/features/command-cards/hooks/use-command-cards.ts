@@ -5,6 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CommandCompletedPayload } from '@/shared/types';
 
 import { deleteCommandCard, loadCommandCards } from '../api';
+import {
+  loadSelectedCommandCardId,
+  resolveRestoredCommandCardId,
+  saveSelectedCommandCardId,
+} from '../selection-storage';
 import type { CommandCard } from '../types';
 
 type CommandCardsState = {
@@ -14,6 +19,7 @@ type CommandCardsState = {
   loadError: string | null;
   addCompletedCommand: (command: CommandCompletedPayload) => void;
   selectCard: (commandId: string) => void;
+  clearSelection: () => void;
   deleteCard: (commandId: string) => Promise<void>;
 };
 
@@ -31,6 +37,23 @@ export function useCommandCards(): CommandCardsState {
         setCards((currentCards) =>
           mergeCommandCards(currentCards, persistedCards),
         );
+        setSelectedCardId((currentId) => {
+          if (currentId) {
+            return currentId;
+          }
+
+          const restoredId = resolveRestoredCommandCardId(
+            loadSelectedCommandCardId(),
+            new Set(persistedCards.map(({ commandId }) => commandId)),
+          );
+
+          if (restoredId) {
+            return restoredId;
+          }
+
+          saveSelectedCommandCardId(null);
+          return null;
+        });
         setLoadError(null);
       })
       .catch((error: unknown) => {
@@ -64,9 +87,13 @@ export function useCommandCards(): CommandCardsState {
   );
 
   const selectCard = useCallback((commandId: string) => {
-    setSelectedCardId((currentId) =>
-      currentId === commandId ? null : commandId,
-    );
+    setSelectedCardId(commandId);
+    saveSelectedCommandCardId(commandId);
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedCardId(null);
+    saveSelectedCommandCardId(null);
   }, []);
 
   const deleteCard = useCallback(async (commandId: string) => {
@@ -74,9 +101,14 @@ export function useCommandCards(): CommandCardsState {
     setCards((currentCards) =>
       currentCards.filter((card) => card.commandId !== commandId),
     );
-    setSelectedCardId((currentId) =>
-      currentId === commandId ? null : currentId,
-    );
+    setSelectedCardId((currentId) => {
+      if (currentId !== commandId) {
+        return currentId;
+      }
+
+      saveSelectedCommandCardId(null);
+      return null;
+    });
   }, []);
 
   return {
@@ -86,6 +118,7 @@ export function useCommandCards(): CommandCardsState {
     loadError,
     addCompletedCommand,
     selectCard,
+    clearSelection,
     deleteCard,
   };
 }

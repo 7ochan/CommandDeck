@@ -18,6 +18,7 @@ export function TerminalWorkspace() {
     loadError,
     addCompletedCommand,
     selectCard,
+    clearSelection,
     deleteCard,
   } = useCommandCards();
   const runCommandAgain = useCallback(
@@ -34,6 +35,7 @@ export function TerminalWorkspace() {
         isLoading={isLoading}
         loadError={loadError}
         onSelectCard={selectCard}
+        onClearSelection={clearSelection}
         onRunAgain={runCommandAgain}
         onDeleteCard={deleteCard}
       />

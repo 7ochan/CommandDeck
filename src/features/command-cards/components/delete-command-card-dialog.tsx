@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 type DeleteCommandCardDialogProps = {
   command: string;
@@ -20,6 +20,7 @@ export function DeleteCommandCardDialog({
   onConfirm,
 }: DeleteCommandCardDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -39,7 +40,7 @@ export function DeleteCommandCardDialog({
     <dialog
       ref={dialogRef}
       className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-white/12 bg-[#0b1018] p-0 text-slate-200 shadow-2xl shadow-black/60 backdrop:bg-black/70"
-      aria-labelledby="delete-command-card-title"
+      aria-labelledby={titleId}
       onCancel={(event) => {
         if (isDeleting) {
           event.preventDefault();
@@ -54,10 +55,7 @@ export function DeleteCommandCardDialog({
       }}
     >
       <div className="p-5">
-        <h3
-          id="delete-command-card-title"
-          className="text-sm font-semibold text-slate-100"
-        >
+        <h3 id={titleId} className="text-sm font-semibold text-slate-100">
           Delete this command card?
         </h3>
         <p className="mt-2 text-xs leading-5 text-slate-400">
