@@ -289,6 +289,14 @@ function TerminalView(
           sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
           reportConnectionStatus('connected');
+
+          if (
+            message.payload.bufferedOutput &&
+            message.payload.bufferedOutput.length > 0
+          ) {
+            terminal.write(message.payload.bufferedOutput);
+          }
+
           fit();
           sendTerminalResize(
             socket as WebSocket,
@@ -314,8 +322,11 @@ function TerminalView(
         // establishment messages. They must be processed before the sessionId
         // guard because the client sessionId is null until one of them arrives.
         if (message.type === 'terminal.workspace.selected') {
-          // Existing PTY reattached: update session ID and replay buffered
-          // output. Do NOT reset xterm — scrollback and state are preserved.
+          // Existing PTY reattached: reset xterm buffer cleanly and write full
+          // output history (scrollback + active prompt).
+          sectionPresentation.reset();
+          terminal.reset();
+
           sessionId = message.payload.sessionId;
           sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;

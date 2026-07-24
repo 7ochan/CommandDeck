@@ -35,6 +35,8 @@ export class TerminalSession {
   private currentCwd: string;
   private readonly currentWorkspaceId: string;
   private closed = false;
+  private outputBuffer = '';
+  private static readonly MAX_OUTPUT_HISTORY_BYTES = 1024 * 1024; // 1 MiB
 
   constructor(id: string, launch: PtyLaunch, initialWorkspaceId: string) {
     this.id = id;
@@ -55,12 +57,14 @@ export class TerminalSession {
 
     this.dataSubscription = this.terminalProcess.onData((data) => {
       if (!this.integrationParser) {
+        this.bufferOutput(data);
         this.emitData(data);
         return;
       }
 
       for (const token of this.integrationParser.push(data)) {
         if (token.type === 'output') {
+          this.bufferOutput(token.data);
           this.emitData(token.data);
         } else {
           this.commandCapture.accept(token.marker);
@@ -77,6 +81,7 @@ export class TerminalSession {
       const remainingOutput = this.integrationParser?.drain();
 
       if (remainingOutput) {
+        this.bufferOutput(remainingOutput);
         this.emitData(remainingOutput);
       }
 
@@ -106,6 +111,20 @@ export class TerminalSession {
 
   get cwd(): string {
     return this.currentCwd;
+  }
+
+  get outputHistory(): string {
+    return this.outputBuffer;
+  }
+
+  private bufferOutput(data: string): void {
+    this.outputBuffer += data;
+
+    if (this.outputBuffer.length > TerminalSession.MAX_OUTPUT_HISTORY_BYTES) {
+      this.outputBuffer = this.outputBuffer.slice(
+        this.outputBuffer.length - TerminalSession.MAX_OUTPUT_HISTORY_BYTES,
+      );
+    }
   }
 
   onData(listener: DataListener): () => void {

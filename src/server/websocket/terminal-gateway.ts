@@ -13,13 +13,6 @@ import { ConnectionRegistry } from './connection-registry.js';
 const OUTPUT_FLUSH_INTERVAL_MS = 8;
 const OUTPUT_FLUSH_THRESHOLD = 64 * 1024;
 
-/**
- * Maximum bytes buffered for a detached workspace session (1 MiB).
- * The tail is kept when the limit is exceeded so the most recent terminal
- * state is always available on reattachment.
- */
-const DETACHED_OUTPUT_BUFFER_LIMIT = 1024 * 1024;
-
 type WorkspaceAccess = {
   workspaceExists: (workspaceId: string) => boolean;
   initialWorkspaceId: () => string;
@@ -30,20 +23,8 @@ const defaultWorkspaceAccess: WorkspaceAccess = {
   initialWorkspaceId: () => DEFAULT_WORKSPACE_ID,
 };
 
-/**
- * Output accumulated for a session while no socket is attached to it.
- * Keyed by session ID.
- */
-type DetachedBuffer = {
-  output: string;
-  removeDataListener: () => void;
-};
-
 export class TerminalGateway {
   private readonly connections = new ConnectionRegistry();
-
-  /** Output accumulated per session while it has no attached socket. */
-  private readonly detachedBuffers = new Map<string, DetachedBuffer>();
 
   /**
    * Session IDs that have been fully started (PTY spawned and first
@@ -168,17 +149,10 @@ export class TerminalGateway {
       activeBinding = binding;
       this.connections.add(sessionId, socket);
 
-      // Drain the detached buffer accumulated while this session had no socket.
-      const detachedBuffer = this.detachedBuffers.get(sessionId);
-      const bufferedOutput = detachedBuffer?.output ?? '';
-
-      if (detachedBuffer) {
-        detachedBuffer.removeDataListener();
-        this.detachedBuffers.delete(sessionId);
-      }
-
       const isFirstStart = !this.startedSessionIds.has(sessionId);
       this.startedSessionIds.add(sessionId);
+
+      const bufferedOutput = session.outputHistory;
 
       if (isFirstStart) {
         // Brand-new PTY: tell the client to reset xterm and begin a fresh session.
@@ -192,10 +166,11 @@ export class TerminalGateway {
             cols: session.cols,
             rows: session.rows,
             workspaceId: session.workspaceId,
+            bufferedOutput,
           },
         });
       } else {
-        // Existing PTY reattached: keep xterm state, replay buffered output.
+        // Existing PTY reattached: keep xterm state, replay full output history.
         send({
           version: TERMINAL_PROTOCOL_VERSION,
           type: 'terminal.workspace.selected',
@@ -228,29 +203,6 @@ export class TerminalGateway {
 
       binding.dispose();
       this.connections.deleteBySocket(socket);
-
-      // Start buffering output for this session while it runs unattached.
-      const { session } = binding;
-      const sessionId = session.id;
-
-      const bufferWhileDetached = (data: string) => {
-        const entry = this.detachedBuffers.get(sessionId);
-
-        if (!entry) {
-          return;
-        }
-
-        entry.output += data;
-
-        if (entry.output.length > DETACHED_OUTPUT_BUFFER_LIMIT) {
-          entry.output = entry.output.slice(
-            entry.output.length - DETACHED_OUTPUT_BUFFER_LIMIT,
-          );
-        }
-      };
-
-      const removeDataListener = session.onData(bufferWhileDetached);
-      this.detachedBuffers.set(sessionId, { output: '', removeDataListener });
     };
 
     // ─── Switch to a different workspace ─────────────────────────────────────
@@ -373,13 +325,6 @@ export class TerminalGateway {
           const closedSession = this.sessions.getForWorkspace(targetWorkspaceId);
 
           if (closedSession) {
-            const detachedBuf = this.detachedBuffers.get(closedSession.id);
-
-            if (detachedBuf) {
-              detachedBuf.removeDataListener();
-              this.detachedBuffers.delete(closedSession.id);
-            }
-
             this.startedSessionIds.delete(closedSession.id);
             this.sessions.close(closedSession.id);
           }
@@ -407,11 +352,6 @@ export class TerminalGateway {
   }
 
   closeAll(): void {
-    for (const buffer of this.detachedBuffers.values()) {
-      buffer.removeDataListener();
-    }
-
-    this.detachedBuffers.clear();
     this.startedSessionIds.clear();
     this.sessions.closeAll();
     this.connections.closeAll();

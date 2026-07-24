@@ -36,6 +36,7 @@ export type TerminalServerMessage =
         cols: number;
         rows: number;
         workspaceId: string;
+        bufferedOutput?: string;
       }
     >
   | TerminalMessage<'terminal.output', { data: string }>
@@ -137,19 +138,27 @@ export function parseTerminalServerMessage(
   const { payload, sessionId, type, version } = message;
 
   if (type === 'terminal.started') {
-    const { cols, cwd, rows, shell, workspaceId } = payload;
+    const { cols, cwd, rows, shell, workspaceId, bufferedOutput } = payload;
 
     return typeof shell === 'string' &&
       typeof cwd === 'string' &&
       typeof workspaceId === 'string' &&
       workspaceId.length > 0 &&
       isIntegerInRange(cols, MIN_COLUMNS, MAX_COLUMNS) &&
-      isIntegerInRange(rows, MIN_ROWS, MAX_ROWS)
+      isIntegerInRange(rows, MIN_ROWS, MAX_ROWS) &&
+      (bufferedOutput === undefined || typeof bufferedOutput === 'string')
       ? {
           version,
           type,
           sessionId,
-          payload: { shell, cwd, cols, rows, workspaceId },
+          payload: {
+            shell,
+            cwd,
+            cols,
+            rows,
+            workspaceId,
+            ...(typeof bufferedOutput === 'string' ? { bufferedOutput } : {}),
+          },
         }
       : null;
   }
