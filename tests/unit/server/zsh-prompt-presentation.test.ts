@@ -11,7 +11,7 @@ describe('zsh prompt presentation', () => {
     expect(ZSH_COMMAND_INDICATOR).toBe('❯');
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain('%F{cyan}%~%f');
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain(
-      `%F{green}${ZSH_COMMAND_INDICATOR}%f `,
+      `%B%F{green}${ZSH_COMMAND_INDICATOR}%f%b `,
     );
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain("RPROMPT=''");
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain("PROMPT_EOL_MARK=''");

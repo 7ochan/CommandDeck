@@ -228,7 +228,17 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Reason:** A modern terminal can be easier to scan without creating a second rendering model. Prompt rendering belongs to the shell, xterm appearance belongs to browser presentation, and command lifecycle remains owned by the existing structured shell protocol.
 
-**Consequences:** User zsh startup files and shell behavior still load normally, but their visible primary and right prompts are replaced inside CommandDeck. Unsupported shells retain their native prompts. Command separation is not a React card, decoration, persisted record, or output rewrite. Rich command blocks, custom renderers, and terminal-output restoration remain outside this phase.
+**Consequences:** User zsh startup files and shell behavior still load normally, but their visible primary and right prompts are replaced inside CommandDeck. Unsupported shells retain their native prompts. At this baseline stage, command separation is not a React card, decoration, persisted record, or output rewrite. TD-023 extends the presentation with xterm-owned marker decorations while retaining the other constraints. Rich command blocks, custom renderers, and terminal-output restoration remain outside this phase.
+
+## TD-023 — Command sections use xterm-anchored completion separators
+
+**Status:** Accepted
+
+**Decision:** Keep the shell-emitted completion newline from TD-022 and add a browser-only command-section presentation coordinator. The coordinator consumes the existing ordered `command.started` and `command.completed` events, waits for earlier terminal writes to be parsed, and registers one text-free xterm marker decoration at each completed command boundary. The active command is never decorated as complete. Decorations are presentation-only, pointer-inert, hidden from assistive technology, and disposed on scrollback trimming, terminal reset, or session replacement. No output bytes, ANSI sequences, History records, or React command blocks are created or changed.
+
+**Reason:** A marker-backed separator makes completed commands easier to scan without inserting visible rule characters into terminal output or maintaining a second terminal model. xterm owns marker movement, viewport placement, alternate-buffer suppression, and scrollback disposal, so presentation work scales with retained completed commands rather than output volume.
+
+**Consequences:** CommandDeck opts into xterm's proposed decoration API behind an isolated presentation module while continuing to use stable PTY, parser, input, resize, and buffer APIs everywhere else. If decoration registration is unavailable, the native completion spacing remains intact. The retained marker boundary is suitable for future lightweight section presentation, but this decision does not add metadata, actions, cards, or durable command-section state.
 
 ## Open implementation parameters
 

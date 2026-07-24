@@ -4,6 +4,7 @@ import { TERMINAL_PRESENTATION_OPTIONS } from '../../../src/features/terminal/te
 
 describe('terminal presentation options', () => {
   it('keeps readable, accessible xterm-native rendering defaults', () => {
+    expect(TERMINAL_PRESENTATION_OPTIONS.allowProposedApi).toBe(true);
     expect(TERMINAL_PRESENTATION_OPTIONS.cursorStyle).toBe('bar');
     expect(TERMINAL_PRESENTATION_OPTIONS.cursorWidth).toBe(2);
     expect(TERMINAL_PRESENTATION_OPTIONS.lineHeight).toBeGreaterThan(1.2);

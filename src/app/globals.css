@@ -60,6 +60,35 @@ select {
   image-rendering: auto;
 }
 
+.commanddeck-terminal .xterm-decoration.commanddeck-command-section-separator {
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+  background: linear-gradient(
+      90deg,
+      rgb(103 232 249 / 28%),
+      rgb(100 116 139 / 12%) 64%,
+      transparent 92%
+    )
+    bottom / 100% 1px no-repeat;
+  opacity: 0;
+  animation: commanddeck-finalize-section 180ms ease-out forwards;
+}
+
+@keyframes commanddeck-finalize-section {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commanddeck-terminal
+    .xterm-decoration.commanddeck-command-section-separator {
+    opacity: 1;
+    animation: none;
+  }
+}
+
 .command-history-scrollbar,
 .command-deck-scrollbar {
   scrollbar-color: #273449 transparent;

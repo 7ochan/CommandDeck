@@ -7,7 +7,7 @@ __commanddeck_render_command_separator() {
 
 builtin setopt prompt_percent
 PROMPT="%{$(__commanddeck_emit_prompt_start)%}%F{cyan}%~%f
-%F{green}${ZSH_COMMAND_INDICATOR}%f %{$(__commanddeck_emit_prompt_end)%}"
+%B%F{green}${ZSH_COMMAND_INDICATOR}%f%b %{$(__commanddeck_emit_prompt_end)%}"
 PROMPT2='  '
 RPROMPT=''
 PROMPT_EOL_MARK=''

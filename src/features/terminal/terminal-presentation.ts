@@ -1,7 +1,7 @@
 import type { ITerminalInitOnlyOptions, ITerminalOptions } from '@xterm/xterm';
 
 export const TERMINAL_PRESENTATION_OPTIONS = {
-  allowProposedApi: false,
+  allowProposedApi: true,
   cursorBlink: true,
   cursorStyle: 'bar',
   cursorInactiveStyle: 'outline',

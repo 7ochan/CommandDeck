@@ -21,6 +21,7 @@ import {
   sendTerminalResize,
   selectTerminalWorkspace,
 } from '../terminal-client';
+import { TerminalCommandSections } from '../terminal-command-sections';
 import { TERMINAL_PRESENTATION_OPTIONS } from '../terminal-presentation';
 
 type ConnectionStatus =
@@ -150,6 +151,7 @@ function TerminalView(
     let sessionId: string | null = null;
     let socket: WebSocket | null = null;
     let terminal: XtermTerminal | null = null;
+    let commandSections: TerminalCommandSections | null = null;
     let inputSubscription: IDisposable | null = null;
     let resizeSubscription: IDisposable | null = null;
     let resizeObserver: ResizeObserver | null = null;
@@ -170,6 +172,8 @@ function TerminalView(
       terminal = new TerminalEmulator(TERMINAL_PRESENTATION_OPTIONS);
       terminal.loadAddon(fitAddon);
       terminal.open(container);
+      const sectionPresentation = new TerminalCommandSections(terminal);
+      commandSections = sectionPresentation;
 
       const fit = () => {
         if (
@@ -236,6 +240,7 @@ function TerminalView(
 
         if (message.type === 'terminal.started') {
           if (sessionId && sessionId !== message.sessionId) {
+            sectionPresentation.reset();
             terminal.reset();
           }
 
@@ -290,7 +295,13 @@ function TerminalView(
           return;
         }
 
+        if (message.type === 'command.started') {
+          sectionPresentation.commandStarted(message.payload.commandId);
+          return;
+        }
+
         if (message.type === 'command.completed') {
+          sectionPresentation.commandCompleted(message.payload.commandId);
           onCommandCompletedRef.current?.(message.payload);
           return;
         }
@@ -364,6 +375,7 @@ function TerminalView(
       }
 
       socket?.close(1000, 'Terminal component unmounted');
+      commandSections?.dispose();
       terminal?.dispose();
     };
   }, [selectWorkspace]);

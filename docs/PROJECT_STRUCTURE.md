@@ -53,6 +53,7 @@ command-deck/
 │   │   ├── terminal/
 │   │   │   ├── components/
 │   │   │   ├── hooks/
+│   │   │   ├── terminal-command-sections.ts # xterm marker-backed completion presentation
 │   │   │   ├── terminal-presentation.ts # Browser-only xterm appearance options
 │   │   │   ├── terminal-store.ts
 │   │   │   └── terminal-client.ts

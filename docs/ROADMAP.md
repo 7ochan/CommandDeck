@@ -83,7 +83,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Validated Command Templates with ordered variable prompts and execution preview
 - Workspace create, rename, switch, delete, default migration, and isolated History/Deck data
 - Workspace-scoped terminal cwd persistence and validated restore on initial and replacement sessions
-- Minimal zsh prompt, subtle command separation, and modern xterm presentation without a custom renderer
+- Minimal zsh prompt, subtle xterm-anchored completed-command sections, and modern xterm presentation without a custom renderer
 - Workspace Timeline derived from History with collapsible inactivity/directory-based Activity Sessions
 - Basic History-list virtualization
 - Early command/cwd live search and success, failed, and interrupted filters
@@ -102,7 +102,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Template placeholders are detected automatically, resolved once per distinct case-sensitive name, previewed, and expanded without mutating the stored Deck definition.
 - Switching Workspace terminates the previous PTY, starts the selected Workspace in its saved cwd, and changes History/search state, Deck, and template context without cross-workspace results.
 - Refreshing or reopening a terminal restores the selected Workspace's last existing cwd and safely falls back to the user's home directory.
-- The reference zsh prompt shows only abbreviated cwd and a command indicator, while interactive programs, resize, shortcuts, and raw terminal rendering remain intact.
+- The reference zsh prompt shows only abbreviated cwd and a command indicator, completed commands gain lightweight marker-backed separation, and interactive programs, resize, shortcuts, and raw terminal rendering remain intact.
 - Timeline reflects the active Workspace's History, preserves existing filters/actions, and stores no duplicate event or session data.
 
 ### Milestone
