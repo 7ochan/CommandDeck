@@ -240,6 +240,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Consequences:** CommandDeck opts into xterm's proposed decoration API behind an isolated presentation module while continuing to use stable PTY, parser, input, resize, and buffer APIs everywhere else. If decoration registration is unavailable, the native completion spacing remains intact. The retained marker boundary is suitable for future lightweight section presentation, but this decision does not add metadata, actions, cards, or durable command-section state.
 
+## TD-024 — Developer Hub is the terminal-route extension boundary
+
+**Status:** Accepted
+
+**Decision:** Replace the stacked terminal sidebar with a compact, typed Developer Hub tab registry in the layout layer. Register only Deck and History initially, reuse their existing feature components and root-owned hooks, and keep both tab panels mounted while making the inactive panel hidden and inert. Place the Hub to the right of a flexible terminal on desktop and collapse the same mounted Hub beneath the terminal on smaller screens. Present Workspace selection and terminal connection state in a compact context bar, with create, rename, and delete remaining in the existing management dialog opened from an overflow control.
+
+**Reason:** The terminal should dominate the workspace without making History or Deck slower to reach or creating duplicate feature state. A stable tab composition provides one long-term UI extension point, while mounted panels preserve local interaction, keyboard, dialog, and scroll state across instant tab switches.
+
+**Consequences:** Developer Hub state is transient presentation state and introduces no protocol, database, API, or durable model changes. History and Deck lifecycle, search, selection, template execution, and mutations remain owned by their current features. Future approved modules can add a tab and panel at this boundary, but Workflows, AI, and Analytics are not implemented or registered in this phase; TD-013 continues to govern AI. Responsive collapse changes only visibility and sizing, never terminal or feature ownership.
+
 ## Open implementation parameters
 
 These details should be resolved by Phase 0 measurements without changing the architecture:

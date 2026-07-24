@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
 import { useCommandHistory } from '@/features/command-history/hooks/use-command-history';
 import {
   Terminal,
   type TerminalHandle,
+  type TerminalConnectionStatus,
 } from '@/features/terminal/components/terminal';
 import {
   clearPendingTimelineExecution,
@@ -16,7 +17,19 @@ import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-sw
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
 import type { CommandCompletedPayload, WorkspaceSummary } from '@/shared/types';
 
-import { CommandSidebar } from './command-sidebar';
+import { DeveloperHub } from './developer-hub';
+
+const CONNECTION_STATUS_PRESENTATION: Record<
+  TerminalConnectionStatus,
+  { label: string; tone: 'connected' | 'pending' | 'offline' | 'error' }
+> = {
+  connecting: { label: 'Connecting', tone: 'pending' },
+  switching: { label: 'Switching', tone: 'pending' },
+  connected: { label: 'Connected', tone: 'connected' },
+  disconnected: { label: 'Disconnected', tone: 'offline' },
+  error: { label: 'Connection error', tone: 'error' },
+  exited: { label: 'Shell exited', tone: 'offline' },
+};
 
 export function TerminalWorkspace() {
   const workspacesState = useWorkspaces();
@@ -70,6 +83,8 @@ function ActiveWorkspaceLayout({
   onRefreshWorkspaces,
 }: ActiveWorkspaceLayoutProps) {
   const terminalRef = useRef<TerminalHandle>(null);
+  const [terminalConnectionStatus, setTerminalConnectionStatus] =
+    useState<TerminalConnectionStatus>('connecting');
   const {
     entries,
     selectedEntryId,
@@ -191,23 +206,27 @@ function ActiveWorkspaceLayout({
   }, [activeWorkspace.workspaceId, onSelectWorkspace, workspaces]);
 
   return (
-    <div className="flex min-h-0 flex-1 gap-3">
-      <Terminal
-        ref={terminalRef}
-        workspaceId={activeWorkspace.workspaceId}
-        workspaceName={activeWorkspace.name}
-        onCommandCompleted={handleCommandCompleted}
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <WorkspaceSwitcher
+        workspaces={workspaces}
+        activeWorkspace={activeWorkspace}
+        connectionStatus={
+          CONNECTION_STATUS_PRESENTATION[terminalConnectionStatus]
+        }
+        onSelect={onSelectWorkspace}
+        onCreate={onCreateWorkspace}
+        onRename={onRenameWorkspace}
+        onDelete={handleDeleteWorkspace}
       />
-      <div className="flex min-h-0 w-[clamp(19rem,31vw,25rem)] shrink-0 flex-col gap-3">
-        <WorkspaceSwitcher
-          workspaces={workspaces}
-          activeWorkspace={activeWorkspace}
-          onSelect={onSelectWorkspace}
-          onCreate={onCreateWorkspace}
-          onRename={onRenameWorkspace}
-          onDelete={handleDeleteWorkspace}
+
+      <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
+        <Terminal
+          ref={terminalRef}
+          workspaceId={activeWorkspace.workspaceId}
+          onCommandCompleted={handleCommandCompleted}
+          onConnectionStatusChange={setTerminalConnectionStatus}
         />
-        <CommandSidebar
+        <DeveloperHub
           deckItems={deckItems}
           isDeckLoading={isDeckLoading}
           deckLoadError={deckLoadError}

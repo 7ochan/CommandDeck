@@ -78,6 +78,14 @@ The accepted trade-off is that CommandDeck will not target serverless platforms 
 - Use server-rendered components only where they simplify initial loading; the active terminal workspace is inherently client-driven.
 - Organize code by product feature rather than by generic file type.
 
+### Developer Hub and workspace layout
+
+The terminal route uses a terminal-first workspace layout. A compact Workspace context bar owns selection, the active Workspace name, terminal connection status, and an overflow entry point to the existing management dialog. Below it, the xterm surface consumes the flexible majority of the viewport and a narrower Developer Hub occupies the permanent right-side extension area on desktop.
+
+The Developer Hub is a layout composition boundary, not a new domain or data layer. Its typed tab registry initially contains only Deck and History. Each tab renders the existing feature section with the existing root-owned hooks, data, and callbacks. Both panels remain mounted while the inactive panel is hidden and inert, preserving feature-local search, filters, selection, keyboard-navigation refs, edit/template dialogs, scroll position, and feedback state without copying them into the layout or a global store.
+
+On smaller screens, the Hub moves beneath the terminal and collapses to its tab bar by default. Expanding or switching a tab reveals the same mounted panel; the terminal retains the flexible majority of the available height. Future approved browser modules can add a tab definition and panel without changing terminal, Workspace, History, or Deck ownership. Workflows, AI, and Analytics are not implemented or registered by this decision; AI remains deferred under TD-013.
+
 ### xterm.js
 
 Each terminal tab owns one xterm.js instance in the browser and corresponds to one server-side PTY session. The frontend:

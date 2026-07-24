@@ -154,22 +154,9 @@ export function CommandHistorySection({
       tabIndex={-1}
       onKeyDown={handleSectionKeyDown}
     >
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/8 px-3">
-        <div className="flex items-center gap-2">
-          <h2
-            id="command-history-title"
-            className="font-mono text-[11px] font-medium text-slate-300"
-          >
-            History
-          </h2>
-          <span className="rounded-full bg-white/6 px-1.5 py-0.5 font-mono text-[9px] text-slate-500">
-            {entries.length} visible
-          </span>
-        </div>
-        <span className="font-mono text-[8px] tracking-wide text-slate-600 uppercase">
-          Automatic
-        </span>
-      </div>
+      <h2 id="command-history-title" className="sr-only">
+        Command History
+      </h2>
 
       <HistorySearchControls
         query={query}

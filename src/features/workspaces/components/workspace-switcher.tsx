@@ -7,6 +7,10 @@ import type { WorkspaceSummary } from '@/shared/types';
 type WorkspaceSwitcherProps = {
   workspaces: WorkspaceSummary[];
   activeWorkspace: WorkspaceSummary;
+  connectionStatus?: {
+    label: string;
+    tone: 'connected' | 'pending' | 'offline' | 'error';
+  };
   onSelect: (workspaceId: string) => void;
   onCreate: (name: string) => Promise<WorkspaceSummary>;
   onRename: (workspaceId: string, name: string) => Promise<WorkspaceSummary>;
@@ -16,6 +20,7 @@ type WorkspaceSwitcherProps = {
 export function WorkspaceSwitcher({
   workspaces,
   activeWorkspace,
+  connectionStatus,
   onSelect,
   onCreate,
   onRename,
@@ -109,17 +114,24 @@ export function WorkspaceSwitcher({
   return (
     <>
       <section
-        className="shrink-0 rounded-xl border border-white/10 bg-[#090d14] p-3 shadow-xl shadow-black/15"
+        className="flex h-11 shrink-0 items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-[#080d14] px-2.5 shadow-[0_10px_35px_rgba(0,0,0,0.12)]"
         aria-label="Active Workspace"
       >
-        <div className="flex items-center justify-between gap-3">
-          <label className="min-w-0 flex-1">
-            <span className="mb-1.5 block text-[9px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
+        <label className="flex min-w-0 items-center gap-2">
+          <span
+            className="hidden size-7 shrink-0 items-center justify-center rounded-md bg-cyan-300/8 font-mono text-[10px] text-cyan-200/70 sm:flex"
+            aria-hidden="true"
+          >
+            {'//'}
+          </span>
+          <span className="min-w-0">
+            <span className="block font-mono text-[8px] tracking-[0.14em] text-slate-600 uppercase">
               Workspace
             </span>
             <select
               value={activeWorkspace.workspaceId}
-              className="h-9 w-full truncate rounded-lg border border-white/10 bg-black/20 px-2.5 text-xs font-medium text-slate-200 outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/10"
+              title={activeWorkspace.name}
+              className="block h-5 max-w-[42vw] cursor-pointer truncate border-0 bg-transparent p-0 pr-5 text-[11px] font-medium text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 sm:max-w-72"
               onChange={(event) => onSelect(event.currentTarget.value)}
             >
               {workspaces.map((workspace) => (
@@ -131,18 +143,35 @@ export function WorkspaceSwitcher({
                 </option>
               ))}
             </select>
-          </label>
+          </span>
+        </label>
+
+        <div className="flex shrink-0 items-center gap-1.5">
+          {connectionStatus && (
+            <span
+              className="flex items-center gap-1.5 rounded-full bg-white/[0.025] px-2 py-1 font-mono text-[9px] text-slate-500"
+              role="status"
+              aria-label={`Terminal ${connectionStatus.label}`}
+              aria-live="polite"
+            >
+              <span
+                className={`size-1.5 rounded-full ${connectionStatusDotClass(connectionStatus.tone)}`}
+                aria-hidden="true"
+              />
+              <span className="max-w-24 truncate" aria-hidden="true">
+                {connectionStatus.label}
+              </span>
+            </span>
+          )}
           <button
             type="button"
-            className="mt-5 h-9 rounded-lg border border-white/10 px-3 text-[10px] text-slate-400 hover:bg-white/5 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-cyan-300/60 focus-visible:outline-none"
+            className="flex size-8 items-center justify-center rounded-md text-sm tracking-widest text-slate-500 hover:bg-white/5 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-cyan-300/60 focus-visible:outline-none"
+            aria-label="Manage Workspaces"
+            title="Manage Workspaces"
             onClick={() => setIsManaging(true)}
           >
-            Manage
+            <span aria-hidden="true">•••</span>
           </button>
-        </div>
-        <div className="mt-2 flex gap-3 font-mono text-[9px] text-slate-600">
-          <span>{activeWorkspace.historyCount} History</span>
-          <span>{activeWorkspace.deckCount} Deck</span>
         </div>
       </section>
 
@@ -274,4 +303,22 @@ export function WorkspaceSwitcher({
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function connectionStatusDotClass(
+  tone: NonNullable<WorkspaceSwitcherProps['connectionStatus']>['tone'],
+): string {
+  if (tone === 'connected') {
+    return 'bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.45)]';
+  }
+
+  if (tone === 'pending') {
+    return 'animate-pulse bg-amber-300 motion-reduce:animate-none';
+  }
+
+  if (tone === 'error') {
+    return 'bg-rose-300';
+  }
+
+  return 'bg-slate-500';
 }

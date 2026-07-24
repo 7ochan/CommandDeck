@@ -34,25 +34,12 @@ export function CommandDeckSection({
 
   return (
     <section
-      className="flex max-h-[46%] min-h-40 shrink-0 flex-col border-b border-white/10"
+      className="flex min-h-0 flex-1 flex-col"
       aria-labelledby="command-deck-title"
     >
-      <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/8 px-3">
-        <div className="flex items-center gap-2">
-          <h2
-            id="command-deck-title"
-            className="font-mono text-[11px] font-medium text-cyan-100"
-          >
-            Command Deck
-          </h2>
-          <span className="rounded-full bg-cyan-300/8 px-1.5 py-0.5 font-mono text-[9px] text-cyan-200/60">
-            {items.length}
-          </span>
-        </div>
-        <span className="font-mono text-[8px] tracking-wide text-cyan-200/35 uppercase">
-          Curated
-        </span>
-      </div>
+      <h2 id="command-deck-title" className="sr-only">
+        Command Deck
+      </h2>
 
       {items.length === 0 ? (
         <div className="flex min-h-28 flex-1 flex-col items-center justify-center px-6 text-center">
@@ -75,13 +62,13 @@ export function CommandDeckSection({
           </p>
         </div>
       ) : (
-        <div className="command-deck-scrollbar min-h-0 flex-1 overflow-y-auto p-2.5">
+        <div className="command-deck-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
           {loadError && (
             <p className="mb-2 rounded-lg border border-amber-300/15 bg-amber-300/5 px-3 py-2 text-[10px] text-amber-200/70">
               {loadError}
             </p>
           )}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             {items.map((item, index) => (
               <CommandDeckItemView
                 key={item.deckItemId}

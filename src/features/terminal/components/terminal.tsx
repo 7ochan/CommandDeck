@@ -8,7 +8,6 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
 } from 'react';
 
 import { parseTerminalServerMessage } from '@/shared/contracts';
@@ -24,21 +23,18 @@ import {
 import { TerminalCommandSections } from '../terminal-command-sections';
 import { TERMINAL_PRESENTATION_OPTIONS } from '../terminal-presentation';
 
-type ConnectionStatus =
-  'connecting' | 'connected' | 'disconnected' | 'error' | 'exited';
-
-const STATUS_LABELS: Record<ConnectionStatus, string> = {
-  connecting: 'Connecting',
-  connected: 'Connected',
-  disconnected: 'Disconnected',
-  error: 'Connection error',
-  exited: 'Shell exited',
-};
+export type TerminalConnectionStatus =
+  | 'connecting'
+  | 'switching'
+  | 'connected'
+  | 'disconnected'
+  | 'error'
+  | 'exited';
 
 type TerminalProps = {
   workspaceId: string;
-  workspaceName: string;
   onCommandCompleted?: (command: CommandCompletedPayload) => void;
+  onConnectionStatusChange?: (status: TerminalConnectionStatus) => void;
 };
 
 export type TerminalHandle = {
@@ -49,11 +45,12 @@ export type TerminalHandle = {
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
 
 function TerminalView(
-  { workspaceId, workspaceName, onCommandCompleted }: TerminalProps,
+  { workspaceId, onCommandCompleted, onConnectionStatusChange }: TerminalProps,
   ref: ForwardedRef<TerminalHandle>,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onCommandCompletedRef = useRef(onCommandCompleted);
+  const onConnectionStatusChangeRef = useRef(onConnectionStatusChange);
   const socketRef = useRef<WebSocket | null>(null);
   const sessionIdRef = useRef<string | null>(null);
   const desiredWorkspaceIdRef = useRef(workspaceId);
@@ -63,10 +60,10 @@ function TerminalView(
     resolve: (selected: boolean) => void;
     timeoutId: number;
   } | null>(null);
-  const [status, setStatus] = useState<ConnectionStatus>('connecting');
-  const [shellName, setShellName] = useState('Local shell');
-  const [assignedWorkspaceId, setAssignedWorkspaceId] = useState<string | null>(
-    null,
+  const reportConnectionStatus = useCallback(
+    (status: TerminalConnectionStatus) =>
+      onConnectionStatusChangeRef.current?.(status),
+    [],
   );
 
   const selectWorkspace = useCallback(
@@ -82,6 +79,8 @@ function TerminalView(
         return Promise.resolve(false);
       }
 
+      reportConnectionStatus('switching');
+
       const pendingSelection = pendingWorkspaceSelectionRef.current;
 
       if (pendingSelection) {
@@ -96,6 +95,7 @@ function TerminalView(
             targetWorkspaceId
           ) {
             pendingWorkspaceSelectionRef.current = null;
+            reportConnectionStatus('error');
             resolve(false);
           }
         }, 3_000);
@@ -107,7 +107,7 @@ function TerminalView(
         selectTerminalWorkspace(socket, sessionId, targetWorkspaceId);
       });
     },
-    [],
+    [reportConnectionStatus],
   );
 
   useImperativeHandle(ref, () => ({
@@ -136,6 +136,10 @@ function TerminalView(
   }, [onCommandCompleted]);
 
   useEffect(() => {
+    onConnectionStatusChangeRef.current = onConnectionStatusChange;
+  }, [onConnectionStatusChange]);
+
+  useEffect(() => {
     desiredWorkspaceIdRef.current = workspaceId;
     void selectWorkspace(workspaceId);
   }, [selectWorkspace, workspaceId]);
@@ -157,6 +161,8 @@ function TerminalView(
     let resizeObserver: ResizeObserver | null = null;
     let resizeFrame: number | null = null;
     let shellExited = false;
+
+    reportConnectionStatus('connecting');
 
     const initialize = async () => {
       const [{ FitAddon }, { Terminal: TerminalEmulator }] = await Promise.all([
@@ -234,7 +240,7 @@ function TerminalView(
         const message = parseTerminalServerMessage(event.data);
 
         if (!message) {
-          setStatus('error');
+          reportConnectionStatus('error');
           return;
         }
 
@@ -247,11 +253,7 @@ function TerminalView(
           sessionId = message.sessionId;
           sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
-          setAssignedWorkspaceId(message.payload.workspaceId);
-          setShellName(
-            message.payload.shell.split(/[\\/]/).pop() ?? 'Local shell',
-          );
-          setStatus('connected');
+          reportConnectionStatus('connected');
           fit();
           sendTerminalResize(
             socket as WebSocket,
@@ -284,7 +286,7 @@ function TerminalView(
 
         if (message.type === 'terminal.workspace.selected') {
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
-          setAssignedWorkspaceId(message.payload.workspaceId);
+          reportConnectionStatus('connected');
           const pendingSelection = pendingWorkspaceSelectionRef.current;
 
           if (pendingSelection?.workspaceId === message.payload.workspaceId) {
@@ -308,7 +310,7 @@ function TerminalView(
 
         if (message.type === 'terminal.exited') {
           shellExited = true;
-          setStatus('exited');
+          reportConnectionStatus('exited');
           terminal.write(
             `\r\n\x1b[2m[Process exited with code ${message.payload.exitCode}]\x1b[0m\r\n`,
           );
@@ -324,19 +326,19 @@ function TerminalView(
             pendingSelection.resolve(false);
           }
 
-          setStatus('error');
+          reportConnectionStatus('error');
         }
       });
 
       socket.addEventListener('close', () => {
         if (!disposed && !shellExited) {
-          setStatus('disconnected');
+          reportConnectionStatus('disconnected');
         }
       });
 
       socket.addEventListener('error', () => {
         if (!disposed) {
-          setStatus('error');
+          reportConnectionStatus('error');
         }
       });
     };
@@ -345,7 +347,7 @@ function TerminalView(
       console.error('Unable to initialize terminal:', error);
 
       if (!disposed) {
-        setStatus('error');
+        reportConnectionStatus('error');
       }
     });
 
@@ -378,41 +380,14 @@ function TerminalView(
       commandSections?.dispose();
       terminal?.dispose();
     };
-  }, [selectWorkspace]);
+  }, [reportConnectionStatus, selectWorkspace]);
 
   return (
-    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#080c12] shadow-2xl shadow-black/30">
-      <div className="flex min-h-12 shrink-0 items-center justify-between gap-4 border-b border-white/8 bg-white/[0.025] px-4 py-2 sm:px-5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span
-            className="size-1.5 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.45)]"
-            aria-hidden="true"
-          />
-          <p
-            className="min-w-0 truncate text-xs text-slate-300"
-            aria-label={`Workspace: ${workspaceName}`}
-            aria-live="polite"
-          >
-            <span className="text-slate-500">Workspace:</span>{' '}
-            <span className="font-medium text-cyan-100/90">
-              {workspaceName}
-            </span>
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2 font-mono text-[10px] tracking-wide text-slate-500 sm:text-[11px]">
-          <span className="hidden text-slate-600 sm:inline">{shellName}</span>
-          <span className="hidden text-slate-700 sm:inline" aria-hidden="true">
-            ·
-          </span>
-          <span aria-live="polite">
-            {assignedWorkspaceId !== workspaceId
-              ? 'Switching workspace…'
-              : STATUS_LABELS[status]}
-          </span>
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 p-3 sm:p-4 lg:p-5">
+    <section
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.07] bg-[#080c12] shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
+      aria-label="Terminal"
+    >
+      <div className="min-h-0 flex-1 p-2 sm:p-3">
         <div
           ref={containerRef}
           className="commanddeck-terminal h-full min-h-0 w-full min-w-0"

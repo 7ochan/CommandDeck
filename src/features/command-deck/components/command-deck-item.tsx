@@ -94,45 +94,49 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 
   return (
     <article
-      className={`relative isolate overflow-hidden rounded-lg border transition-colors ${
+      className={`relative isolate overflow-hidden rounded-lg border transition-[border-color,background-color] ${
         isSelected
-          ? 'border-cyan-300/45 bg-cyan-300/8 shadow-[0_8px_24px_rgba(0,0,0,0.25)]'
-          : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/5'
+          ? 'border-cyan-300/30 bg-cyan-300/[0.065]'
+          : 'border-transparent bg-white/[0.025] hover:border-white/8 hover:bg-white/[0.045]'
       }`}
     >
-      <button
-        type="button"
-        className="w-full cursor-pointer p-3 text-left focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:outline-none focus-visible:ring-inset"
-        aria-expanded={isSelected}
-        aria-controls={actionPanelId}
-        aria-pressed={isSelected}
-        aria-keyshortcuts="Enter"
-        tabIndex={isTabStop ? 0 : -1}
-        title="Select · Double-click or press Enter to run"
-        onClick={() => onSelect(item.deckItemId)}
-        onDoubleClick={run}
-        onKeyDown={handleKeyDown}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="min-w-0 flex-1 truncate text-xs font-medium text-slate-200">
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          className="min-w-0 flex-1 cursor-pointer px-2.5 py-2 text-left focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:outline-none focus-visible:ring-inset"
+          aria-expanded={isSelected}
+          aria-controls={actionPanelId}
+          aria-pressed={isSelected}
+          aria-keyshortcuts="Enter"
+          tabIndex={isTabStop ? 0 : -1}
+          title="Select · Double-click or press Enter to run"
+          onClick={() => onSelect(item.deckItemId)}
+          onDoubleClick={run}
+          onKeyDown={handleKeyDown}
+        >
+          <h3 className="truncate text-[11px] font-medium text-slate-200">
             {item.displayName}
           </h3>
-          <span
-            className="shrink-0 rounded border border-cyan-300/20 bg-cyan-300/8 px-1.5 py-0.5 font-mono text-[8px] text-cyan-200/80"
-            aria-hidden="true"
-          >
-            DECK
-          </span>
-        </div>
-        <pre className="mt-2 overflow-hidden font-mono text-[10px] leading-4 break-words whitespace-pre-wrap text-slate-400">
-          <CommandTemplateHighlight parsed={parsedTemplate} />
-        </pre>
-        {item.description && (
-          <p className="mt-2 text-[10px] leading-4 text-slate-500">
-            {item.description}
-          </p>
-        )}
-      </button>
+          <pre className="mt-1 max-h-8 overflow-hidden font-mono text-[10px] leading-4 break-words whitespace-pre-wrap text-slate-500">
+            <CommandTemplateHighlight parsed={parsedTemplate} />
+          </pre>
+          {item.description && (
+            <p className="mt-1 truncate text-[9px] leading-4 text-slate-600">
+              {item.description}
+            </p>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className="m-1.5 ml-0 flex w-8 shrink-0 items-center justify-center rounded-md bg-cyan-300/[0.065] text-[10px] text-cyan-200/70 transition-colors hover:bg-cyan-300/12 hover:text-cyan-100 focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:outline-none"
+          aria-label={`Run ${item.displayName}`}
+          title="Run command"
+          onClick={run}
+        >
+          <span aria-hidden="true">▶</span>
+        </button>
+      </div>
 
       <div
         className={`grid transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none ${
@@ -146,10 +150,10 @@ export const CommandDeckItem = memo(function CommandDeckItem({
         <div className="min-h-0 overflow-hidden">
           <div
             id={actionPanelId}
-            className="border-t border-white/6 px-2.5 py-2.5"
+            className="border-t border-white/6 px-2 py-2"
             aria-label="Command Deck item actions"
           >
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-1">
               <DeckActionButton icon="▶" label="Run" onClick={run} />
               <DeckActionButton
                 icon="✎"
@@ -166,7 +170,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
               />
             </div>
             <p
-              className="min-h-4 pt-1.5 text-center text-[9px] text-slate-500"
+              className="min-h-3 pt-1 text-center text-[8px] text-slate-500"
               aria-live="polite"
             >
               {statusMessage}
@@ -218,10 +222,10 @@ function DeckActionButton({
   return (
     <button
       type="button"
-      className={`flex min-w-0 flex-col items-center gap-1 rounded-lg border px-1 py-1.5 text-center text-[9px] leading-3.5 transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-1 py-1.5 text-center text-[9px] leading-3 transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === 'danger'
-          ? 'border-rose-300/10 text-rose-300/75 hover:border-rose-300/20 hover:bg-rose-300/8 focus-visible:ring-rose-300/70'
-          : 'border-white/7 text-slate-400 hover:border-white/12 hover:bg-white/5 hover:text-slate-200 focus-visible:ring-cyan-300/70'
+          ? 'text-rose-300/70 hover:bg-rose-300/8 focus-visible:ring-rose-300/70'
+          : 'bg-white/[0.025] text-slate-400 hover:bg-white/6 hover:text-slate-200 focus-visible:ring-cyan-300/70'
       }`}
       disabled={disabled}
       onClick={onClick}

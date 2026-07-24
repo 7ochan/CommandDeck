@@ -31,7 +31,7 @@ command-deck/
 │   │   └── timeline/
 │   │       └── page.tsx            # Dedicated active-Workspace Timeline route
 │   ├── components/
-│   │   ├── layout/                 # Shared application layout primitives
+│   │   ├── layout/                 # App shell, terminal workspace, and typed tabbed Developer Hub
 │   │   └── ui/                     # Generic accessible UI primitives
 │   ├── features/
 │   │   ├── command-history/
@@ -173,6 +173,7 @@ Dependencies point inward toward domain contracts and application services. Infr
 | Open tabs and selected tab        | Zustand terminal store, reconciled with server  |
 | xterm.js instance and live buffer | Terminal React component/ref                    |
 | History filters and selections    | Feature hooks or URL state                      |
+| Active Developer Hub tab/collapse | Developer Hub layout component                  |
 | Timeline groups and selection     | Derived feature state; never persisted          |
 | Template input values and preview | Command execution dialog; transient only        |
 | Active Workspace selection        | Root client hook; assigned per terminal session |

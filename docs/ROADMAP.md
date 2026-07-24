@@ -84,6 +84,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Workspace create, rename, switch, delete, default migration, and isolated History/Deck data
 - Workspace-scoped terminal cwd persistence and validated restore on initial and replacement sessions
 - Minimal zsh prompt, subtle xterm-anchored completed-command sections, and modern xterm presentation without a custom renderer
+- Terminal-first responsive workspace with a tabbed Deck/History Developer Hub
 - Workspace Timeline derived from History with collapsible inactivity/directory-based Activity Sessions
 - Basic History-list virtualization
 - Early command/cwd live search and success, failed, and interrupted filters
@@ -103,6 +104,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Switching Workspace terminates the previous PTY, starts the selected Workspace in its saved cwd, and changes History/search state, Deck, and template context without cross-workspace results.
 - Refreshing or reopening a terminal restores the selected Workspace's last existing cwd and safely falls back to the user's home directory.
 - The reference zsh prompt shows only abbreviated cwd and a command indicator, completed commands gain lightweight marker-backed separation, and interactive programs, resize, shortcuts, and raw terminal rendering remain intact.
+- The terminal remains the dominant surface while the Developer Hub switches instantly between state-preserving Deck and History panels and collapses below it on smaller screens.
 - Timeline reflects the active Workspace's History, preserves existing filters/actions, and stores no duplicate event or session data.
 
 ### Milestone
