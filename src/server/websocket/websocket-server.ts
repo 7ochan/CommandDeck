@@ -54,8 +54,15 @@ export class TerminalWebSocketServer {
       });
     };
 
-    this.webSocketServer.on('connection', (socket) => {
-      this.gateway.handleConnection(socket);
+    this.webSocketServer.on('connection', (socket, request) => {
+      const requestUrl = new URL(
+        request.url ?? '/',
+        `http://${request.headers.host ?? 'localhost'}`,
+      );
+      this.gateway.handleConnection(
+        socket,
+        requestUrl.searchParams.get('workspaceId') ?? undefined,
+      );
     });
     options.httpServer.on('upgrade', this.upgradeHandler);
   }

@@ -3,11 +3,13 @@ import type Database from 'better-sqlite3';
 import { createLegacyCommandHistoryMigration } from './0001-command-cards.js';
 import { createCommandHistoryAndDeckMigration } from './0002-command-history-and-deck.js';
 import { createWorkspacesMigration } from './0003-workspaces.js';
+import { createWorkspaceTerminalStateMigration } from './0004-workspace-terminal-state.js';
 
 const migrations = [
   createLegacyCommandHistoryMigration,
   createCommandHistoryAndDeckMigration,
   createWorkspacesMigration,
+  createWorkspaceTerminalStateMigration,
 ] as const;
 
 export function runMigrations(sqlite: Database.Database): void {

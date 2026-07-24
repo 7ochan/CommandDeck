@@ -18,6 +18,15 @@ export const workspaces = sqliteTable(
   (table) => [uniqueIndex('workspaces_name_idx').on(table.name)],
 );
 
+export const workspaceTerminalState = sqliteTable('workspace_terminal_state', {
+  workspaceId: text('workspace_id')
+    .primaryKey()
+    .notNull()
+    .references(() => workspaces.workspaceId, { onDelete: 'cascade' }),
+  cwd: text('cwd').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
 export const commandHistory = sqliteTable(
   'command_history',
   {

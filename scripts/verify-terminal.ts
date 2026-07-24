@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import WebSocket, { type RawData } from 'ws';
@@ -58,15 +58,22 @@ try {
   assert.equal(initialWorkspaces[0]?.name, 'Default Workspace');
   const defaultWorkspaceId = initialWorkspaces[0]?.workspaceId;
   assert.ok(defaultWorkspaceId);
+  const defaultWorkingDirectory = join(dataDirectory, 'default-project');
+  const servicesWorkingDirectory = join(dataDirectory, 'services-project');
+  mkdirSync(defaultWorkingDirectory);
+  mkdirSync(servicesWorkingDirectory);
 
   const messages: TerminalServerMessage[] = [];
   let output = '';
-  const socket = new WebSocket(`ws://${hostname}:${port}/ws/terminal`, {
-    headers: {
-      Cookie: cookie,
-      Origin: origin,
+  const socket = new WebSocket(
+    `ws://${hostname}:${port}/ws/terminal?workspaceId=${encodeURIComponent(defaultWorkspaceId)}`,
+    {
+      headers: {
+        Cookie: cookie,
+        Origin: origin,
+      },
     },
-  });
+  );
 
   socket.on('message', (data: RawData) => {
     const message = parseTerminalServerMessage(data.toString());
@@ -272,6 +279,26 @@ try {
   );
   assertCommandPair(afterInterruptStarted, afterInterruptCompleted, 0);
 
+  sendExecute(
+    socket,
+    sessionId,
+    `cd -- ${shellQuote(defaultWorkingDirectory)}`,
+  );
+  const defaultCwdStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command.startsWith('cd -- '),
+    'Default Workspace cwd command start',
+  );
+  const defaultCwdCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === defaultCwdStarted.payload.commandId,
+    'Default Workspace cwd command completion',
+  );
+  assertCommandPair(defaultCwdStarted, defaultCwdCompleted, 0);
+
   const deckItem = await addHistoryEntryToDeck(
     defaultWorkspaceId,
     firstCompleted.payload.commandId,
@@ -332,6 +359,27 @@ try {
     messages,
     servicesWorkspace.workspaceId,
   );
+  sendExecute(
+    socket,
+    sessionId,
+    `cd -- ${shellQuote(servicesWorkingDirectory)}`,
+  );
+  const servicesCwdStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) =>
+      message.payload.workspaceId === servicesWorkspace.workspaceId &&
+      message.payload.command.startsWith('cd -- '),
+    'Services Workspace cwd command start',
+  );
+  const servicesCwdCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === servicesCwdStarted.payload.commandId,
+    'Services Workspace cwd command completion',
+  );
+  assertCommandPair(servicesCwdStarted, servicesCwdCompleted, 0);
   sendExecute(socket, sessionId, "printf '__WORKSPACE_SERVICES__\\n'");
   const servicesStarted = await waitForCommandMessage(
     messages,
@@ -402,6 +450,7 @@ try {
     servicesWorkspace.workspaceId,
   );
   assertHistoryPersisted(servicesHistory, [
+    servicesCwdCompleted.payload.commandId,
     servicesCompleted.payload.commandId,
     servicesTemplateCompleted.payload.commandId,
   ]);
@@ -425,7 +474,6 @@ try {
     'Backend Services',
   );
   assert.equal(renamedServicesWorkspace.name, 'Backend Services');
-  await selectWorkspace(socket, sessionId, messages, defaultWorkspaceId);
 
   socket.send(
     serializeTerminalMessage({
@@ -446,6 +494,7 @@ try {
     rerunMultilineCompleted.payload.commandId,
     interruptedCompleted.payload.commandId,
     afterInterruptCompleted.payload.commandId,
+    defaultCwdCompleted.payload.commandId,
     deckRunCompleted.payload.commandId,
   ];
   const historyBeforeRestart = await loadCommandHistory(defaultWorkspaceId);
@@ -473,11 +522,12 @@ try {
     ({ workspaceId }) => workspaceId === servicesWorkspace.workspaceId,
   );
   assert.ok(servicesAfterRestart);
-  assert.equal(servicesAfterRestart.historyCount, 2);
+  assert.equal(servicesAfterRestart.historyCount, 3);
   assert.equal(servicesAfterRestart.deckCount, 1);
   assertHistoryPersisted(
     await loadCommandHistory(servicesWorkspace.workspaceId),
     [
+      servicesCwdCompleted.payload.commandId,
       servicesCompleted.payload.commandId,
       servicesTemplateCompleted.payload.commandId,
     ],
@@ -485,11 +535,50 @@ try {
   assert.deepEqual(await loadCommandDeck(servicesWorkspace.workspaceId), [
     servicesTemplate,
   ]);
+
+  const restartedResponse = await fetch(origin);
+  const restartedCookie = restartedResponse.headers
+    .get('set-cookie')
+    ?.split(';')[0];
+  assert.ok(restartedCookie);
+  const restoredDefault = await openTerminal(
+    defaultWorkspaceId,
+    restartedCookie,
+  );
+  assert.equal(restoredDefault.started.payload.cwd, defaultWorkingDirectory);
+  await closeTerminal(
+    restoredDefault.socket,
+    restoredDefault.started.sessionId,
+  );
+  const restoredServices = await openTerminal(
+    servicesWorkspace.workspaceId,
+    restartedCookie,
+  );
+  assert.equal(restoredServices.started.payload.cwd, servicesWorkingDirectory);
+  await closeTerminal(
+    restoredServices.socket,
+    restoredServices.started.sessionId,
+  );
+
+  rmSync(defaultWorkingDirectory, { recursive: true, force: true });
+  const invalidDirectoryFallback = await openTerminal(
+    defaultWorkspaceId,
+    restartedCookie,
+  );
+  assert.equal(
+    invalidDirectoryFallback.started.payload.cwd,
+    homedir(),
+    'A missing saved cwd should fall back to the user home directory',
+  );
+  await closeTerminal(
+    invalidDirectoryFallback.socket,
+    invalidDirectoryFallback.started.sessionId,
+  );
   await deleteWorkspace(servicesWorkspace.workspaceId, 204);
   await deleteWorkspace(defaultWorkspaceId, 409);
 
   console.log(
-    'Terminal verification passed: Workspace CRUD/switching/isolation/restart behavior, lifecycle ownership, History persistence/search, Deck templates, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: per-Workspace cwd restoration and invalid-directory fallback, Workspace CRUD/switching/isolation/restart behavior, lifecycle ownership, History persistence/search, Deck templates, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
@@ -507,6 +596,63 @@ function startServer(commandDeckDataDirectory: string): ChildProcess {
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+}
+
+async function openTerminal(
+  workspaceId: string,
+  cookie: string,
+): Promise<{
+  socket: WebSocket;
+  started: Extract<TerminalServerMessage, { type: 'terminal.started' }>;
+}> {
+  const messages: TerminalServerMessage[] = [];
+  const socket = new WebSocket(
+    `ws://${hostname}:${port}/ws/terminal?workspaceId=${encodeURIComponent(workspaceId)}`,
+    {
+      headers: {
+        Cookie: cookie,
+        Origin: origin,
+      },
+    },
+  );
+  socket.on('message', (data: RawData) => {
+    const message = parseTerminalServerMessage(data.toString());
+
+    if (message) {
+      messages.push(message);
+    }
+  });
+  await once(socket, 'open');
+  const started = await waitForMessage(
+    messages,
+    (message) => message.type === 'terminal.started',
+    `terminal.started(${workspaceId})`,
+  );
+
+  if (started.type !== 'terminal.started') {
+    throw new Error('Expected terminal.started.');
+  }
+
+  return { socket, started };
+}
+
+async function closeTerminal(
+  socket: WebSocket,
+  sessionId: string,
+): Promise<void> {
+  socket.send(
+    serializeTerminalMessage({
+      version: TERMINAL_PROTOCOL_VERSION,
+      type: 'terminal.close',
+      sessionId,
+      payload: {},
+    }),
+  );
+  await once(socket, 'close');
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 async function loadCommandHistory(

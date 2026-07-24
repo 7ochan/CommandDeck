@@ -5,11 +5,13 @@ import {
   type TerminalClientMessage,
 } from '@/shared/contracts';
 
-export function createTerminalWebSocket(): WebSocket {
+export function createTerminalWebSocket(workspaceId: string): WebSocket {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return new WebSocket(
+  const url = new URL(
     `${protocol}//${window.location.host}${TERMINAL_WEBSOCKET_PATH}`,
   );
+  url.searchParams.set('workspaceId', workspaceId);
+  return new WebSocket(url);
 }
 
 export function sendTerminalInput(

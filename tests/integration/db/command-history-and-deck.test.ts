@@ -16,7 +16,9 @@ import { createCommandHistoryAndDeckMigration } from '../../../src/server/db/mig
 import { SqliteCommandDeckRepository } from '../../../src/server/db/repositories/command-deck-repository.js';
 import { SqliteCommandHistoryRepository } from '../../../src/server/db/repositories/command-history-repository.js';
 import { SqliteWorkspaceRepository } from '../../../src/server/db/repositories/workspace-repository.js';
+import { SqliteWorkspaceTerminalStateRepository } from '../../../src/server/db/repositories/workspace-terminal-state-repository.js';
 import { WorkspaceService } from '../../../src/server/workspaces/workspace-service.js';
+import { WorkspaceTerminalStateService } from '../../../src/server/workspace-terminal-state/workspace-terminal-state-service.js';
 import type {
   CommandCompletedPayload,
   CommandHistoryEntry,
@@ -50,7 +52,12 @@ describe('Command History and Command Deck persistence', () => {
         .prepare('SELECT name FROM schema_migrations ORDER BY id')
         .pluck()
         .all(),
-    ).toEqual(['command_cards', 'command_history_and_deck', 'workspaces']);
+    ).toEqual([
+      'command_cards',
+      'command_history_and_deck',
+      'workspaces',
+      'workspace_terminal_state',
+    ]);
     expect(
       database.sqlite
         .prepare(
@@ -64,6 +71,7 @@ describe('Command History and Command Deck persistence', () => {
         'command_definitions',
         'command_history',
         'workspaces',
+        'workspace_terminal_state',
       ]),
     );
   });
@@ -485,6 +493,72 @@ describe('Command History and Command Deck persistence', () => {
     expect(reopenedWorkspaceService.deleteWorkspace('workspace-two')).toEqual({
       outcome: 'final-workspace',
     });
+  });
+
+  it('persists independent Workspace terminal state without rewriting unchanged cwd values', () => {
+    const { database, databasePath } = createTemporaryDatabase();
+    const workspaceRepository = new SqliteWorkspaceRepository(database.orm);
+    const workspaceService = new WorkspaceService(
+      workspaceRepository,
+      () => 'workspace-two',
+      () => 50,
+    );
+    workspaceService.createWorkspace('Services');
+    const terminalStateRepository = new SqliteWorkspaceTerminalStateRepository(
+      database.orm,
+    );
+    const timestamps = [100, 200, 300];
+    const terminalStateService = new WorkspaceTerminalStateService(
+      terminalStateRepository,
+      () => timestamps.shift() ?? 999,
+    );
+
+    expect(
+      terminalStateService.updateState(DEFAULT_WORKSPACE_ID, {
+        cwd: '/tmp/default-project',
+      }),
+    ).toBe(true);
+    expect(
+      terminalStateService.updateState(DEFAULT_WORKSPACE_ID, {
+        cwd: '/tmp/default-project',
+      }),
+    ).toBe(false);
+    expect(
+      terminalStateRepository.findByWorkspaceId(DEFAULT_WORKSPACE_ID),
+    ).toEqual({
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      cwd: '/tmp/default-project',
+      updatedAt: 100,
+    });
+    expect(
+      terminalStateService.updateState('workspace-two', {
+        cwd: '/tmp/services-project',
+      }),
+    ).toBe(true);
+    expect(
+      terminalStateService.getLaunchConfiguration(DEFAULT_WORKSPACE_ID),
+    ).toEqual({ cwd: '/tmp/default-project' });
+    expect(
+      terminalStateService.getLaunchConfiguration('workspace-two'),
+    ).toEqual({ cwd: '/tmp/services-project' });
+
+    database.close();
+    openDatabases.splice(openDatabases.indexOf(database), 1);
+    const reopened = openCommandDeckDatabase(databasePath);
+    openDatabases.push(reopened);
+    const reopenedRepository = new SqliteWorkspaceTerminalStateRepository(
+      reopened.orm,
+    );
+
+    expect(reopenedRepository.findByWorkspaceId('workspace-two')).toEqual({
+      workspaceId: 'workspace-two',
+      cwd: '/tmp/services-project',
+      updatedAt: 300,
+    });
+    new WorkspaceService(
+      new SqliteWorkspaceRepository(reopened.orm),
+    ).deleteWorkspace('workspace-two');
+    expect(reopenedRepository.findByWorkspaceId('workspace-two')).toBeNull();
   });
 });
 

@@ -5,9 +5,11 @@ import { openCommandDeckDatabase } from '../db/client.js';
 import { SqliteCommandDeckRepository } from '../db/repositories/command-deck-repository.js';
 import { SqliteCommandHistoryRepository } from '../db/repositories/command-history-repository.js';
 import { SqliteWorkspaceRepository } from '../db/repositories/workspace-repository.js';
+import { SqliteWorkspaceTerminalStateRepository } from '../db/repositories/workspace-terminal-state-repository.js';
 import { TerminalSessionManager } from '../terminal/terminal-session-manager.js';
 import { TerminalGateway } from '../websocket/terminal-gateway.js';
 import { WorkspaceService } from '../workspaces/workspace-service.js';
+import { WorkspaceTerminalStateService } from '../workspace-terminal-state/workspace-terminal-state-service.js';
 import { DEFAULT_WORKSPACE_ID } from '../../shared/types/workspace.js';
 import {
   getServerContainerIfInitialized,
@@ -28,6 +30,9 @@ export function initializeServerContainer(): ServerContainer {
   const deckRepository = new SqliteCommandDeckRepository(database.orm);
   const workspaceRepository = new SqliteWorkspaceRepository(database.orm);
   const workspaceService = new WorkspaceService(workspaceRepository);
+  const workspaceTerminalStateService = new WorkspaceTerminalStateService(
+    new SqliteWorkspaceTerminalStateRepository(database.orm),
+  );
   const commandEvents = new CommandEventBus();
   const commandHistoryService = new CommandHistoryService(
     historyRepository,
@@ -41,6 +46,7 @@ export function initializeServerContainer(): ServerContainer {
     undefined,
     commandEvents,
     DEFAULT_WORKSPACE_ID,
+    workspaceTerminalStateService,
   );
   const terminalGateway = new TerminalGateway(sessions, workspaceService);
   let closed = false;

@@ -31,12 +31,20 @@ export class TerminalGateway {
     private readonly workspaceAccess: WorkspaceAccess = defaultWorkspaceAccess,
   ) {}
 
-  handleConnection(socket: WebSocket): void {
+  handleConnection(socket: WebSocket, requestedWorkspaceId?: string): void {
     let session;
 
     try {
-      session = this.sessions.create();
-      session.setWorkspace(this.workspaceAccess.initialWorkspaceId());
+      const workspaceId = requestedWorkspaceId
+        ? requestedWorkspaceId
+        : this.workspaceAccess.initialWorkspaceId();
+
+      if (!this.workspaceAccess.workspaceExists(workspaceId)) {
+        socket.close(1008, 'Workspace not found');
+        return;
+      }
+
+      session = this.sessions.create(workspaceId);
     } catch (error) {
       console.error('Unable to create terminal session:', error);
       socket.close(1011, 'Unable to create terminal session');

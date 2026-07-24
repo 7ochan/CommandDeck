@@ -13,16 +13,17 @@ export type TerminalExit = {
 type DataListener = (data: string) => void;
 type ExitListener = (event: TerminalExit) => void;
 type CommandListener = (event: CommandLifecycleEvent) => void;
+type CwdListener = (event: { cwd: string; workspaceId: string }) => void;
 
 export class TerminalSession {
   readonly id: string;
   readonly shell: string;
-  readonly cwd: string;
 
   private readonly terminalProcess: IPty;
   private readonly dataListeners = new Set<DataListener>();
   private readonly exitListeners = new Set<ExitListener>();
   private readonly commandListeners = new Set<CommandListener>();
+  private readonly cwdListeners = new Set<CwdListener>();
   private readonly dataSubscription: IDisposable;
   private readonly exitSubscription: IDisposable;
   private readonly commandCapture: CommandCapture;
@@ -31,13 +32,14 @@ export class TerminalSession {
   private readonly disposeLaunch: () => void;
   private pendingData = '';
   private exitEvent: TerminalExit | null = null;
+  private currentCwd: string;
   private currentWorkspaceId: string;
   private closed = false;
 
   constructor(id: string, launch: PtyLaunch, initialWorkspaceId: string) {
     this.id = id;
     this.shell = launch.shell;
-    this.cwd = launch.cwd;
+    this.currentCwd = launch.cwd;
     this.currentWorkspaceId = initialWorkspaceId;
     this.terminalProcess = launch.process;
     this.disposeLaunch = launch.dispose;
@@ -62,6 +64,11 @@ export class TerminalSession {
           this.emitData(token.data);
         } else {
           this.commandCapture.accept(token.marker);
+
+          if (token.marker.type === 'cwd') {
+            this.currentCwd = token.marker.cwd;
+            this.emitCwd(token.marker.cwd);
+          }
         }
       }
     });
@@ -95,6 +102,10 @@ export class TerminalSession {
 
   get workspaceId(): string {
     return this.currentWorkspaceId;
+  }
+
+  get cwd(): string {
+    return this.currentCwd;
   }
 
   onData(listener: DataListener): () => void {
@@ -131,6 +142,11 @@ export class TerminalSession {
   onCommand(listener: CommandListener): () => void {
     this.commandListeners.add(listener);
     return () => this.commandListeners.delete(listener);
+  }
+
+  onCwd(listener: CwdListener): () => void {
+    this.cwdListeners.add(listener);
+    return () => this.cwdListeners.delete(listener);
   }
 
   setWorkspace(workspaceId: string): void {
@@ -178,6 +194,7 @@ export class TerminalSession {
     this.dataListeners.clear();
     this.exitListeners.clear();
     this.commandListeners.clear();
+    this.cwdListeners.clear();
   }
 
   private emitData(data: string): void {
@@ -188,6 +205,14 @@ export class TerminalSession {
 
     for (const listener of this.dataListeners) {
       listener(data);
+    }
+  }
+
+  private emitCwd(cwd: string): void {
+    const event = { cwd, workspaceId: this.currentWorkspaceId };
+
+    for (const listener of this.cwdListeners) {
+      listener(event);
     }
   }
 }

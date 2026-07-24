@@ -194,7 +194,7 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Status:** Accepted
 
-**Decision:** Make Workspace the required root context for Command History, command definitions, and Command Deck items. Create `Default Workspace` during migration and assign every existing row to it. Keep active Workspace in the browser root and assign a Workspace ID to each server terminal session through a versioned WebSocket message. Snapshot that ID when a command starts. Require an explicit Workspace ID for every History and Deck service/repository operation; do not introduce a process-global active Workspace.
+**Decision:** Make Workspace the required root context for Command History, command definitions, and Command Deck items. Create `Default Workspace` during migration and assign every existing row to it. Keep active Workspace in the browser root, supply it at the authenticated WebSocket connection boundary for terminal creation, and use a versioned WebSocket message for subsequent session switches. Snapshot that ID when a command starts. Require an explicit Workspace ID for every History and Deck service/repository operation; do not introduce a process-global active Workspace.
 
 **Reason:** UI-only filtering cannot guarantee that asynchronous shell completions are stored in the correct context. Per-terminal assignment provides a durable event boundary, isolates concurrent or future terminals naturally, and keeps History and Deck services independent from workspace-selection state.
 
@@ -209,6 +209,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 **Reason:** Timeline and History describe the same immutable executions but answer different questions. A second durable activity model would duplicate facts and create synchronization failures. Pure grouping is deterministic, independently testable, and can later consume explicit project-root metadata without migrating Timeline records.
 
 **Consequences:** Filtering may change the visible Activity Session projection because sessions are derived from the filtered History result. Timeline selection, collapse state, and one-time terminal handoff are transient. Run Again navigates to the terminal view and waits for the matching Workspace assignment before sending the command. Expanded sessions reveal events in batches of 100; the event boundary remains suitable for future viewport virtualization but is not yet virtualized. Analytics, charts, and persisted session annotations remain out of scope.
+
+## TD-021 — Workspace Terminal State is durable launch configuration
+
+**Status:** Accepted
+
+**Decision:** Persist lightweight terminal state in a dedicated, Workspace-owned SQLite record. The initial record contains the last cwd reported by trusted shell integration and its update timestamp. Terminal creation receives the browser's active Workspace ID at the WebSocket upgrade boundary, validates that Workspace, loads its terminal state through a dedicated service, validates the saved directory immediately before PTY creation, and falls back to the user's home directory when the saved cwd is absent or invalid. Persist a cwd marker only when it differs from the Workspace's stored cwd.
+
+**Reason:** Browser refresh creates a new shell and must recover only durable launch context, not process or terminal-emulator state. Keeping this state outside History and Deck preserves their domain boundaries, while a launch-configuration object and patch-style state update allow future terminal preferences to be added without changing the terminal manager's persistence API.
+
+**Consequences:** Each Workspace restores its own last reported directory for newly created terminals. Workspace switching continues to assign the existing terminal session without implicitly changing its live shell directory; a subsequently created terminal uses the selected Workspace's saved state. Missing directories never reach node-pty as a cwd. PTYs, output, scrollback, and running processes are not persisted or restored.
 
 ## Open implementation parameters
 

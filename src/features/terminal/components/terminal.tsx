@@ -251,7 +251,7 @@ function TerminalView(
       scheduleFit();
       void document.fonts.ready.then(scheduleFit);
 
-      socket = createTerminalWebSocket();
+      socket = createTerminalWebSocket(desiredWorkspaceIdRef.current);
       socketRef.current = socket;
       socket.addEventListener('message', (event) => {
         if (typeof event.data !== 'string' || !terminal) {

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { basename, isAbsolute } from 'node:path';
 import * as pty from 'node-pty';
@@ -21,13 +21,18 @@ export type PtyLaunch = {
   dispose: () => void;
 };
 
+export type PtyLaunchConfiguration = {
+  cwd?: string;
+};
+
 export class PtyAdapter {
   spawnDefaultShell(
+    configuration: PtyLaunchConfiguration = {},
     cols = DEFAULT_TERMINAL_COLUMNS,
     rows = DEFAULT_TERMINAL_ROWS,
   ): PtyLaunch {
     const shell = resolveDefaultShell();
-    const cwd = resolveStartingDirectory();
+    const cwd = resolveStartingDirectory(configuration.cwd);
     const shellProfile = createShellLaunchProfile(shell);
     const environment: Record<string, string | undefined> = {
       ...process.env,
@@ -84,9 +89,25 @@ function resolveDefaultShell(): string {
   return platform() === 'darwin' ? '/bin/zsh' : '/bin/bash';
 }
 
-function resolveStartingDirectory(): string {
+export function resolveStartingDirectory(preferredCwd?: string): string {
+  if (preferredCwd && isExistingDirectory(preferredCwd)) {
+    return preferredCwd;
+  }
+
   const home = homedir();
-  return existsSync(home) ? home : process.cwd();
+  return isExistingDirectory(home) ? home : process.cwd();
+}
+
+function isExistingDirectory(path: string): boolean {
+  if (!isAbsolute(path)) {
+    return false;
+  }
+
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 function shellArguments(shell: string): string[] {

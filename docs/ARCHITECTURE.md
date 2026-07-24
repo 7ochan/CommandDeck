@@ -118,7 +118,15 @@ The terminal manager owns a registry of active sessions. Each session contains:
 
 It is responsible for create, input, resize, close, exit, disconnect, and shutdown behavior. PTY objects must never cross the server boundary.
 
-Workspace selection is terminal-session state, not a process-global singleton. The browser sends a validated workspace-selection message on initial connection and every switch. The terminal session snapshots its current Workspace ID into `command.started`; completion retains that snapshot even if the user switches while a command is running. This gives each future terminal tab an independent Workspace assignment and prevents a late completion from leaking into the newly active Workspace.
+Workspace selection is terminal-session state, not a process-global singleton. The browser supplies the initial Workspace at the authenticated WebSocket connection boundary and sends a validated workspace-selection message on every subsequent switch. The terminal session snapshots its current Workspace ID into `command.started`; completion retains that snapshot even if the user switches while a command is running. This gives each future terminal tab an independent Workspace assignment and prevents a late completion from leaking into the newly active Workspace.
+
+New terminal connections include the browser's active Workspace ID in the authenticated WebSocket upgrade URL. Before creating a PTY, the gateway validates the Workspace and the terminal manager requests a launch configuration from the Workspace Terminal State service. The service loads that Workspace's saved cwd; the PTY adapter accepts it only when it is an existing directory and otherwise uses the user's home directory. This validation occurs before every spawn.
+
+### Workspace Terminal State
+
+Workspace Terminal State is a dedicated server component with its own repository and service. Its durable record is keyed by Workspace and initially contains the last cwd reported by shell integration plus an update timestamp. Repeated markers for the same cwd do not update the row or timestamp. The state and launch-configuration APIs use objects so later terminal preferences such as dimensions, environment selection, or shell profile can be added without coupling them to History, Deck, or Timeline.
+
+Shell cwd markers update the state of the Workspace currently assigned to that terminal session. Switching a live terminal's Workspace does not synthesize a cwd update or attempt to move the running shell. The next cwd marker updates the newly assigned Workspace, and every newly created terminal starts from that Workspace's independently persisted state.
 
 ### Shell process
 
@@ -227,20 +235,21 @@ SQLite is the only durable store. Use `better-sqlite3` as the Node.js driver and
 
 Initial domain model:
 
-| Entity                  | Purpose                                                               |
-| ----------------------- | --------------------------------------------------------------------- |
-| `workspaces`            | Root contexts with durable names and lifecycle metadata               |
-| `terminal_sessions`     | Historical lifecycle metadata for terminal tabs                       |
-| `command_history`       | Immutable command, cwd, timing, completion, and exit data             |
-| `command_definitions`   | Exact reusable command/template text with optional History provenance |
-| `command_deck_items`    | Curated display name, description, order, and definition reference    |
-| `tags` / `command_tags` | User organization and filtering                                       |
-| `quick_action_groups`   | Ordered sidebar groups                                                |
-| `quick_actions`         | Reusable commands and insert/execute behavior                         |
-| `workflows`             | Workflow identity, description, and version                           |
-| `workflow_steps`        | Ordered commands and stop-on-failure rules                            |
-| `workflow_runs`         | Execution history and outcome                                         |
-| `settings`              | Application-level preferences                                         |
+| Entity                     | Purpose                                                               |
+| -------------------------- | --------------------------------------------------------------------- |
+| `workspaces`               | Root contexts with durable names and lifecycle metadata               |
+| `workspace_terminal_state` | Last reported cwd and future terminal launch preferences by Workspace |
+| `terminal_sessions`        | Historical lifecycle metadata for terminal tabs                       |
+| `command_history`          | Immutable command, cwd, timing, completion, and exit data             |
+| `command_definitions`      | Exact reusable command/template text with optional History provenance |
+| `command_deck_items`       | Curated display name, description, order, and definition reference    |
+| `tags` / `command_tags`    | User organization and filtering                                       |
+| `quick_action_groups`      | Ordered sidebar groups                                                |
+| `quick_actions`            | Reusable commands and insert/execute behavior                         |
+| `workflows`                | Workflow identity, description, and version                           |
+| `workflow_steps`           | Ordered commands and stop-on-failure rules                            |
+| `workflow_runs`            | Execution history and outcome                                         |
+| `settings`                 | Application-level preferences                                         |
 
 An FTS5 index covers command text, searchable output, and notes. Workspace, date, status, tags, pins, and bookmarks remain structured filters rather than encoded search text.
 

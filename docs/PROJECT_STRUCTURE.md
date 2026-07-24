@@ -86,6 +86,8 @@ command-deck/
 │   │   │   ├── pty-adapter.ts
 │   │   │   ├── terminal-session.ts
 │   │   │   └── terminal-session-manager.ts
+│   │   ├── workspace-terminal-state/
+│   │   │   └── workspace-terminal-state-service.ts
 │   │   └── websocket/
 │   │       ├── connection-registry.ts
 │   │       ├── terminal-gateway.ts
@@ -164,6 +166,7 @@ Dependencies point inward toward domain contracts and application services. Infr
 | Active node-pty process           | Server terminal manager                         |
 | Command-capture state machine     | Server terminal session                         |
 | Durable Workspaces, History, Deck | SQLite through repositories                     |
+| Workspace terminal launch state   | SQLite through Workspace Terminal State service |
 | WebSocket connection status       | Zustand terminal store                          |
 | Open tabs and selected tab        | Zustand terminal store, reconciled with server  |
 | xterm.js instance and live buffer | Terminal React component/ref                    |
