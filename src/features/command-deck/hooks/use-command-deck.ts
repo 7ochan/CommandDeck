@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CommandDeckItem, CommandDeckItemUpdate } from '@/shared/types';
 
@@ -23,61 +23,102 @@ type CommandDeckState = {
   removeItem: (deckItemId: string) => Promise<void>;
 };
 
-export function useCommandDeck(): CommandDeckState {
-  const [items, setItems] = useState<CommandDeckItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+export function useCommandDeck(workspaceId: string): CommandDeckState {
+  const [data, setData] = useState<{
+    workspaceId: string;
+    items: CommandDeckItem[];
+    isLoading: boolean;
+    loadError: string | null;
+  }>({ workspaceId, items: [], isLoading: true, loadError: null });
+  const activeWorkspaceIdRef = useRef(workspaceId);
+
+  useEffect(() => {
+    activeWorkspaceIdRef.current = workspaceId;
+  }, [workspaceId]);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    void loadCommandDeck(controller.signal)
+    void loadCommandDeck(workspaceId, controller.signal)
       .then((loadedItems) => {
-        setItems(loadedItems);
-        setLoadError(null);
+        setData({
+          workspaceId,
+          items: loadedItems,
+          isLoading: false,
+          loadError: null,
+        });
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
-          setLoadError(
-            error instanceof Error
-              ? error.message
-              : 'Unable to load Command Deck.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
+          setData({
+            workspaceId,
+            items: [],
+            isLoading: false,
+            loadError:
+              error instanceof Error
+                ? error.message
+                : 'Unable to load Command Deck.',
+          });
         }
       });
 
     return () => controller.abort();
-  }, []);
+  }, [workspaceId]);
 
   const addFromHistory = useCallback(async (historyId: string) => {
-    const item = await addHistoryEntryToDeck(historyId);
-    setItems((currentItems) => mergeDeckItem(currentItems, item));
+    const activeWorkspaceId = activeWorkspaceIdRef.current;
+    const item = await addHistoryEntryToDeck(activeWorkspaceId, historyId);
+    setData((currentData) =>
+      currentData.workspaceId === activeWorkspaceId
+        ? {
+            ...currentData,
+            items: mergeDeckItem(currentData.items, item),
+          }
+        : currentData,
+    );
   }, []);
 
   const updateItem = useCallback(
     async (deckItemId: string, update: CommandDeckItemUpdate) => {
-      const item = await updateCommandDeckItem(deckItemId, update);
-      setItems((currentItems) => mergeDeckItem(currentItems, item));
+      const activeWorkspaceId = activeWorkspaceIdRef.current;
+      const item = await updateCommandDeckItem(
+        activeWorkspaceId,
+        deckItemId,
+        update,
+      );
+      setData((currentData) =>
+        currentData.workspaceId === activeWorkspaceId
+          ? {
+              ...currentData,
+              items: mergeDeckItem(currentData.items, item),
+            }
+          : currentData,
+      );
     },
     [],
   );
 
   const removeItem = useCallback(async (deckItemId: string) => {
-    await removeCommandDeckItem(deckItemId);
-    setItems((currentItems) =>
-      currentItems.filter((item) => item.deckItemId !== deckItemId),
+    const activeWorkspaceId = activeWorkspaceIdRef.current;
+    await removeCommandDeckItem(activeWorkspaceId, deckItemId);
+    setData((currentData) =>
+      currentData.workspaceId === activeWorkspaceId
+        ? {
+            ...currentData,
+            items: currentData.items.filter(
+              (item) => item.deckItemId !== deckItemId,
+            ),
+          }
+        : currentData,
     );
   }, []);
 
+  const hasCurrentData = data.workspaceId === workspaceId;
+
   return {
-    items,
-    isLoading,
-    loadError,
+    items: hasCurrentData ? data.items : [],
+    isLoading: hasCurrentData ? data.isLoading : true,
+    loadError: hasCurrentData ? data.loadError : null,
     addFromHistory,
     updateItem,
     removeItem,

@@ -1,10 +1,10 @@
 # CommandDeck
 
-CommandDeck is a local-first visual terminal workspace where every executed command remains searchable in Command History and useful commands become an editable, persistent Command Deck.
+CommandDeck is a local-first multi-workspace terminal environment where each Workspace owns immutable Command History and an editable, persistent Command Deck.
 
 ## Project status
 
-The terminal, shell integration, Command History, and Command Deck vertical slice are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events, persist automatically as immutable History entries, and appear live beside the responsive xterm.js terminal. History can be searched and filtered; entries can be rerun, copied, or added to the curated Deck. Deck items can be renamed, described, edited independently of History, and executed through the active terminal. Commands may use validated `{{variable}}` placeholders that are resolved in a preview dialog immediately before execution without changing the stored template.
+The terminal, shell integration, Workspaces, Command History, and Command Deck vertical slice are initialized and verified. A default Workspace is created automatically and existing data migrates into it. Completed zsh commands are assigned to the Workspace selected for that terminal execution and persist as immutable History. Each Workspace loads only its own searchable History and curated Deck. Deck commands may use validated `{{variable}}` placeholders that are resolved immediately before execution without changing the stored template.
 
 Zustand, broad output/note search, Electron, and AI functionality have not been implemented.
 
@@ -20,7 +20,7 @@ npm install
 npm run dev
 ```
 
-The custom server listens on `http://127.0.0.1:3000` by default. Command History and Deck data are stored in the operating system's application data directory. Copy `.env.example` to `.env` to change the loopback port or set `COMMANDDECK_DATA_DIR`.
+The custom server listens on `http://127.0.0.1:3000` by default. Workspaces, Command History, and Deck data are stored in the operating system's application data directory. Copy `.env.example` to `.env` to change the loopback port or set `COMMANDDECK_DATA_DIR`.
 
 ## Available scripts
 

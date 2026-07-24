@@ -5,14 +5,33 @@ import type {
 import {
   addCommandDeckItemSchema,
   commandDeckItemSchema,
+  workspaceIdSchema,
 } from '@/shared/schemas';
 import { getServerContainer } from '@/server/runtime/server-container-registry';
 
 export const dynamic = 'force-dynamic';
 
-export function GET(): Response {
+export function GET(request: Request): Response {
+  const parsedWorkspaceId = workspaceIdSchema.safeParse(
+    new URL(request.url).searchParams.get('workspaceId'),
+  );
+
+  if (!parsedWorkspaceId.success) {
+    return Response.json({ error: 'Invalid Workspace ID.' }, { status: 400 });
+  }
+
+  if (
+    !getServerContainer().workspaceService.workspaceExists(
+      parsedWorkspaceId.data,
+    )
+  ) {
+    return Response.json({ error: 'Workspace not found.' }, { status: 404 });
+  }
+
   const response: CommandDeckResponse = {
-    items: getServerContainer().commandDeckService.listDeckItems(),
+    items: getServerContainer().commandDeckService.listDeckItems(
+      parsedWorkspaceId.data,
+    ),
   };
 
   return Response.json(response, {
@@ -39,7 +58,15 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const requestBody: AddCommandDeckItemRequest = parsedRequest.data;
+  if (
+    !getServerContainer().workspaceService.workspaceExists(
+      requestBody.workspaceId,
+    )
+  ) {
+    return Response.json({ error: 'Workspace not found.' }, { status: 404 });
+  }
   const result = getServerContainer().commandDeckService.addHistoryEntry(
+    requestBody.workspaceId,
     requestBody.historyId,
   );
 

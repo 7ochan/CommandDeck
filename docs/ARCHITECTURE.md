@@ -9,6 +9,7 @@ Accepted architecture for the initial web application. This document describes t
 - Preserve normal terminal behavior while adding structured command history.
 - Keep terminal access and stored data on the local machine.
 - Keep immutable Command History and curated Command Deck items as distinct durable domain objects.
+- Make Workspace the explicit root context for terminals, History, Deck, and future workflows.
 - Use one understandable application runtime rather than distributed services.
 - Keep live terminal traffic separate from durable data operations.
 - Establish boundaries that can be tested independently.
@@ -113,8 +114,11 @@ The terminal manager owns a registry of active sessions. Each session contains:
 - Shell-integration parser state
 - Command-capture state
 - Owning WebSocket connection or reconnect token
+- Current Workspace ID used for subsequent command starts
 
 It is responsible for create, input, resize, close, exit, disconnect, and shutdown behavior. PTY objects must never cross the server boundary.
+
+Workspace selection is terminal-session state, not a process-global singleton. The browser sends a validated workspace-selection message on initial connection and every switch. The terminal session snapshots its current Workspace ID into `command.started`; completion retains that snapshot even if the user switches while a command is running. This gives each future terminal tab an independent Workspace assignment and prevents a late completion from leaking into the newly active Workspace.
 
 ### Shell process
 
@@ -173,6 +177,7 @@ Client-to-server event families:
 - `terminal.resize`
 - `terminal.close`
 - `terminal.reconnect`
+- `terminal.workspace.select`
 
 Server-to-client event families:
 
@@ -180,6 +185,7 @@ Server-to-client event families:
 - `terminal.output`
 - `terminal.exited`
 - `terminal.error`
+- `terminal.workspace.selected`
 - `command.started`
 - `command.completed`
 
@@ -203,6 +209,8 @@ The initial Command History query performs literal case-insensitive command and 
 
 Command Deck CRUD uses a separate HTTP resource and application service. Adding from History is a server-side transaction that validates the source entry, creates an editable command definition, and creates a Deck item with source provenance. Deck execution itself is client-initiated through the active terminal's existing `terminal.execute` message; shell integration then creates an ordinary new History entry. The Deck service never writes History execution rows, and the History capture service never creates or edits Deck data.
 
+Workspace CRUD uses its own repository and service. Every History and Deck service method receives a Workspace ID explicitly; neither service reads an ambient active Workspace. HTTP routes require Workspace IDs and repositories include Workspace predicates in every query or mutation. The browser root owns the active selection, while each terminal session owns the server-authoritative assignment used by capture. Deleting the last Workspace is rejected.
+
 Command Templates are a shared, runtime-neutral domain module rather than React behavior. The initial grammar recognizes exact `{{name}}` tokens whose case-sensitive names match `[A-Za-z_][A-Za-z0-9_]*`. Parsing returns ordered unique placeholders, every occurrence span, and structured syntax errors. Validation rejects malformed templates, missing or whitespace-only values, and expanded commands that still contain placeholder syntax. Expansion performs only position-based plain string substitution: it does not evaluate expressions, shell syntax, nesting, defaults, environment variables, or template logic.
 
 Deck definitions continue to persist the exact template text. Placeholder values and expanded commands are transient UI state and are never written back to the definition. Commands without placeholders execute immediately. Commands with placeholders open a client dialog that deduplicates names by first appearance, shows a live read-only preview, and sends the validated expanded command through the same `terminal.execute` path. This keeps template parsing reusable by future approved consumers without coupling it to Deck presentation or implementing AI.
@@ -215,7 +223,7 @@ Initial domain model:
 
 | Entity                  | Purpose                                                               |
 | ----------------------- | --------------------------------------------------------------------- |
-| `workspaces`            | Named project roots and workspace metadata                            |
+| `workspaces`            | Root contexts with durable names and lifecycle metadata               |
 | `terminal_sessions`     | Historical lifecycle metadata for terminal tabs                       |
 | `command_history`       | Immutable command, cwd, timing, completion, and exit data             |
 | `command_definitions`   | Exact reusable command/template text with optional History provenance |
@@ -233,6 +241,8 @@ An FTS5 index covers command text, searchable output, and notes. Workspace, date
 Large outputs require a configurable persistence limit. The exact threshold should be chosen using Phase 0 load tests. When output is truncated, preserve useful beginning and ending segments and record that truncation occurred.
 
 The database belongs in a configurable application-data directory, not in source control. Development data and test databases must be isolated from each other.
+
+The first Workspace migration creates `Default Workspace`, assigns all existing History, definitions, and Deck items to it, and adds foreign keys with cascade cleanup. Workspace-leading indexes support active-context queries and counts. The migration rebuilds dependent tables in foreign-key order so existing data and provenance remain valid.
 
 ## Quick actions and workflows
 
@@ -267,6 +277,7 @@ Public network access, multi-user authentication, remote terminals, and collabor
 - Batch frequent PTY output events while preserving ordering.
 - Apply node-pty flow control or bounded queues when the browser cannot keep up.
 - Virtualize long Command History lists.
+- Query and render only the active Workspace's History and Deck; abort superseded loads on switching.
 - Keep live PTY buffers out of global React state.
 - Limit and visibly mark persisted output truncation.
 - Use database transactions when finalizing commands and related search records.

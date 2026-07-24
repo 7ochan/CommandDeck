@@ -1,5 +1,6 @@
 export type CommandStartedPayload = {
   commandId: string;
+  workspaceId: string;
   command: string;
   cwd: string;
   startedAt: number;

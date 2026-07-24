@@ -4,6 +4,7 @@ import type { UpdateCommandDeckItemRequest } from '@/shared/contracts';
 import {
   commandDeckItemSchema,
   updateCommandDeckItemSchema,
+  workspaceIdSchema,
 } from '@/shared/schemas';
 import { getServerContainer } from '@/server/runtime/server-container-registry';
 
@@ -18,8 +19,11 @@ export async function PATCH(
   { params }: DeckItemRouteContext,
 ): Promise<Response> {
   const parsedId = deckItemIdSchema.safeParse((await params).deckItemId);
+  const parsedWorkspaceId = workspaceIdSchema.safeParse(
+    new URL(request.url).searchParams.get('workspaceId'),
+  );
 
-  if (!parsedId.success) {
+  if (!parsedId.success || !parsedWorkspaceId.success) {
     return Response.json({ error: 'Invalid Deck item ID.' }, { status: 400 });
   }
 
@@ -45,6 +49,7 @@ export async function PATCH(
     ...(parsedUpdate.data.description === '' ? { description: null } : {}),
   };
   const result = getServerContainer().commandDeckService.updateDeckItem(
+    parsedWorkspaceId.data,
     parsedId.data,
     update,
   );
@@ -59,16 +64,20 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: DeckItemRouteContext,
 ): Promise<Response> {
   const parsedId = deckItemIdSchema.safeParse((await params).deckItemId);
+  const parsedWorkspaceId = workspaceIdSchema.safeParse(
+    new URL(request.url).searchParams.get('workspaceId'),
+  );
 
-  if (!parsedId.success) {
+  if (!parsedId.success || !parsedWorkspaceId.success) {
     return Response.json({ error: 'Invalid Deck item ID.' }, { status: 400 });
   }
 
   const removed = getServerContainer().commandDeckService.removeDeckItem(
+    parsedWorkspaceId.data,
     parsedId.data,
   );
 

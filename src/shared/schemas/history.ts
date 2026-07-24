@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
 import type { CommandHistoryEntry } from '../types/command';
+import { workspaceIdSchema } from './workspace';
 
 export const commandCompletionReasonSchema = z.enum(['shell', 'session-exit']);
 
 export const commandHistoryEntrySchema: z.ZodType<CommandHistoryEntry> = z
   .object({
     commandId: z.string().min(1),
+    workspaceId: workspaceIdSchema,
     command: z.string().min(1),
     cwd: z.string(),
     exitCode: z.number().int(),

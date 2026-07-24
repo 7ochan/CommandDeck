@@ -27,18 +27,27 @@ export class CommandDeckService {
     private readonly clock: () => number = Date.now,
   ) {}
 
-  listDeckItems(): CommandDeckItem[] {
-    return this.repository.list();
+  listDeckItems(workspaceId: string): CommandDeckItem[] {
+    return this.repository.list(workspaceId);
   }
 
-  addHistoryEntry(historyId: string): AddHistoryEntryToDeckResult {
-    const existing = this.repository.findBySourceHistoryId(historyId);
+  addHistoryEntry(
+    workspaceId: string,
+    historyId: string,
+  ): AddHistoryEntryToDeckResult {
+    const existing = this.repository.findBySourceHistoryId(
+      workspaceId,
+      historyId,
+    );
 
     if (existing) {
       return { outcome: 'exists', item: existing };
     }
 
-    const historyEntry = this.historyRepository.findById(historyId);
+    const historyEntry = this.historyRepository.findById(
+      workspaceId,
+      historyId,
+    );
 
     if (!historyEntry) {
       return { outcome: 'history-not-found' };
@@ -58,6 +67,7 @@ export class CommandDeckService {
     const item = this.repository.create({
       deckItemId: this.createId(),
       definitionId: this.createId(),
+      workspaceId,
       sourceHistoryId: historyId,
       displayName: deriveDisplayName(historyEntry.command),
       command: historyEntry.command,
@@ -68,6 +78,7 @@ export class CommandDeckService {
   }
 
   updateDeckItem(
+    workspaceId: string,
     deckItemId: string,
     update: CommandDeckItemUpdate,
   ): UpdateCommandDeckItemResult {
@@ -84,12 +95,17 @@ export class CommandDeckService {
       }
     }
 
-    const item = this.repository.update(deckItemId, update, this.clock());
+    const item = this.repository.update(
+      workspaceId,
+      deckItemId,
+      update,
+      this.clock(),
+    );
     return item ? { outcome: 'updated', item } : { outcome: 'not-found' };
   }
 
-  removeDeckItem(deckItemId: string): boolean {
-    return this.repository.delete(deckItemId);
+  removeDeckItem(workspaceId: string, deckItemId: string): boolean {
+    return this.repository.delete(workspaceId, deckItemId);
   }
 }
 

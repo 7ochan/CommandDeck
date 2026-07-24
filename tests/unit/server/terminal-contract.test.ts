@@ -6,6 +6,24 @@ import {
 } from '../../../src/shared/contracts/terminal.js';
 
 describe('terminal.execute protocol', () => {
+  it('accepts an explicit Workspace selection', () => {
+    expect(
+      parseTerminalClientMessage(
+        JSON.stringify({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'terminal.workspace.select',
+          sessionId: 'session-1',
+          payload: { workspaceId: 'workspace-two' },
+        }),
+      ),
+    ).toEqual({
+      version: TERMINAL_PROTOCOL_VERSION,
+      type: 'terminal.workspace.select',
+      sessionId: 'session-1',
+      payload: { workspaceId: 'workspace-two' },
+    });
+  });
+
   it('preserves an exact multiline command', () => {
     const command = "if true; then\n  printf 'again\\n'\nfi";
 

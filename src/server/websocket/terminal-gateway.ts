@@ -6,22 +6,37 @@ import {
   serializeTerminalMessage,
   type TerminalServerMessage,
 } from '../../shared/contracts/terminal.js';
+import { DEFAULT_WORKSPACE_ID } from '../../shared/types/workspace.js';
 import { TerminalSessionManager } from '../terminal/terminal-session-manager.js';
 import { ConnectionRegistry } from './connection-registry.js';
 
 const OUTPUT_FLUSH_INTERVAL_MS = 8;
 const OUTPUT_FLUSH_THRESHOLD = 64 * 1024;
 
+type WorkspaceAccess = {
+  workspaceExists: (workspaceId: string) => boolean;
+  initialWorkspaceId: () => string;
+};
+
+const defaultWorkspaceAccess: WorkspaceAccess = {
+  workspaceExists: (workspaceId) => workspaceId === DEFAULT_WORKSPACE_ID,
+  initialWorkspaceId: () => DEFAULT_WORKSPACE_ID,
+};
+
 export class TerminalGateway {
   private readonly connections = new ConnectionRegistry();
 
-  constructor(private readonly sessions = new TerminalSessionManager()) {}
+  constructor(
+    private readonly sessions = new TerminalSessionManager(),
+    private readonly workspaceAccess: WorkspaceAccess = defaultWorkspaceAccess,
+  ) {}
 
   handleConnection(socket: WebSocket): void {
     let session;
 
     try {
       session = this.sessions.create();
+      session.setWorkspace(this.workspaceAccess.initialWorkspaceId());
     } catch (error) {
       console.error('Unable to create terminal session:', error);
       socket.close(1011, 'Unable to create terminal session');
@@ -144,6 +159,29 @@ export class TerminalGateway {
         return;
       }
 
+      if (message.type === 'terminal.workspace.select') {
+        if (
+          !this.workspaceAccess.workspaceExists(message.payload.workspaceId)
+        ) {
+          send({
+            version: TERMINAL_PROTOCOL_VERSION,
+            type: 'terminal.error',
+            sessionId,
+            payload: { message: 'Workspace not found.' },
+          });
+          return;
+        }
+
+        session.setWorkspace(message.payload.workspaceId);
+        send({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'terminal.workspace.selected',
+          sessionId,
+          payload: { workspaceId: session.workspaceId },
+        });
+        return;
+      }
+
       if (message.type === 'terminal.resize') {
         session.resize(message.payload.cols, message.payload.rows);
         send({
@@ -170,6 +208,7 @@ export class TerminalGateway {
         cwd: session.cwd,
         cols: session.cols,
         rows: session.rows,
+        workspaceId: session.workspaceId,
       },
     });
   }

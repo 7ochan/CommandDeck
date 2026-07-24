@@ -1,5 +1,6 @@
 export type CommandDefinition = {
   definitionId: string;
+  workspaceId: string;
   sourceHistoryId: string | null;
   command: string;
   createdAt: number;
@@ -8,6 +9,7 @@ export type CommandDefinition = {
 
 export type CommandDeckItem = {
   deckItemId: string;
+  workspaceId: string;
   definitionId: string;
   sourceHistoryId: string | null;
   displayName: string;

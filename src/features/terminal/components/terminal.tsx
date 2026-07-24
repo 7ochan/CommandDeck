@@ -4,6 +4,7 @@ import type { IDisposable, Terminal as XtermTerminal } from '@xterm/xterm';
 import type { ForwardedRef } from 'react';
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -18,6 +19,7 @@ import {
   executeTerminalCommand,
   sendTerminalInput,
   sendTerminalResize,
+  selectTerminalWorkspace,
 } from '../terminal-client';
 
 type ConnectionStatus =
@@ -32,43 +34,109 @@ const STATUS_LABELS: Record<ConnectionStatus, string> = {
 };
 
 type TerminalProps = {
+  workspaceId: string;
+  workspaceName: string;
   onCommandCompleted?: (command: CommandCompletedPayload) => void;
 };
 
 export type TerminalHandle = {
   runCommand: (command: string) => boolean;
+  selectWorkspace: (workspaceId: string) => Promise<boolean>;
 };
 
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
 
 function TerminalView(
-  { onCommandCompleted }: TerminalProps,
+  { workspaceId, workspaceName, onCommandCompleted }: TerminalProps,
   ref: ForwardedRef<TerminalHandle>,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onCommandCompletedRef = useRef(onCommandCompleted);
   const socketRef = useRef<WebSocket | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const desiredWorkspaceIdRef = useRef(workspaceId);
+  const assignedWorkspaceIdRef = useRef<string | null>(null);
+  const pendingWorkspaceSelectionRef = useRef<{
+    workspaceId: string;
+    resolve: (selected: boolean) => void;
+    timeoutId: number;
+  } | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
   const [shellName, setShellName] = useState('Local shell');
+  const [assignedWorkspaceId, setAssignedWorkspaceId] = useState<string | null>(
+    null,
+  );
+
+  const selectWorkspace = useCallback(
+    (targetWorkspaceId: string): Promise<boolean> => {
+      if (assignedWorkspaceIdRef.current === targetWorkspaceId) {
+        return Promise.resolve(true);
+      }
+
+      const socket = socketRef.current;
+      const sessionId = sessionIdRef.current;
+
+      if (!socket || !sessionId || socket.readyState !== WebSocket.OPEN) {
+        return Promise.resolve(false);
+      }
+
+      const pendingSelection = pendingWorkspaceSelectionRef.current;
+
+      if (pendingSelection) {
+        window.clearTimeout(pendingSelection.timeoutId);
+        pendingSelection.resolve(false);
+      }
+
+      return new Promise<boolean>((resolve) => {
+        const timeoutId = window.setTimeout(() => {
+          if (
+            pendingWorkspaceSelectionRef.current?.workspaceId ===
+            targetWorkspaceId
+          ) {
+            pendingWorkspaceSelectionRef.current = null;
+            resolve(false);
+          }
+        }, 3_000);
+        pendingWorkspaceSelectionRef.current = {
+          workspaceId: targetWorkspaceId,
+          resolve,
+          timeoutId,
+        };
+        selectTerminalWorkspace(socket, sessionId, targetWorkspaceId);
+      });
+    },
+    [],
+  );
 
   useImperativeHandle(ref, () => ({
     runCommand: (command: string) => {
       const socket = socketRef.current;
       const sessionId = sessionIdRef.current;
 
-      if (!socket || !sessionId || socket.readyState !== WebSocket.OPEN) {
+      if (
+        !socket ||
+        !sessionId ||
+        socket.readyState !== WebSocket.OPEN ||
+        pendingWorkspaceSelectionRef.current !== null ||
+        assignedWorkspaceIdRef.current !== desiredWorkspaceIdRef.current
+      ) {
         return false;
       }
 
       executeTerminalCommand(socket, sessionId, command);
       return true;
     },
+    selectWorkspace,
   }));
 
   useEffect(() => {
     onCommandCompletedRef.current = onCommandCompleted;
   }, [onCommandCompleted]);
+
+  useEffect(() => {
+    desiredWorkspaceIdRef.current = workspaceId;
+    void selectWorkspace(workspaceId);
+  }, [selectWorkspace, workspaceId]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -162,7 +230,12 @@ function TerminalView(
       };
 
       inputSubscription = terminal.onData((data) => {
-        if (socket && sessionId) {
+        if (
+          socket &&
+          sessionId &&
+          pendingWorkspaceSelectionRef.current === null &&
+          assignedWorkspaceIdRef.current === desiredWorkspaceIdRef.current
+        ) {
           sendTerminalInput(socket, sessionId, data);
         }
       });
@@ -195,6 +268,8 @@ function TerminalView(
         if (message.type === 'terminal.started') {
           sessionId = message.sessionId;
           sessionIdRef.current = sessionId;
+          assignedWorkspaceIdRef.current = message.payload.workspaceId;
+          setAssignedWorkspaceId(message.payload.workspaceId);
           setShellName(
             message.payload.shell.split(/[\\/]/).pop() ?? 'Local shell',
           );
@@ -206,6 +281,7 @@ function TerminalView(
             terminal.cols,
             terminal.rows,
           );
+          void selectWorkspace(desiredWorkspaceIdRef.current);
           terminal.focus();
           return;
         }
@@ -216,6 +292,19 @@ function TerminalView(
 
         if (message.type === 'terminal.output') {
           terminal.write(message.payload.data);
+          return;
+        }
+
+        if (message.type === 'terminal.workspace.selected') {
+          assignedWorkspaceIdRef.current = message.payload.workspaceId;
+          setAssignedWorkspaceId(message.payload.workspaceId);
+          const pendingSelection = pendingWorkspaceSelectionRef.current;
+
+          if (pendingSelection?.workspaceId === message.payload.workspaceId) {
+            window.clearTimeout(pendingSelection.timeoutId);
+            pendingWorkspaceSelectionRef.current = null;
+            pendingSelection.resolve(true);
+          }
           return;
         }
 
@@ -234,6 +323,14 @@ function TerminalView(
         }
 
         if (message.type === 'terminal.error') {
+          const pendingSelection = pendingWorkspaceSelectionRef.current;
+
+          if (pendingSelection) {
+            window.clearTimeout(pendingSelection.timeoutId);
+            pendingWorkspaceSelectionRef.current = null;
+            pendingSelection.resolve(false);
+          }
+
           setStatus('error');
         }
       });
@@ -262,6 +359,15 @@ function TerminalView(
     return () => {
       disposed = true;
       sessionIdRef.current = null;
+      assignedWorkspaceIdRef.current = null;
+
+      const pendingSelection = pendingWorkspaceSelectionRef.current;
+
+      if (pendingSelection) {
+        window.clearTimeout(pendingSelection.timeoutId);
+        pendingSelection.resolve(false);
+        pendingWorkspaceSelectionRef.current = null;
+      }
 
       if (socketRef.current === socket) {
         socketRef.current = null;
@@ -278,7 +384,7 @@ function TerminalView(
       socket?.close(1000, 'Terminal component unmounted');
       terminal?.dispose();
     };
-  }, []);
+  }, [selectWorkspace]);
 
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#070b11] shadow-2xl shadow-black/30">
@@ -286,12 +392,18 @@ function TerminalView(
         <div className="flex min-w-0 items-center gap-2 font-mono text-xs text-slate-400">
           <span className="size-2 rounded-full bg-emerald-300" />
           <span className="truncate">{shellName}</span>
+          <span className="text-slate-700" aria-hidden="true">
+            /
+          </span>
+          <span className="truncate text-cyan-200/70">{workspaceName}</span>
         </div>
         <span
           className="font-mono text-[11px] text-slate-500"
           aria-live="polite"
         >
-          {STATUS_LABELS[status]}
+          {assignedWorkspaceId !== workspaceId
+            ? 'Switching workspace…'
+            : STATUS_LABELS[status]}
         </span>
       </div>
 

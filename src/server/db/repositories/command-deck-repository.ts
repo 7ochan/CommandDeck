@@ -1,4 +1,4 @@
-import { asc, eq, max } from 'drizzle-orm';
+import { and, asc, eq, max } from 'drizzle-orm';
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type {
@@ -11,6 +11,7 @@ import type * as schema from '../schema.js';
 export type NewCommandDeckItem = {
   deckItemId: string;
   definitionId: string;
+  workspaceId: string;
   sourceHistoryId: string;
   displayName: string;
   command: string;
@@ -18,20 +19,25 @@ export type NewCommandDeckItem = {
 };
 
 export interface CommandDeckRepository {
-  list(): CommandDeckItem[];
-  findById(deckItemId: string): CommandDeckItem | null;
-  findBySourceHistoryId(historyId: string): CommandDeckItem | null;
+  list(workspaceId: string): CommandDeckItem[];
+  findById(workspaceId: string, deckItemId: string): CommandDeckItem | null;
+  findBySourceHistoryId(
+    workspaceId: string,
+    historyId: string,
+  ): CommandDeckItem | null;
   create(item: NewCommandDeckItem): CommandDeckItem;
   update(
+    workspaceId: string,
     deckItemId: string,
     update: CommandDeckItemUpdate,
     updatedAt: number,
   ): CommandDeckItem | null;
-  delete(deckItemId: string): boolean;
+  delete(workspaceId: string, deckItemId: string): boolean;
 }
 
 const deckItemSelection = {
   deckItemId: commandDeckItems.deckItemId,
+  workspaceId: commandDeckItems.workspaceId,
   definitionId: commandDefinitions.definitionId,
   sourceHistoryId: commandDefinitions.sourceHistoryId,
   displayName: commandDeckItems.displayName,
@@ -47,7 +53,7 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
     private readonly database: BetterSQLite3Database<typeof schema>,
   ) {}
 
-  list(): CommandDeckItem[] {
+  list(workspaceId: string): CommandDeckItem[] {
     return this.database
       .select(deckItemSelection)
       .from(commandDeckItems)
@@ -55,11 +61,12 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
         commandDefinitions,
         eq(commandDeckItems.definitionId, commandDefinitions.definitionId),
       )
+      .where(eq(commandDeckItems.workspaceId, workspaceId))
       .orderBy(asc(commandDeckItems.position), asc(commandDeckItems.addedAt))
       .all();
   }
 
-  findById(deckItemId: string): CommandDeckItem | null {
+  findById(workspaceId: string, deckItemId: string): CommandDeckItem | null {
     return (
       this.database
         .select(deckItemSelection)
@@ -68,12 +75,20 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
           commandDefinitions,
           eq(commandDeckItems.definitionId, commandDefinitions.definitionId),
         )
-        .where(eq(commandDeckItems.deckItemId, deckItemId))
+        .where(
+          and(
+            eq(commandDeckItems.workspaceId, workspaceId),
+            eq(commandDeckItems.deckItemId, deckItemId),
+          ),
+        )
         .get() ?? null
     );
   }
 
-  findBySourceHistoryId(historyId: string): CommandDeckItem | null {
+  findBySourceHistoryId(
+    workspaceId: string,
+    historyId: string,
+  ): CommandDeckItem | null {
     return (
       this.database
         .select(deckItemSelection)
@@ -82,7 +97,12 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
           commandDefinitions,
           eq(commandDeckItems.definitionId, commandDefinitions.definitionId),
         )
-        .where(eq(commandDefinitions.sourceHistoryId, historyId))
+        .where(
+          and(
+            eq(commandDeckItems.workspaceId, workspaceId),
+            eq(commandDefinitions.sourceHistoryId, historyId),
+          ),
+        )
         .get() ?? null
     );
   }
@@ -92,6 +112,7 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
       const currentMaximum = transaction
         .select({ value: max(commandDeckItems.position) })
         .from(commandDeckItems)
+        .where(eq(commandDeckItems.workspaceId, item.workspaceId))
         .get()?.value;
       const position = (currentMaximum ?? -1) + 1;
 
@@ -99,6 +120,7 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
         .insert(commandDefinitions)
         .values({
           definitionId: item.definitionId,
+          workspaceId: item.workspaceId,
           sourceHistoryId: item.sourceHistoryId,
           command: item.command,
           createdAt: item.createdAt,
@@ -109,6 +131,7 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
         .insert(commandDeckItems)
         .values({
           deckItemId: item.deckItemId,
+          workspaceId: item.workspaceId,
           definitionId: item.definitionId,
           displayName: item.displayName,
           description: null,
@@ -119,7 +142,7 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
         .run();
     });
 
-    const created = this.findById(item.deckItemId);
+    const created = this.findById(item.workspaceId, item.deckItemId);
 
     if (!created) {
       throw new Error('Created Deck item could not be read.');
@@ -129,11 +152,12 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
   }
 
   update(
+    workspaceId: string,
     deckItemId: string,
     update: CommandDeckItemUpdate,
     updatedAt: number,
   ): CommandDeckItem | null {
-    const existing = this.findById(deckItemId);
+    const existing = this.findById(workspaceId, deckItemId);
 
     if (!existing) {
       return null;
@@ -159,15 +183,20 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
             : {}),
           updatedAt,
         })
-        .where(eq(commandDeckItems.deckItemId, deckItemId))
+        .where(
+          and(
+            eq(commandDeckItems.workspaceId, workspaceId),
+            eq(commandDeckItems.deckItemId, deckItemId),
+          ),
+        )
         .run();
     });
 
-    return this.findById(deckItemId);
+    return this.findById(workspaceId, deckItemId);
   }
 
-  delete(deckItemId: string): boolean {
-    const existing = this.findById(deckItemId);
+  delete(workspaceId: string, deckItemId: string): boolean {
+    const existing = this.findById(workspaceId, deckItemId);
 
     if (!existing) {
       return false;
@@ -176,7 +205,12 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
     this.database.transaction((transaction) => {
       transaction
         .delete(commandDeckItems)
-        .where(eq(commandDeckItems.deckItemId, deckItemId))
+        .where(
+          and(
+            eq(commandDeckItems.workspaceId, workspaceId),
+            eq(commandDeckItems.deckItemId, deckItemId),
+          ),
+        )
         .run();
       transaction
         .delete(commandDefinitions)

@@ -5,10 +5,11 @@ import type { CommandHistoryQuery } from '@/shared/types';
 import { buildCommandHistoryUrl } from './query';
 
 export async function loadCommandHistory(
+  workspaceId: string,
   query: CommandHistoryQuery,
   signal?: AbortSignal,
 ): Promise<CommandHistoryResponse> {
-  const response = await fetch(buildCommandHistoryUrl(query), {
+  const response = await fetch(buildCommandHistoryUrl(workspaceId, query), {
     cache: 'no-store',
     signal,
   });

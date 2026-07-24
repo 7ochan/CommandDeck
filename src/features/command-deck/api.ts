@@ -5,9 +5,14 @@ import {
 import type { CommandDeckItem, CommandDeckItemUpdate } from '@/shared/types';
 
 export async function loadCommandDeck(
+  workspaceId: string,
   signal?: AbortSignal,
 ): Promise<CommandDeckItem[]> {
-  const response = await fetch('/api/deck', { cache: 'no-store', signal });
+  const parameters = new URLSearchParams({ workspaceId });
+  const response = await fetch(`/api/deck?${parameters.toString()}`, {
+    cache: 'no-store',
+    signal,
+  });
 
   if (!response.ok) {
     throw new Error(`Unable to load Command Deck (${response.status}).`);
@@ -18,12 +23,13 @@ export async function loadCommandDeck(
 }
 
 export async function addHistoryEntryToDeck(
+  workspaceId: string,
   historyId: string,
 ): Promise<CommandDeckItem> {
   const response = await fetch('/api/deck', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ historyId }),
+    body: JSON.stringify({ workspaceId, historyId }),
   });
 
   if (!response.ok) {
@@ -40,14 +46,19 @@ export async function addHistoryEntryToDeck(
 }
 
 export async function updateCommandDeckItem(
+  workspaceId: string,
   deckItemId: string,
   update: CommandDeckItemUpdate,
 ): Promise<CommandDeckItem> {
-  const response = await fetch(`/api/deck/${encodeURIComponent(deckItemId)}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(update),
-  });
+  const parameters = new URLSearchParams({ workspaceId });
+  const response = await fetch(
+    `/api/deck/${encodeURIComponent(deckItemId)}?${parameters.toString()}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(update),
+    },
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -62,10 +73,15 @@ export async function updateCommandDeckItem(
   return commandDeckItemSchema.parse(payload);
 }
 
-export async function removeCommandDeckItem(deckItemId: string): Promise<void> {
-  const response = await fetch(`/api/deck/${encodeURIComponent(deckItemId)}`, {
-    method: 'DELETE',
-  });
+export async function removeCommandDeckItem(
+  workspaceId: string,
+  deckItemId: string,
+): Promise<void> {
+  const parameters = new URLSearchParams({ workspaceId });
+  const response = await fetch(
+    `/api/deck/${encodeURIComponent(deckItemId)}?${parameters.toString()}`,
+    { method: 'DELETE' },
+  );
 
   if (response.ok || response.status === 404) {
     return;

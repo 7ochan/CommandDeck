@@ -3,7 +3,7 @@ import type {
   CommandStartedPayload,
 } from '../types/command';
 
-export const TERMINAL_PROTOCOL_VERSION = 1 as const;
+export const TERMINAL_PROTOCOL_VERSION = 2 as const;
 export const TERMINAL_WEBSOCKET_PATH = '/ws/terminal';
 
 const MAX_INPUT_LENGTH = 64 * 1024;
@@ -22,16 +22,24 @@ type TerminalMessage<TType extends string, TPayload> = {
 export type TerminalClientMessage =
   | TerminalMessage<'terminal.input', { data: string }>
   | TerminalMessage<'terminal.execute', { command: string }>
+  | TerminalMessage<'terminal.workspace.select', { workspaceId: string }>
   | TerminalMessage<'terminal.resize', { cols: number; rows: number }>
   | TerminalMessage<'terminal.close', Record<string, never>>;
 
 export type TerminalServerMessage =
   | TerminalMessage<
       'terminal.started',
-      { shell: string; cwd: string; cols: number; rows: number }
+      {
+        shell: string;
+        cwd: string;
+        cols: number;
+        rows: number;
+        workspaceId: string;
+      }
     >
   | TerminalMessage<'terminal.output', { data: string }>
   | TerminalMessage<'terminal.resized', { cols: number; rows: number }>
+  | TerminalMessage<'terminal.workspace.selected', { workspaceId: string }>
   | TerminalMessage<
       'terminal.exited',
       { exitCode: number; signal: number | null }
@@ -71,6 +79,19 @@ export function parseTerminalClientMessage(
       : null;
   }
 
+  if (type === 'terminal.workspace.select') {
+    return typeof payload.workspaceId === 'string' &&
+      payload.workspaceId.length > 0 &&
+      payload.workspaceId.length <= 200
+      ? {
+          version,
+          type,
+          sessionId,
+          payload: { workspaceId: payload.workspaceId },
+        }
+      : null;
+  }
+
   if (type === 'terminal.resize') {
     const { cols, rows } = payload;
 
@@ -99,13 +120,32 @@ export function parseTerminalServerMessage(
   const { payload, sessionId, type, version } = message;
 
   if (type === 'terminal.started') {
-    const { cols, cwd, rows, shell } = payload;
+    const { cols, cwd, rows, shell, workspaceId } = payload;
 
     return typeof shell === 'string' &&
       typeof cwd === 'string' &&
+      typeof workspaceId === 'string' &&
+      workspaceId.length > 0 &&
       isIntegerInRange(cols, MIN_COLUMNS, MAX_COLUMNS) &&
       isIntegerInRange(rows, MIN_ROWS, MAX_ROWS)
-      ? { version, type, sessionId, payload: { shell, cwd, cols, rows } }
+      ? {
+          version,
+          type,
+          sessionId,
+          payload: { shell, cwd, cols, rows, workspaceId },
+        }
+      : null;
+  }
+
+  if (type === 'terminal.workspace.selected') {
+    return typeof payload.workspaceId === 'string' &&
+      payload.workspaceId.length > 0
+      ? {
+          version,
+          type,
+          sessionId,
+          payload: { workspaceId: payload.workspaceId },
+        }
       : null;
   }
 
@@ -162,15 +202,17 @@ export function parseTerminalServerMessage(
 function parseCommandStartedPayload(
   payload: Record<string, unknown>,
 ): CommandStartedPayload | null {
-  const { command, commandId, cwd, startedAt } = payload;
+  const { command, commandId, cwd, startedAt, workspaceId } = payload;
 
   return typeof commandId === 'string' &&
     commandId.length > 0 &&
+    typeof workspaceId === 'string' &&
+    workspaceId.length > 0 &&
     typeof command === 'string' &&
     command.length > 0 &&
     typeof cwd === 'string' &&
     isNonNegativeInteger(startedAt)
-    ? { commandId, command, cwd, startedAt }
+    ? { commandId, workspaceId, command, cwd, startedAt }
     : null;
 }
 

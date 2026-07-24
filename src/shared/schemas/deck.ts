@@ -2,9 +2,11 @@ import { z } from 'zod';
 
 import { validateCommandTemplate } from '../command-template/index.ts';
 import type { CommandDeckItem } from '../types/deck';
+import { workspaceIdSchema } from './workspace';
 
 export const commandDeckItemSchema: z.ZodType<CommandDeckItem> = z.object({
   deckItemId: z.string().min(1),
+  workspaceId: workspaceIdSchema,
   definitionId: z.string().min(1),
   sourceHistoryId: z.string().min(1).nullable(),
   displayName: z.string().min(1),
@@ -20,6 +22,7 @@ export const commandDeckResponseSchema = z.object({
 });
 
 export const addCommandDeckItemSchema = z.object({
+  workspaceId: workspaceIdSchema,
   historyId: z.string().min(1).max(200),
 });
 

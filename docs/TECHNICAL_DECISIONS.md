@@ -190,6 +190,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Consequences:** Malformed brace syntax, blank values, nested placeholders, and unresolved placeholders block saving or execution. Duplicate placeholders prompt once and reuse the same value, ordered by first appearance. Commands without placeholders retain immediate execution. Defaults, optional variables, environment lookup, and persisted values require a future versioned grammar decision and are not inferred by the initial parser.
 
+## TD-019 — Workspace-rooted data and terminal assignment
+
+**Status:** Accepted
+
+**Decision:** Make Workspace the required root context for Command History, command definitions, and Command Deck items. Create `Default Workspace` during migration and assign every existing row to it. Keep active Workspace in the browser root and assign a Workspace ID to each server terminal session through a versioned WebSocket message. Snapshot that ID when a command starts. Require an explicit Workspace ID for every History and Deck service/repository operation; do not introduce a process-global active Workspace.
+
+**Reason:** UI-only filtering cannot guarantee that asynchronous shell completions are stored in the correct context. Per-terminal assignment provides a durable event boundary, isolates concurrent or future terminals naturally, and keeps History and Deck services independent from workspace-selection state.
+
+**Consequences:** Workspace switches abort and replace active History/Deck loads, reset feature-local filters and template dialogs, and update terminal metadata. A command already running remains attributed to the Workspace in which it started. Workspace deletion cascades owned data, is forbidden for the final remaining Workspace, and requires selecting a remaining Workspace before deleting the active one. Workspace IDs lead History and Deck indexes and are validated at HTTP and WebSocket boundaries.
+
 ## Open implementation parameters
 
 These details should be resolved by Phase 0 measurements without changing the architecture:

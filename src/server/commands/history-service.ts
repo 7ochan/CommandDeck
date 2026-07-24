@@ -24,8 +24,11 @@ export class CommandHistoryService {
     });
   }
 
-  listHistory(query?: CommandHistoryQuery): CommandHistoryEntry[] {
-    return this.repository.listNewestFirst(query);
+  listHistory(
+    workspaceId: string,
+    query?: CommandHistoryQuery,
+  ): CommandHistoryEntry[] {
+    return this.repository.listNewestFirst(workspaceId, query);
   }
 
   close(): void {

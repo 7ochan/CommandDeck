@@ -14,12 +14,19 @@ export class CommandCapture {
   private pendingCommand: string | null = null;
   private activeCommand: CommandStartedPayload | null = null;
   private cwd: string;
+  private workspaceId: string;
 
   constructor(
     initialCwd: string,
+    initialWorkspaceId: string,
     private readonly clock: () => number = Date.now,
   ) {
     this.cwd = initialCwd;
+    this.workspaceId = initialWorkspaceId;
+  }
+
+  setWorkspace(workspaceId: string): void {
+    this.workspaceId = workspaceId;
   }
 
   onEvent(listener: CommandListener): () => void {
@@ -62,6 +69,7 @@ export class CommandCapture {
 
     this.activeCommand = {
       commandId: randomUUID(),
+      workspaceId: this.workspaceId,
       command: this.pendingCommand,
       cwd: this.cwd,
       startedAt: this.clock(),

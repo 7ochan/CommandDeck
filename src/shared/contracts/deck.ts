@@ -5,6 +5,7 @@ export type CommandDeckResponse = {
 };
 
 export type AddCommandDeckItemRequest = {
+  workspaceId: string;
   historyId: string;
 };
 

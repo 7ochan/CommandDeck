@@ -52,6 +52,7 @@ describe('Command History interaction behavior', () => {
 function entry(commandId: string): CommandHistoryEntry {
   return {
     commandId,
+    workspaceId: 'workspace-one',
     command: `printf ${commandId}`,
     cwd: '/tmp',
     exitCode: 0,

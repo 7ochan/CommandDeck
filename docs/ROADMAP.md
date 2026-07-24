@@ -81,6 +81,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Curated persistent Command Deck referencing reusable definitions
 - Add from History; edit, remove, and execute Deck items
 - Validated Command Templates with ordered variable prompts and execution preview
+- Workspace create, rename, switch, delete, default migration, and isolated History/Deck data
 - Basic History-list virtualization
 - Early command/cwd live search and success, failed, and interrupted filters
 
@@ -96,6 +97,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Editing or removing a Deck item never changes its source History entry.
 - Deck execution is visible and produces a new History entry.
 - Template placeholders are detected automatically, resolved once per distinct case-sensitive name, previewed, and expanded without mutating the stored Deck definition.
+- Switching Workspace changes terminal assignment, History/search state, Deck, and template context without cross-workspace results.
 
 ### Milestone
 

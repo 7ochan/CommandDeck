@@ -35,90 +35,125 @@ type CommandHistoryState = {
   clearSelection: () => void;
 };
 
-export function useCommandHistory(): CommandHistoryState {
-  const [entries, setEntries] = useState<CommandHistoryEntry[]>([]);
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
-  const [query, setQuery] = useState<CommandHistoryQuery>(
-    EMPTY_COMMAND_HISTORY_QUERY,
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSearching, setIsSearching] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const activeQueryRef = useRef(query);
+export function useCommandHistory(workspaceId: string): CommandHistoryState {
+  const [data, setData] = useState<{
+    workspaceId: string;
+    entries: CommandHistoryEntry[];
+    isLoading: boolean;
+    isSearching: boolean;
+    loadError: string | null;
+  }>({
+    workspaceId,
+    entries: [],
+    isLoading: true,
+    isSearching: true,
+    loadError: null,
+  });
+  const [selection, setSelection] = useState<{
+    workspaceId: string;
+    commandId: string | null;
+  }>({ workspaceId, commandId: null });
+  const [queryState, setQueryState] = useState<{
+    workspaceId: string;
+    query: CommandHistoryQuery;
+  }>({ workspaceId, query: EMPTY_COMMAND_HISTORY_QUERY });
+  const query =
+    queryState.workspaceId === workspaceId
+      ? queryState.query
+      : EMPTY_COMMAND_HISTORY_QUERY;
+  const activeWorkspaceIdRef = useRef(workspaceId);
+  const activeQueryRef = useRef({ workspaceId, query });
   const liveEntriesRef = useRef(new Map<string, CommandHistoryEntry>());
-  const hasLoadedRef = useRef(false);
-  const hasRestoredSelectionRef = useRef(false);
+  const loadedWorkspaceIdsRef = useRef(new Set<string>());
+  const restoredWorkspaceIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
-    activeQueryRef.current = query;
-  }, [query]);
+    activeWorkspaceIdRef.current = workspaceId;
+    activeQueryRef.current = { workspaceId, query };
+  }, [query, workspaceId]);
 
   useEffect(() => {
     const controller = new AbortController();
     const debounceTimer = window.setTimeout(
       () => {
-        void loadCommandHistory(query, controller.signal)
+        void loadCommandHistory(workspaceId, query, controller.signal)
           .then(({ entries: persistedEntries }) => {
             const matchingLiveEntries = [
               ...liveEntriesRef.current.values(),
-            ].filter((entry) => matchesCommandHistoryQuery(entry, query));
+            ].filter(
+              (entry) =>
+                entry.workspaceId === workspaceId &&
+                matchesCommandHistoryQuery(entry, query),
+            );
             const visibleEntries = mergeHistoryEntries(
               persistedEntries,
               matchingLiveEntries,
             );
 
-            setEntries(visibleEntries);
-            setSelectedEntryId((currentId) => {
+            setData({
+              workspaceId,
+              entries: visibleEntries,
+              isLoading: false,
+              isSearching: false,
+              loadError: null,
+            });
+            setSelection((currentSelection) => {
               const visibleIds = new Set(
                 visibleEntries.map(({ commandId }) => commandId),
               );
+              const currentId =
+                currentSelection.workspaceId === workspaceId
+                  ? currentSelection.commandId
+                  : null;
 
               if (currentId && visibleIds.has(currentId)) {
-                return currentId;
+                return { workspaceId, commandId: currentId };
               }
 
-              if (!hasRestoredSelectionRef.current) {
-                hasRestoredSelectionRef.current = true;
+              if (!restoredWorkspaceIdsRef.current.has(workspaceId)) {
+                restoredWorkspaceIdsRef.current.add(workspaceId);
                 const restoredId = resolveRestoredHistoryEntryId(
-                  loadSelectedHistoryEntryId(),
+                  loadSelectedHistoryEntryId(workspaceId),
                   visibleIds,
                 );
 
                 if (restoredId) {
-                  return restoredId;
+                  return { workspaceId, commandId: restoredId };
                 }
               }
 
-              saveSelectedHistoryEntryId(null);
-              return null;
+              saveSelectedHistoryEntryId(workspaceId, null);
+              return { workspaceId, commandId: null };
             });
-            setLoadError(null);
           })
           .catch((error: unknown) => {
             if (!controller.signal.aborted) {
-              setLoadError(
-                error instanceof Error
-                  ? error.message
-                  : 'Unable to load Command History.',
-              );
+              setData({
+                workspaceId,
+                entries: [],
+                isLoading: false,
+                isSearching: false,
+                loadError:
+                  error instanceof Error
+                    ? error.message
+                    : 'Unable to load Command History.',
+              });
             }
           })
           .finally(() => {
             if (!controller.signal.aborted) {
-              hasLoadedRef.current = true;
-              setIsLoading(false);
-              setIsSearching(false);
+              loadedWorkspaceIdsRef.current.add(workspaceId);
             }
           });
       },
-      hasLoadedRef.current ? 120 : 0,
+      loadedWorkspaceIdsRef.current.has(workspaceId) ? 120 : 0,
     );
 
     return () => {
       window.clearTimeout(debounceTimer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, workspaceId]);
 
   const addCompletedCommand = useCallback(
     (command: CommandCompletedPayload) => {
@@ -129,9 +164,20 @@ export function useCommandHistory(): CommandHistoryState {
 
       liveEntriesRef.current.set(entry.commandId, entry);
 
-      if (matchesCommandHistoryQuery(entry, activeQueryRef.current)) {
-        setEntries((currentEntries) =>
-          mergeHistoryEntries(currentEntries, [entry]),
+      const activeQuery = activeQueryRef.current;
+
+      if (
+        entry.workspaceId === activeWorkspaceIdRef.current &&
+        activeQuery.workspaceId === entry.workspaceId &&
+        matchesCommandHistoryQuery(entry, activeQuery.query)
+      ) {
+        setData((currentData) =>
+          currentData.workspaceId === entry.workspaceId
+            ? {
+                ...currentData,
+                entries: mergeHistoryEntries(currentData.entries, [entry]),
+              }
+            : currentData,
         );
       }
     },
@@ -139,42 +185,82 @@ export function useCommandHistory(): CommandHistoryState {
   );
 
   const setSearchTerm = useCallback((searchTerm: string) => {
-    setIsSearching(true);
-    setQuery((currentQuery) => ({ ...currentQuery, searchTerm }));
-  }, []);
-
-  const toggleStatus = useCallback((status: CommandHistoryStatus) => {
-    setIsSearching(true);
-    setQuery((currentQuery) => ({
-      ...currentQuery,
-      statuses: currentQuery.statuses.includes(status)
-        ? currentQuery.statuses.filter((candidate) => candidate !== status)
-        : [...currentQuery.statuses, status],
+    const activeWorkspaceId = activeWorkspaceIdRef.current;
+    setData((currentData) =>
+      currentData.workspaceId === activeWorkspaceId
+        ? { ...currentData, isSearching: true }
+        : currentData,
+    );
+    setQueryState((currentState) => ({
+      workspaceId: activeWorkspaceId,
+      query: {
+        ...(currentState.workspaceId === activeWorkspaceId
+          ? currentState.query
+          : EMPTY_COMMAND_HISTORY_QUERY),
+        searchTerm,
+      },
     }));
   }, []);
 
+  const toggleStatus = useCallback((status: CommandHistoryStatus) => {
+    const activeWorkspaceId = activeWorkspaceIdRef.current;
+    setData((currentData) =>
+      currentData.workspaceId === activeWorkspaceId
+        ? { ...currentData, isSearching: true }
+        : currentData,
+    );
+    setQueryState((currentState) => {
+      const currentQuery =
+        currentState.workspaceId === activeWorkspaceId
+          ? currentState.query
+          : EMPTY_COMMAND_HISTORY_QUERY;
+      return {
+        workspaceId: activeWorkspaceId,
+        query: {
+          ...currentQuery,
+          statuses: currentQuery.statuses.includes(status)
+            ? currentQuery.statuses.filter((candidate) => candidate !== status)
+            : [...currentQuery.statuses, status],
+        },
+      };
+    });
+  }, []);
+
   const clearQuery = useCallback(() => {
-    setIsSearching(true);
-    setQuery(EMPTY_COMMAND_HISTORY_QUERY);
+    const activeWorkspaceId = activeWorkspaceIdRef.current;
+    setData((currentData) =>
+      currentData.workspaceId === activeWorkspaceId
+        ? { ...currentData, isSearching: true }
+        : currentData,
+    );
+    setQueryState({
+      workspaceId: activeWorkspaceId,
+      query: EMPTY_COMMAND_HISTORY_QUERY,
+    });
   }, []);
 
   const selectEntry = useCallback((commandId: string) => {
-    setSelectedEntryId(commandId);
-    saveSelectedHistoryEntryId(commandId);
+    const activeWorkspaceId = activeWorkspaceIdRef.current;
+    setSelection({ workspaceId: activeWorkspaceId, commandId });
+    saveSelectedHistoryEntryId(activeWorkspaceId, commandId);
   }, []);
 
   const clearSelection = useCallback(() => {
-    setSelectedEntryId(null);
-    saveSelectedHistoryEntryId(null);
+    const activeWorkspaceId = activeWorkspaceIdRef.current;
+    setSelection({ workspaceId: activeWorkspaceId, commandId: null });
+    saveSelectedHistoryEntryId(activeWorkspaceId, null);
   }, []);
 
+  const hasCurrentData = data.workspaceId === workspaceId;
+
   return {
-    entries,
-    selectedEntryId,
+    entries: hasCurrentData ? data.entries : [],
+    selectedEntryId:
+      selection.workspaceId === workspaceId ? selection.commandId : null,
     query,
-    isLoading,
-    isSearching,
-    loadError,
+    isLoading: hasCurrentData ? data.isLoading : true,
+    isSearching: hasCurrentData ? data.isSearching : true,
+    loadError: hasCurrentData ? data.loadError : null,
     addCompletedCommand,
     setSearchTerm,
     toggleStatus,

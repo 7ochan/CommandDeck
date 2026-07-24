@@ -1,7 +1,11 @@
 import type { CommandHistoryQuery } from '@/shared/types';
 
-export function buildCommandHistoryUrl(query: CommandHistoryQuery): string {
+export function buildCommandHistoryUrl(
+  workspaceId: string,
+  query: CommandHistoryQuery,
+): string {
   const parameters = new URLSearchParams();
+  parameters.set('workspaceId', workspaceId);
   const searchTerm = query.searchTerm.trim();
 
   if (searchTerm) {
@@ -12,6 +16,5 @@ export function buildCommandHistoryUrl(query: CommandHistoryQuery): string {
     parameters.append('status', status);
   }
 
-  const queryString = parameters.toString();
-  return queryString ? `/api/history?${queryString}` : '/api/history';
+  return `/api/history?${parameters.toString()}`;
 }

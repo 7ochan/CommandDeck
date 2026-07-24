@@ -1,4 +1,4 @@
-const SELECTED_HISTORY_ENTRY_KEY = 'commanddeck:selected-history-entry';
+const SELECTED_HISTORY_ENTRY_KEY_PREFIX = 'commanddeck:selected-history-entry:';
 
 type SelectionStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
@@ -12,16 +12,18 @@ export function resolveRestoredHistoryEntryId(
 }
 
 export function loadSelectedHistoryEntryId(
+  workspaceId: string,
   storage?: SelectionStorage,
 ): string | null {
   try {
-    return resolveStorage(storage)?.getItem(SELECTED_HISTORY_ENTRY_KEY) ?? null;
+    return resolveStorage(storage)?.getItem(selectionKey(workspaceId)) ?? null;
   } catch {
     return null;
   }
 }
 
 export function saveSelectedHistoryEntryId(
+  workspaceId: string,
   commandId: string | null,
   storage?: SelectionStorage,
 ): void {
@@ -33,13 +35,17 @@ export function saveSelectedHistoryEntryId(
     }
 
     if (commandId) {
-      resolvedStorage.setItem(SELECTED_HISTORY_ENTRY_KEY, commandId);
+      resolvedStorage.setItem(selectionKey(workspaceId), commandId);
     } else {
-      resolvedStorage.removeItem(SELECTED_HISTORY_ENTRY_KEY);
+      resolvedStorage.removeItem(selectionKey(workspaceId));
     }
   } catch {
     // Selection persistence is optional when browser storage is unavailable.
   }
+}
+
+function selectionKey(workspaceId: string): string {
+  return `${SELECTED_HISTORY_ENTRY_KEY_PREFIX}${workspaceId}`;
 }
 
 function resolveStorage(storage?: SelectionStorage): SelectionStorage | null {

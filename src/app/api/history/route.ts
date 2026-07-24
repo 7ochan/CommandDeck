@@ -1,5 +1,5 @@
 import type { CommandHistoryResponse } from '@/shared/contracts';
-import { commandHistoryQuerySchema } from '@/shared/schemas';
+import { commandHistoryQuerySchema, workspaceIdSchema } from '@/shared/schemas';
 import { getServerContainer } from '@/server/runtime/server-container-registry';
 
 export const dynamic = 'force-dynamic';
@@ -10,15 +10,27 @@ export function GET(request: Request): Response {
     searchTerm: url.searchParams.get('q') ?? '',
     statuses: url.searchParams.getAll('status'),
   });
+  const parsedWorkspaceId = workspaceIdSchema.safeParse(
+    url.searchParams.get('workspaceId'),
+  );
 
-  if (!parsedQuery.success) {
+  if (!parsedQuery.success || !parsedWorkspaceId.success) {
     return Response.json(
       { error: 'Invalid Command History query.' },
       { status: 400 },
     );
   }
 
+  if (
+    !getServerContainer().workspaceService.workspaceExists(
+      parsedWorkspaceId.data,
+    )
+  ) {
+    return Response.json({ error: 'Workspace not found.' }, { status: 404 });
+  }
+
   const entries = getServerContainer().commandHistoryService.listHistory(
+    parsedWorkspaceId.data,
     parsedQuery.data,
   );
   const response: CommandHistoryResponse = {

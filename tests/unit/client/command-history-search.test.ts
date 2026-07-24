@@ -69,15 +69,20 @@ describe('Command History search behavior', () => {
   });
 
   it('encodes the History query without empty parameters', () => {
-    expect(buildCommandHistoryUrl({ searchTerm: '  ', statuses: [] })).toBe(
-      '/api/history',
-    );
     expect(
-      buildCommandHistoryUrl({
+      buildCommandHistoryUrl('workspace-one', {
+        searchTerm: '  ',
+        statuses: [],
+      }),
+    ).toBe('/api/history?workspaceId=workspace-one');
+    expect(
+      buildCommandHistoryUrl('workspace-one', {
         searchTerm: 'npm test',
         statuses: ['failed', 'interrupted'],
       }),
-    ).toBe('/api/history?q=npm+test&status=failed&status=interrupted');
+    ).toBe(
+      '/api/history?workspaceId=workspace-one&q=npm+test&status=failed&status=interrupted',
+    );
   });
 });
 
@@ -86,6 +91,7 @@ function entry(
 ): CommandHistoryEntry {
   return {
     commandId: 'command-id',
+    workspaceId: 'workspace-one',
     command: 'printf hello',
     cwd: '/tmp/project',
     exitCode: 0,

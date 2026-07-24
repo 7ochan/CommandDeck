@@ -31,15 +31,17 @@ export class TerminalSession {
   private readonly disposeLaunch: () => void;
   private pendingData = '';
   private exitEvent: TerminalExit | null = null;
+  private currentWorkspaceId: string;
   private closed = false;
 
-  constructor(id: string, launch: PtyLaunch) {
+  constructor(id: string, launch: PtyLaunch, initialWorkspaceId: string) {
     this.id = id;
     this.shell = launch.shell;
     this.cwd = launch.cwd;
+    this.currentWorkspaceId = initialWorkspaceId;
     this.terminalProcess = launch.process;
     this.disposeLaunch = launch.dispose;
-    this.commandCapture = new CommandCapture(launch.cwd);
+    this.commandCapture = new CommandCapture(launch.cwd, initialWorkspaceId);
     this.integrationParser = launch.integration
       ? new OscShellIntegrationParser(launch.integration)
       : null;
@@ -91,6 +93,10 @@ export class TerminalSession {
     return this.terminalProcess.rows;
   }
 
+  get workspaceId(): string {
+    return this.currentWorkspaceId;
+  }
+
   onData(listener: DataListener): () => void {
     this.dataListeners.add(listener);
 
@@ -125,6 +131,11 @@ export class TerminalSession {
   onCommand(listener: CommandListener): () => void {
     this.commandListeners.add(listener);
     return () => this.commandListeners.delete(listener);
+  }
+
+  setWorkspace(workspaceId: string): void {
+    this.currentWorkspaceId = workspaceId;
+    this.commandCapture.setWorkspace(workspaceId);
   }
 
   write(data: string): void {

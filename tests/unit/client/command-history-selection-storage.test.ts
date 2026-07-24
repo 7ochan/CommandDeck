@@ -15,23 +15,31 @@ describe('Command History selection persistence', () => {
       removeItem: (key: string) => values.delete(key),
     };
 
-    saveSelectedHistoryEntryId('command-2', storage);
-    expect(loadSelectedHistoryEntryId(storage)).toBe('command-2');
+    saveSelectedHistoryEntryId('workspace-one', 'command-2', storage);
+    expect(loadSelectedHistoryEntryId('workspace-one', storage)).toBe(
+      'command-2',
+    );
     expect(
       resolveRestoredHistoryEntryId(
-        loadSelectedHistoryEntryId(storage),
+        loadSelectedHistoryEntryId('workspace-one', storage),
         new Set(['command-1', 'command-2']),
       ),
     ).toBe('command-2');
     expect(
       resolveRestoredHistoryEntryId(
-        loadSelectedHistoryEntryId(storage),
+        loadSelectedHistoryEntryId('workspace-one', storage),
         new Set(['command-1']),
       ),
     ).toBeNull();
 
-    saveSelectedHistoryEntryId(null, storage);
-    expect(loadSelectedHistoryEntryId(storage)).toBeNull();
+    saveSelectedHistoryEntryId('workspace-one', null, storage);
+    expect(loadSelectedHistoryEntryId('workspace-one', storage)).toBeNull();
+
+    saveSelectedHistoryEntryId('workspace-two', 'command-3', storage);
+    expect(loadSelectedHistoryEntryId('workspace-one', storage)).toBeNull();
+    expect(loadSelectedHistoryEntryId('workspace-two', storage)).toBe(
+      'command-3',
+    );
   });
 
   it('degrades safely when browser storage is unavailable', () => {
@@ -47,9 +55,9 @@ describe('Command History selection persistence', () => {
       },
     };
 
-    expect(loadSelectedHistoryEntryId(storage)).toBeNull();
+    expect(loadSelectedHistoryEntryId('workspace-one', storage)).toBeNull();
     expect(() =>
-      saveSelectedHistoryEntryId('command-1', storage),
+      saveSelectedHistoryEntryId('workspace-one', 'command-1', storage),
     ).not.toThrow();
   });
 });

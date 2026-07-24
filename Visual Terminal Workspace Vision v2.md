@@ -2,13 +2,13 @@
 
 ## Core identity
 
-> **A terminal where every command remains searchable in History and useful commands become a curated Command Deck.**
+> **A multi-workspace terminal where every command remains searchable in its History and useful commands become a curated Command Deck.**
 
 Everything else exists to support this idea.
 
 ## Product principles
 
-1. **History records; the Deck reuses.** The terminal automatically preserves execution facts in Command History, while users deliberately curate editable commands into the Command Deck.
+1. **Workspace is the root context.** Each Workspace owns its terminal context, immutable Command History, and curated Command Deck. History records automatically; the Deck reuses deliberately.
 2. **Terminal reliability comes first.** Visual features must not weaken normal shell behavior, resize handling, interactive programs, or process lifecycle management.
 3. **Local-first by default.** Terminal processes and command history remain on the user's machine.
 4. **The user remains in control.** Re-running commands and triggering quick actions must be deliberate and visible.
@@ -46,7 +46,11 @@ The Command Deck contains only commands explicitly chosen by the user. Deck item
 
 This History-to-Deck flow is the product's defining feature.
 
-### 3. Quick-action sidebar
+### 3. Workspaces
+
+One Workspace is always active. Users can create, rename, switch, and delete Workspaces while preserving at least one. Switching changes the terminal's command-assignment context and loads only that Workspace's History, search state, Deck, and template execution context.
+
+### 4. Quick-action sidebar
 
 A customizable sidebar provides deliberate, reusable terminal actions such as:
 
@@ -57,7 +61,7 @@ A customizable sidebar provides deliberate, reusable terminal actions such as:
 
 Users can add, edit, reorder, group, and assign icons to actions. Actions must clearly distinguish between inserting a command and immediately executing it.
 
-### 4. Searchable timeline
+### 5. Searchable timeline
 
 Command History can:
 
@@ -67,7 +71,7 @@ Command History can:
 - Filter by tags, pins, and bookmarks
 - Restore the context of a previous command quickly
 
-### 5. Reusable workflows
+### 6. Reusable workflows
 
 Users can turn repeated command sequences into simple ordered workflows. Initial workflows should remain understandable: ordered steps, optional variables, and explicit stop-on-failure behavior.
 

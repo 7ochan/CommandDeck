@@ -19,9 +19,12 @@ import {
   commandDeckItemSchema,
   commandDeckResponseSchema,
   commandHistoryResponseSchema,
+  workspaceSummarySchema,
+  workspacesResponseSchema,
 } from '../src/shared/schemas/index.js';
 import type { CommandHistoryEntry } from '../src/shared/types/command.js';
 import type { CommandDeckItem } from '../src/shared/types/deck.js';
+import type { WorkspaceSummary } from '../src/shared/types/workspace.js';
 
 const port = Number.parseInt(process.env.COMMANDDECK_VERIFY_PORT ?? '3210', 10);
 const hostname = '127.0.0.1';
@@ -44,6 +47,11 @@ try {
 
   const cookie = response.headers.get('set-cookie')?.split(';')[0];
   assert.ok(cookie, 'Homepage should issue a terminal session cookie');
+  const initialWorkspaces = await loadWorkspaces();
+  assert.equal(initialWorkspaces.length, 1);
+  assert.equal(initialWorkspaces[0]?.name, 'Default Workspace');
+  const defaultWorkspaceId = initialWorkspaces[0]?.workspaceId;
+  assert.ok(defaultWorkspaceId);
 
   const messages: TerminalServerMessage[] = [];
   let output = '';
@@ -75,6 +83,13 @@ try {
     'terminal.started',
   );
   const sessionId = started.sessionId;
+  assert.equal(
+    started.type === 'terminal.started'
+      ? started.payload.workspaceId
+      : undefined,
+    defaultWorkspaceId,
+    'The first terminal should start in Default Workspace',
+  );
 
   socket.send(
     serializeTerminalMessage({
@@ -252,19 +267,24 @@ try {
   assertCommandPair(afterInterruptStarted, afterInterruptCompleted, 0);
 
   const deckItem = await addHistoryEntryToDeck(
+    defaultWorkspaceId,
     firstCompleted.payload.commandId,
   );
-  const editedDeckItem = await editDeckItem(deckItem.deckItemId, {
-    displayName: 'Verification command',
-    command: "printf '__DECK_{{value}}_{{value}}__\\n'",
-    description: 'Edited independently from History.',
-  });
+  const editedDeckItem = await editDeckItem(
+    defaultWorkspaceId,
+    deckItem.deckItemId,
+    {
+      displayName: 'Verification command',
+      command: "printf '__DECK_{{value}}_{{value}}__\\n'",
+      description: 'Edited independently from History.',
+    },
+  );
   assert.equal(
     editedDeckItem.sourceHistoryId,
     firstCompleted.payload.commandId,
     'Deck item should retain History provenance',
   );
-  const historyAfterDeckEdit = await loadCommandHistory();
+  const historyAfterDeckEdit = await loadCommandHistory(defaultWorkspaceId);
   assert.equal(
     historyAfterDeckEdit.find(
       ({ commandId }) => commandId === firstCompleted.payload.commandId,
@@ -299,6 +319,108 @@ try {
   );
   assertCommandPair(deckRunStarted, deckRunCompleted, 0);
 
+  const servicesWorkspace = await createWorkspace('Services');
+  await selectWorkspace(
+    socket,
+    sessionId,
+    messages,
+    servicesWorkspace.workspaceId,
+  );
+  sendExecute(socket, sessionId, "printf '__WORKSPACE_SERVICES__\\n'");
+  const servicesStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command.includes('__WORKSPACE_SERVICES__'),
+    'Services Workspace command start',
+  );
+  const servicesCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === servicesStarted.payload.commandId,
+    'Services Workspace command completion',
+  );
+  assertCommandPair(servicesStarted, servicesCompleted, 0);
+  assert.equal(
+    servicesCompleted.payload.workspaceId,
+    servicesWorkspace.workspaceId,
+  );
+
+  const servicesDeckItem = await addHistoryEntryToDeck(
+    servicesWorkspace.workspaceId,
+    servicesCompleted.payload.commandId,
+  );
+  const servicesTemplate = await editDeckItem(
+    servicesWorkspace.workspaceId,
+    servicesDeckItem.deckItemId,
+    {
+      displayName: 'Workspace template',
+      command: "printf '__WORKSPACE_{{target}}__\\n'",
+      description: 'Runs only in the active Workspace.',
+    },
+  );
+  const servicesExpansion = expandCommandTemplate(servicesTemplate.command, {
+    target: 'TEMPLATE',
+  });
+  assert.ok(servicesExpansion.ok);
+  sendExecute(socket, sessionId, servicesExpansion.command);
+  const servicesTemplateStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command === servicesExpansion.command,
+    'Services template command start',
+  );
+  const servicesTemplateCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) =>
+      message.payload.commandId === servicesTemplateStarted.payload.commandId,
+    'Services template command completion',
+  );
+  assertCommandPair(servicesTemplateStarted, servicesTemplateCompleted, 0);
+  assert.equal(
+    servicesTemplateCompleted.payload.workspaceId,
+    servicesWorkspace.workspaceId,
+  );
+
+  const defaultHistoryDuringServices =
+    await loadCommandHistory(defaultWorkspaceId);
+  assert.equal(
+    defaultHistoryDuringServices.some(
+      ({ commandId }) => commandId === servicesCompleted.payload.commandId,
+    ),
+    false,
+    'Services History must not leak into Default Workspace',
+  );
+  const servicesHistory = await loadCommandHistory(
+    servicesWorkspace.workspaceId,
+  );
+  assertHistoryPersisted(servicesHistory, [
+    servicesCompleted.payload.commandId,
+    servicesTemplateCompleted.payload.commandId,
+  ]);
+  assert.equal((await loadCommandDeck(defaultWorkspaceId)).length, 1);
+  assert.equal(
+    (await loadCommandDeck(servicesWorkspace.workspaceId)).length,
+    1,
+  );
+  assert.equal(
+    (
+      await loadCommandHistory(
+        servicesWorkspace.workspaceId,
+        '__WORKSPACE_SERVICES__',
+      )
+    ).length,
+    1,
+    'Workspace-scoped History search should remain available',
+  );
+  const renamedServicesWorkspace = await renameWorkspace(
+    servicesWorkspace.workspaceId,
+    'Backend Services',
+  );
+  assert.equal(renamedServicesWorkspace.name, 'Backend Services');
+  await selectWorkspace(socket, sessionId, messages, defaultWorkspaceId);
+
   socket.send(
     serializeTerminalMessage({
       version: TERMINAL_PROTOCOL_VERSION,
@@ -320,24 +442,48 @@ try {
     afterInterruptCompleted.payload.commandId,
     deckRunCompleted.payload.commandId,
   ];
-  const historyBeforeRestart = await loadCommandHistory();
+  const historyBeforeRestart = await loadCommandHistory(defaultWorkspaceId);
   assertHistoryPersisted(historyBeforeRestart, expectedCommandIds);
 
   await stopServer(server);
   server = startServer(dataDirectory);
   await waitForServer(server);
 
-  const historyAfterRestart = await loadCommandHistory();
+  const historyAfterRestart = await loadCommandHistory(defaultWorkspaceId);
   assertHistoryPersisted(historyAfterRestart, expectedCommandIds);
-  const deckAfterRestart = await loadCommandDeck();
+  const deckAfterRestart = await loadCommandDeck(defaultWorkspaceId);
   assert.deepEqual(
     deckAfterRestart,
     [editedDeckItem],
     'Edited Command Deck should persist across server restart',
   );
+  const workspacesAfterRestart = await loadWorkspaces();
+  assert.deepEqual(
+    workspacesAfterRestart.map(({ name }) => name),
+    ['Default Workspace', 'Backend Services'],
+    'Workspace names should persist across restart',
+  );
+  const servicesAfterRestart = workspacesAfterRestart.find(
+    ({ workspaceId }) => workspaceId === servicesWorkspace.workspaceId,
+  );
+  assert.ok(servicesAfterRestart);
+  assert.equal(servicesAfterRestart.historyCount, 2);
+  assert.equal(servicesAfterRestart.deckCount, 1);
+  assertHistoryPersisted(
+    await loadCommandHistory(servicesWorkspace.workspaceId),
+    [
+      servicesCompleted.payload.commandId,
+      servicesTemplateCompleted.payload.commandId,
+    ],
+  );
+  assert.deepEqual(await loadCommandDeck(servicesWorkspace.workspaceId), [
+    servicesTemplate,
+  ]);
+  await deleteWorkspace(servicesWorkspace.workspaceId, 204);
+  await deleteWorkspace(defaultWorkspaceId, 409);
 
   console.log(
-    'Terminal verification passed: lifecycle events, History persistence/search storage, Deck template add/edit/expand/run/restart behavior, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: Workspace CRUD/switching/isolation/restart behavior, lifecycle ownership, History persistence/search, Deck templates, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
@@ -357,8 +503,20 @@ function startServer(commandDeckDataDirectory: string): ChildProcess {
   });
 }
 
-async function loadCommandHistory(): Promise<CommandHistoryEntry[]> {
-  const response = await fetch(`${origin}/api/history`, { cache: 'no-store' });
+async function loadCommandHistory(
+  workspaceId: string,
+  searchTerm?: string,
+): Promise<CommandHistoryEntry[]> {
+  const parameters = new URLSearchParams({ workspaceId });
+
+  if (searchTerm) {
+    parameters.set('q', searchTerm);
+  }
+
+  const response = await fetch(
+    `${origin}/api/history?${parameters.toString()}`,
+    { cache: 'no-store' },
+  );
   assert.equal(
     response.status,
     200,
@@ -369,23 +527,25 @@ async function loadCommandHistory(): Promise<CommandHistoryEntry[]> {
 }
 
 async function addHistoryEntryToDeck(
+  workspaceId: string,
   historyId: string,
 ): Promise<CommandDeckItem> {
   const response = await fetch(`${origin}/api/deck`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ historyId }),
+    body: JSON.stringify({ workspaceId, historyId }),
   });
   assert.equal(response.status, 201, 'Adding a History entry should succeed');
   return commandDeckItemSchema.parse(await response.json());
 }
 
 async function editDeckItem(
+  workspaceId: string,
   deckItemId: string,
   update: { displayName: string; command: string; description: string },
 ): Promise<CommandDeckItem> {
   const response = await fetch(
-    `${origin}/api/deck/${encodeURIComponent(deckItemId)}`,
+    `${origin}/api/deck/${encodeURIComponent(deckItemId)}?workspaceId=${encodeURIComponent(workspaceId)}`,
     {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -396,10 +556,60 @@ async function editDeckItem(
   return commandDeckItemSchema.parse(await response.json());
 }
 
-async function loadCommandDeck(): Promise<CommandDeckItem[]> {
-  const response = await fetch(`${origin}/api/deck`, { cache: 'no-store' });
+async function loadCommandDeck(
+  workspaceId: string,
+): Promise<CommandDeckItem[]> {
+  const response = await fetch(
+    `${origin}/api/deck?workspaceId=${encodeURIComponent(workspaceId)}`,
+    { cache: 'no-store' },
+  );
   assert.equal(response.status, 200, 'Command Deck API should respond');
   return commandDeckResponseSchema.parse(await response.json()).items;
+}
+
+async function loadWorkspaces(): Promise<WorkspaceSummary[]> {
+  const response = await fetch(`${origin}/api/workspaces`, {
+    cache: 'no-store',
+  });
+  assert.equal(response.status, 200, 'Workspaces API should respond');
+  return workspacesResponseSchema.parse(await response.json()).workspaces;
+}
+
+async function createWorkspace(name: string): Promise<WorkspaceSummary> {
+  const response = await fetch(`${origin}/api/workspaces`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  assert.equal(response.status, 201, 'Creating a Workspace should succeed');
+  return workspaceSummarySchema.parse(await response.json());
+}
+
+async function renameWorkspace(
+  workspaceId: string,
+  name: string,
+): Promise<WorkspaceSummary> {
+  const response = await fetch(
+    `${origin}/api/workspaces/${encodeURIComponent(workspaceId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    },
+  );
+  assert.equal(response.status, 200, 'Renaming a Workspace should succeed');
+  return workspaceSummarySchema.parse(await response.json());
+}
+
+async function deleteWorkspace(
+  workspaceId: string,
+  expectedStatus: number,
+): Promise<void> {
+  const response = await fetch(
+    `${origin}/api/workspaces/${encodeURIComponent(workspaceId)}`,
+    { method: 'DELETE' },
+  );
+  assert.equal(response.status, expectedStatus);
 }
 
 function assertHistoryPersisted(
@@ -486,6 +696,29 @@ function sendExecute(
   );
 }
 
+async function selectWorkspace(
+  socket: WebSocket,
+  sessionId: string,
+  messages: TerminalServerMessage[],
+  workspaceId: string,
+): Promise<void> {
+  socket.send(
+    serializeTerminalMessage({
+      version: TERMINAL_PROTOCOL_VERSION,
+      type: 'terminal.workspace.select',
+      sessionId,
+      payload: { workspaceId },
+    }),
+  );
+  await waitForMessage(
+    messages,
+    (message) =>
+      message.type === 'terminal.workspace.selected' &&
+      message.payload.workspaceId === workspaceId,
+    `terminal.workspace.selected(${workspaceId})`,
+  );
+}
+
 async function waitForMessage(
   messages: TerminalServerMessage[],
   predicate: (message: TerminalServerMessage) => boolean,
@@ -558,6 +791,7 @@ function assertCommandPair(
   expectedExitCode: number,
 ): void {
   assert.equal(completed.payload.commandId, started.payload.commandId);
+  assert.equal(completed.payload.workspaceId, started.payload.workspaceId);
   assert.equal(completed.payload.command, started.payload.command);
   assert.equal(completed.payload.cwd, started.payload.cwd);
   assert.equal(completed.payload.startedAt, started.payload.startedAt);

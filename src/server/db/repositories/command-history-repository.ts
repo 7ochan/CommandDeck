@@ -11,8 +11,11 @@ import type * as schema from '../schema.js';
 
 export interface CommandHistoryRepository {
   insert(entry: CommandHistoryEntry): boolean;
-  listNewestFirst(query?: CommandHistoryQuery): CommandHistoryEntry[];
-  findById(commandId: string): CommandHistoryEntry | null;
+  listNewestFirst(
+    workspaceId: string,
+    query?: CommandHistoryQuery,
+  ): CommandHistoryEntry[];
+  findById(workspaceId: string, commandId: string): CommandHistoryEntry | null;
 }
 
 export class SqliteCommandHistoryRepository implements CommandHistoryRepository {
@@ -30,8 +33,14 @@ export class SqliteCommandHistoryRepository implements CommandHistoryRepository 
     return result.changes === 1;
   }
 
-  listNewestFirst(query?: CommandHistoryQuery): CommandHistoryEntry[] {
-    const conditions = query ? buildQueryConditions(query) : [];
+  listNewestFirst(
+    workspaceId: string,
+    query?: CommandHistoryQuery,
+  ): CommandHistoryEntry[] {
+    const conditions = [
+      eq(commandHistory.workspaceId, workspaceId),
+      ...(query ? buildQueryConditions(query) : []),
+    ];
     const selection = this.database.select().from(commandHistory);
     const filteredSelection =
       conditions.length > 0 ? selection.where(and(...conditions)) : selection;
@@ -45,12 +54,17 @@ export class SqliteCommandHistoryRepository implements CommandHistoryRepository 
       .all();
   }
 
-  findById(commandId: string): CommandHistoryEntry | null {
+  findById(workspaceId: string, commandId: string): CommandHistoryEntry | null {
     return (
       this.database
         .select()
         .from(commandHistory)
-        .where(eq(commandHistory.commandId, commandId))
+        .where(
+          and(
+            eq(commandHistory.workspaceId, workspaceId),
+            eq(commandHistory.commandId, commandId),
+          ),
+        )
         .get() ?? null
     );
   }

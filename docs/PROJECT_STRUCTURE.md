@@ -42,6 +42,11 @@ command-deck/
 │   │   │   ├── hooks/
 │   │   │   ├── api.ts
 │   │   │   └── types.ts
+│   │   ├── workspaces/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── api.ts
+│   │   │   └── types.ts
 │   │   ├── quick-actions/
 │   │   ├── terminal/
 │   │   │   ├── components/
@@ -59,6 +64,8 @@ command-deck/
 │   │   │   ├── command-capture.ts
 │   │   │   ├── deck-service.ts
 │   │   │   └── history-service.ts
+│   │   ├── workspaces/
+│   │   │   └── workspace-service.ts
 │   │   ├── db/
 │   │   │   ├── client.ts
 │   │   │   ├── schema.ts
@@ -147,16 +154,17 @@ Dependencies point inward toward domain contracts and application services. Infr
 
 ## State ownership
 
-| State                             | Owner                                          |
-| --------------------------------- | ---------------------------------------------- |
-| Active node-pty process           | Server terminal manager                        |
-| Command-capture state machine     | Server terminal session                        |
-| Durable History, Deck, workflows  | SQLite through repositories                    |
-| WebSocket connection status       | Zustand terminal store                         |
-| Open tabs and selected tab        | Zustand terminal store, reconciled with server |
-| xterm.js instance and live buffer | Terminal React component/ref                   |
-| History filters and selections    | Feature hooks or URL state                     |
-| Template input values and preview | Command execution dialog; transient only       |
+| State                             | Owner                                           |
+| --------------------------------- | ----------------------------------------------- |
+| Active node-pty process           | Server terminal manager                         |
+| Command-capture state machine     | Server terminal session                         |
+| Durable Workspaces, History, Deck | SQLite through repositories                     |
+| WebSocket connection status       | Zustand terminal store                          |
+| Open tabs and selected tab        | Zustand terminal store, reconciled with server  |
+| xterm.js instance and live buffer | Terminal React component/ref                    |
+| History filters and selections    | Feature hooks or URL state                      |
+| Template input values and preview | Command execution dialog; transient only        |
+| Active Workspace selection        | Root client hook; assigned per terminal session |
 
 The raw xterm.js buffer must not be copied into Zustand. High-frequency PTY output should travel directly from the terminal client adapter to the relevant xterm.js instance.
 

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { CommandEventBus } from '../commands/command-events.js';
 import { PtyAdapter } from './pty-adapter.js';
 import { TerminalSession } from './terminal-session.js';
+import { DEFAULT_WORKSPACE_ID } from '../../shared/types/workspace.js';
 
 export class TerminalSessionManager {
   private readonly sessions = new Map<string, TerminalSession>();
@@ -10,6 +11,7 @@ export class TerminalSessionManager {
   constructor(
     private readonly ptyAdapter = new PtyAdapter(),
     private readonly commandEvents?: CommandEventBus,
+    private readonly initialWorkspaceId = DEFAULT_WORKSPACE_ID,
   ) {}
 
   create(): TerminalSession {
@@ -17,6 +19,7 @@ export class TerminalSessionManager {
     const session = new TerminalSession(
       id,
       this.ptyAdapter.spawnDefaultShell(),
+      this.initialWorkspaceId,
     );
 
     this.sessions.set(id, session);

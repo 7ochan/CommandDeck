@@ -12,12 +12,16 @@ import {
   type CommandDeckDatabase,
 } from '../../../src/server/db/client.js';
 import { createLegacyCommandHistoryMigration } from '../../../src/server/db/migrations/0001-command-cards.js';
+import { createCommandHistoryAndDeckMigration } from '../../../src/server/db/migrations/0002-command-history-and-deck.js';
 import { SqliteCommandDeckRepository } from '../../../src/server/db/repositories/command-deck-repository.js';
 import { SqliteCommandHistoryRepository } from '../../../src/server/db/repositories/command-history-repository.js';
+import { SqliteWorkspaceRepository } from '../../../src/server/db/repositories/workspace-repository.js';
+import { WorkspaceService } from '../../../src/server/workspaces/workspace-service.js';
 import type {
   CommandCompletedPayload,
   CommandHistoryEntry,
 } from '../../../src/shared/types/command.js';
+import { DEFAULT_WORKSPACE_ID } from '../../../src/shared/types/workspace.js';
 
 const openDatabases: CommandDeckDatabase[] = [];
 const temporaryDirectories: string[] = [];
@@ -46,7 +50,7 @@ describe('Command History and Command Deck persistence', () => {
         .prepare('SELECT name FROM schema_migrations ORDER BY id')
         .pluck()
         .all(),
-    ).toEqual(['command_cards', 'command_history_and_deck']);
+    ).toEqual(['command_cards', 'command_history_and_deck', 'workspaces']);
     expect(
       database.sqlite
         .prepare(
@@ -59,6 +63,7 @@ describe('Command History and Command Deck persistence', () => {
         'command_deck_items',
         'command_definitions',
         'command_history',
+        'workspaces',
       ]),
     );
   });
@@ -103,9 +108,70 @@ describe('Command History and Command Deck persistence', () => {
 
     expect(
       new SqliteCommandHistoryRepository(migrated.orm).findById(
+        DEFAULT_WORKSPACE_ID,
         entry.commandId,
       ),
     ).toEqual(entry);
+  });
+
+  it('moves existing History and Deck records into Default Workspace', () => {
+    const directory = createTemporaryDirectory();
+    const databasePath = join(directory, 'history-and-deck.db');
+    const legacy = new Database(databasePath);
+    legacy.exec(`
+      PRAGMA foreign_keys = ON;
+      CREATE TABLE schema_migrations (
+        id INTEGER PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL UNIQUE,
+        applied_at INTEGER NOT NULL
+      );
+      ${createLegacyCommandHistoryMigration.sql}
+      ${createCommandHistoryAndDeckMigration.sql}
+      INSERT INTO schema_migrations (id, name, applied_at)
+      VALUES
+        (1, 'command_cards', 1),
+        (2, 'command_history_and_deck', 2);
+      INSERT INTO command_history (
+        command_id, command, cwd, exit_code, started_at, ended_at,
+        duration_ms, completion_reason, created_at
+      ) VALUES (
+        'existing-history', 'npm test', '/tmp/project', 0, 10, 20,
+        10, 'shell', 30
+      );
+      INSERT INTO command_definitions (
+        definition_id, source_history_id, command, created_at, updated_at
+      ) VALUES (
+        'existing-definition', 'existing-history', 'npm test', 40, 40
+      );
+      INSERT INTO command_deck_items (
+        deck_item_id, definition_id, display_name, description,
+        position, added_at, updated_at
+      ) VALUES (
+        'existing-deck', 'existing-definition', 'Tests', NULL, 0, 40, 40
+      );
+    `);
+    legacy.close();
+
+    const migrated = openCommandDeckDatabase(databasePath);
+    openDatabases.push(migrated);
+    const historyRepository = new SqliteCommandHistoryRepository(migrated.orm);
+    const deckRepository = new SqliteCommandDeckRepository(migrated.orm);
+
+    expect(
+      historyRepository.findById(DEFAULT_WORKSPACE_ID, 'existing-history'),
+    ).toEqual(
+      expect.objectContaining({
+        commandId: 'existing-history',
+        workspaceId: DEFAULT_WORKSPACE_ID,
+      }),
+    );
+    expect(deckRepository.list(DEFAULT_WORKSPACE_ID)).toEqual([
+      expect.objectContaining({
+        deckItemId: 'existing-deck',
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        sourceHistoryId: 'existing-history',
+      }),
+    ]);
   });
 
   it('captures every completion in immutable newest-first History', () => {
@@ -122,7 +188,7 @@ describe('Command History and Command Deck persistence', () => {
     commandEvents.publish({ type: 'command.completed', payload: completed });
     commandEvents.publish({ type: 'command.completed', payload: completed });
 
-    expect(historyService.listHistory()).toEqual([
+    expect(historyService.listHistory(DEFAULT_WORKSPACE_ID)).toEqual([
       { ...completed, createdAt: 2_000 },
     ]);
     historyService.close();
@@ -158,22 +224,28 @@ describe('Command History and Command Deck persistence', () => {
     }
 
     expect(
-      repository.listNewestFirst({ searchTerm: 'BUILD', statuses: [] }),
+      repository.listNewestFirst(DEFAULT_WORKSPACE_ID, {
+        searchTerm: 'BUILD',
+        statuses: [],
+      }),
     ).toEqual([success]);
     expect(
-      repository.listNewestFirst({
+      repository.listNewestFirst(DEFAULT_WORKSPACE_ID, {
         searchTerm: 'command-deck',
         statuses: ['failed'],
       }),
     ).toEqual([failed]);
     expect(
-      repository.listNewestFirst({
+      repository.listNewestFirst(DEFAULT_WORKSPACE_ID, {
         searchTerm: '',
         statuses: ['failed', 'interrupted'],
       }),
     ).toEqual([failed, interrupted]);
     expect(
-      repository.listNewestFirst({ searchTerm: '100%', statuses: [] }),
+      repository.listNewestFirst(DEFAULT_WORKSPACE_ID, {
+        searchTerm: '100%',
+        statuses: [],
+      }),
     ).toEqual([failed]);
   });
 
@@ -194,17 +266,25 @@ describe('Command History and Command Deck persistence', () => {
       () => 5_000,
     );
 
-    const added = deckService.addHistoryEntry(source.commandId);
-    expect(added.outcome).toBe('created');
-    expect(deckService.addHistoryEntry(source.commandId).outcome).toBe(
-      'exists',
+    const added = deckService.addHistoryEntry(
+      DEFAULT_WORKSPACE_ID,
+      source.commandId,
     );
+    expect(added.outcome).toBe('created');
+    expect(
+      deckService.addHistoryEntry(DEFAULT_WORKSPACE_ID, source.commandId)
+        .outcome,
+    ).toBe('exists');
 
-    const updateResult = deckService.updateDeckItem('deck-1', {
-      displayName: 'Tests with coverage',
-      command: 'npm test -- --coverage',
-      description: 'Run before pushing.',
-    });
+    const updateResult = deckService.updateDeckItem(
+      DEFAULT_WORKSPACE_ID,
+      'deck-1',
+      {
+        displayName: 'Tests with coverage',
+        command: 'npm test -- --coverage',
+        description: 'Run before pushing.',
+      },
+    );
     expect(updateResult.outcome).toBe('updated');
     const updated =
       updateResult.outcome === 'updated' ? updateResult.item : null;
@@ -216,15 +296,17 @@ describe('Command History and Command Deck persistence', () => {
       command: 'npm test -- --coverage',
       description: 'Run before pushing.',
     });
-    expect(historyRepository.findById(source.commandId)).toEqual(source);
+    expect(
+      historyRepository.findById(DEFAULT_WORKSPACE_ID, source.commandId),
+    ).toEqual(source);
 
     database.close();
     openDatabases.splice(openDatabases.indexOf(database), 1);
     const reopened = openCommandDeckDatabase(databasePath);
     openDatabases.push(reopened);
-    expect(new SqliteCommandDeckRepository(reopened.orm).list()).toEqual([
-      updated,
-    ]);
+    expect(
+      new SqliteCommandDeckRepository(reopened.orm).list(DEFAULT_WORKSPACE_ID),
+    ).toEqual([updated]);
   });
 
   it('rejects malformed templates on Deck creation and editing', () => {
@@ -249,20 +331,24 @@ describe('Command History and Command Deck persistence', () => {
       () => 5_000,
     );
 
-    expect(deckService.addHistoryEntry(invalidSource.commandId)).toEqual(
-      expect.objectContaining({ outcome: 'invalid-template' }),
-    );
-    expect(deckService.addHistoryEntry(validSource.commandId).outcome).toBe(
-      'created',
-    );
     expect(
-      deckService.updateDeckItem('deck-template', {
+      deckService.addHistoryEntry(
+        DEFAULT_WORKSPACE_ID,
+        invalidSource.commandId,
+      ),
+    ).toEqual(expect.objectContaining({ outcome: 'invalid-template' }));
+    expect(
+      deckService.addHistoryEntry(DEFAULT_WORKSPACE_ID, validSource.commandId)
+        .outcome,
+    ).toBe('created');
+    expect(
+      deckService.updateDeckItem(DEFAULT_WORKSPACE_ID, 'deck-template', {
         command: 'git checkout {{branch',
       }),
     ).toEqual(expect.objectContaining({ outcome: 'invalid-template' }));
-    expect(deckRepository.findById('deck-template')?.command).toBe(
-      validSource.command,
-    );
+    expect(
+      deckRepository.findById(DEFAULT_WORKSPACE_ID, 'deck-template')?.command,
+    ).toBe(validSource.command);
   });
 
   it('removes Deck-owned rows while retaining source History', () => {
@@ -280,17 +366,125 @@ describe('Command History and Command Deck persistence', () => {
       })(),
       () => 5_000,
     );
-    deckService.addHistoryEntry(source.commandId);
+    deckService.addHistoryEntry(DEFAULT_WORKSPACE_ID, source.commandId);
 
-    expect(deckService.removeDeckItem('deck-remove')).toBe(true);
-    expect(deckRepository.list()).toEqual([]);
-    expect(historyRepository.findById(source.commandId)).toEqual(source);
+    expect(
+      deckService.removeDeckItem(DEFAULT_WORKSPACE_ID, 'deck-remove'),
+    ).toBe(true);
+    expect(deckRepository.list(DEFAULT_WORKSPACE_ID)).toEqual([]);
+    expect(
+      historyRepository.findById(DEFAULT_WORKSPACE_ID, source.commandId),
+    ).toEqual(source);
     expect(
       database.sqlite
         .prepare('SELECT count(*) FROM command_definitions')
         .pluck()
         .get(),
     ).toBe(0);
+  });
+
+  it('isolates History and Deck data while Workspaces persist and manage safely', () => {
+    const { database, databasePath } = createTemporaryDatabase();
+    const workspaceRepository = new SqliteWorkspaceRepository(database.orm);
+    const workspaceService = new WorkspaceService(
+      workspaceRepository,
+      () => 'workspace-two',
+      () => 10_000,
+    );
+    const historyRepository = new SqliteCommandHistoryRepository(database.orm);
+    const deckRepository = new SqliteCommandDeckRepository(database.orm);
+    const deckIds = ['deck-two', 'definition-two'];
+    const deckService = new CommandDeckService(
+      deckRepository,
+      historyRepository,
+      () => deckIds.shift() ?? 'unexpected-id',
+      () => 11_000,
+    );
+
+    expect(workspaceService.listWorkspaces()).toEqual([
+      expect.objectContaining({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        name: 'Default Workspace',
+        historyCount: 0,
+        deckCount: 0,
+      }),
+    ]);
+    expect(workspaceService.createWorkspace('Services')).toEqual(
+      expect.objectContaining({
+        outcome: 'created',
+        workspace: expect.objectContaining({ workspaceId: 'workspace-two' }),
+      }),
+    );
+
+    const workspaceEntry = historyEntry({
+      commandId: 'workspace-two-command',
+      workspaceId: 'workspace-two',
+      command: 'npm run services',
+    });
+    historyRepository.insert(workspaceEntry);
+
+    expect(historyRepository.listNewestFirst(DEFAULT_WORKSPACE_ID)).toEqual([]);
+    expect(historyRepository.listNewestFirst('workspace-two')).toEqual([
+      workspaceEntry,
+    ]);
+    expect(
+      deckService.addHistoryEntry(
+        DEFAULT_WORKSPACE_ID,
+        workspaceEntry.commandId,
+      ).outcome,
+    ).toBe('history-not-found');
+    expect(
+      deckService.addHistoryEntry('workspace-two', workspaceEntry.commandId)
+        .outcome,
+    ).toBe('created');
+    expect(deckRepository.list(DEFAULT_WORKSPACE_ID)).toEqual([]);
+    expect(deckRepository.list('workspace-two')).toHaveLength(1);
+    expect(workspaceService.listWorkspaces()).toEqual([
+      expect.objectContaining({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        historyCount: 0,
+        deckCount: 0,
+      }),
+      expect.objectContaining({
+        workspaceId: 'workspace-two',
+        historyCount: 1,
+        deckCount: 1,
+      }),
+    ]);
+
+    expect(
+      workspaceService.renameWorkspace('workspace-two', 'Backend Services'),
+    ).toEqual(
+      expect.objectContaining({
+        outcome: 'renamed',
+        workspace: expect.objectContaining({ name: 'Backend Services' }),
+      }),
+    );
+
+    database.close();
+    openDatabases.splice(openDatabases.indexOf(database), 1);
+    const reopened = openCommandDeckDatabase(databasePath);
+    openDatabases.push(reopened);
+    const reopenedWorkspaceService = new WorkspaceService(
+      new SqliteWorkspaceRepository(reopened.orm),
+    );
+
+    expect(reopenedWorkspaceService.listWorkspaces()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          workspaceId: 'workspace-two',
+          name: 'Backend Services',
+          historyCount: 1,
+          deckCount: 1,
+        }),
+      ]),
+    );
+    expect(
+      reopenedWorkspaceService.deleteWorkspace(DEFAULT_WORKSPACE_ID),
+    ).toEqual({ outcome: 'deleted' });
+    expect(reopenedWorkspaceService.deleteWorkspace('workspace-two')).toEqual({
+      outcome: 'final-workspace',
+    });
   });
 });
 
@@ -316,6 +510,7 @@ function completedCommand(
 ): CommandCompletedPayload {
   return {
     commandId: 'command-id',
+    workspaceId: DEFAULT_WORKSPACE_ID,
     command: 'printf hello',
     cwd: '/tmp/project',
     exitCode: 0,

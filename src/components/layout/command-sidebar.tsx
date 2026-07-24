@@ -62,7 +62,7 @@ export function CommandSidebar({
 
   return (
     <aside
-      className="flex min-h-0 w-[clamp(19rem,31vw,25rem)] shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#090d14] shadow-2xl shadow-black/20"
+      className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#090d14] shadow-2xl shadow-black/20"
       aria-label="Command History and Command Deck"
     >
       <CommandDeckSection

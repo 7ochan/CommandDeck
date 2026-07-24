@@ -4,8 +4,11 @@ import { CommandHistoryService } from '../commands/history-service.js';
 import { openCommandDeckDatabase } from '../db/client.js';
 import { SqliteCommandDeckRepository } from '../db/repositories/command-deck-repository.js';
 import { SqliteCommandHistoryRepository } from '../db/repositories/command-history-repository.js';
+import { SqliteWorkspaceRepository } from '../db/repositories/workspace-repository.js';
 import { TerminalSessionManager } from '../terminal/terminal-session-manager.js';
 import { TerminalGateway } from '../websocket/terminal-gateway.js';
+import { WorkspaceService } from '../workspaces/workspace-service.js';
+import { DEFAULT_WORKSPACE_ID } from '../../shared/types/workspace.js';
 import {
   getServerContainerIfInitialized,
   registerServerContainer,
@@ -23,6 +26,8 @@ export function initializeServerContainer(): ServerContainer {
   const database = openCommandDeckDatabase();
   const historyRepository = new SqliteCommandHistoryRepository(database.orm);
   const deckRepository = new SqliteCommandDeckRepository(database.orm);
+  const workspaceRepository = new SqliteWorkspaceRepository(database.orm);
+  const workspaceService = new WorkspaceService(workspaceRepository);
   const commandEvents = new CommandEventBus();
   const commandHistoryService = new CommandHistoryService(
     historyRepository,
@@ -32,13 +37,18 @@ export function initializeServerContainer(): ServerContainer {
     deckRepository,
     historyRepository,
   );
-  const sessions = new TerminalSessionManager(undefined, commandEvents);
-  const terminalGateway = new TerminalGateway(sessions);
+  const sessions = new TerminalSessionManager(
+    undefined,
+    commandEvents,
+    DEFAULT_WORKSPACE_ID,
+  );
+  const terminalGateway = new TerminalGateway(sessions, workspaceService);
   let closed = false;
 
   const container: ServerContainer = {
     commandHistoryService,
     commandDeckService,
+    workspaceService,
     terminalGateway,
     databasePath: database.path,
     close: () => {
