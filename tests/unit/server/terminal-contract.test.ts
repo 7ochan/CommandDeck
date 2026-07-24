@@ -102,4 +102,3 @@ describe('terminal.execute protocol', () => {
     ).toBeNull();
   });
 });
-

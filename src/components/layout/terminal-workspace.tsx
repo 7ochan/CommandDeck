@@ -134,7 +134,9 @@ function ActiveWorkspaceLayout({
   // Ensure the active workspace's terminal is always activated (lazy-spawn on
   // first visit; idempotent for subsequent selections).
   if (!activatedWorkspaceIds.has(activeWorkspace.workspaceId)) {
-    setActivatedWorkspaceIds((prev) => new Set([...prev, activeWorkspace.workspaceId]));
+    setActivatedWorkspaceIds(
+      (prev) => new Set([...prev, activeWorkspace.workspaceId]),
+    );
   }
 
   const activeTerminal = useCallback(
@@ -235,7 +237,13 @@ function ActiveWorkspaceLayout({
         return next;
       });
     },
-    [activeTerminal, activeWorkspace.workspaceId, onDeleteWorkspace, onSelectWorkspace, workspaces],
+    [
+      activeTerminal,
+      activeWorkspace.workspaceId,
+      onDeleteWorkspace,
+      onSelectWorkspace,
+      workspaces,
+    ],
   );
 
   useRegisterHistoryPaletteActions({
@@ -285,7 +293,12 @@ function ActiveWorkspaceLayout({
     executeWhenReady();
 
     return () => window.clearInterval(timerId);
-  }, [activeTerminal, activeWorkspace.workspaceId, onSelectWorkspace, workspaces]);
+  }, [
+    activeTerminal,
+    activeWorkspace.workspaceId,
+    onSelectWorkspace,
+    workspaces,
+  ]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">

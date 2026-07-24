@@ -322,7 +322,8 @@ export class TerminalGateway {
         const targetWorkspaceId = message.payload.workspaceId;
 
         if (targetWorkspaceId !== session.workspaceId) {
-          const closedSession = this.sessions.getForWorkspace(targetWorkspaceId);
+          const closedSession =
+            this.sessions.getForWorkspace(targetWorkspaceId);
 
           if (closedSession) {
             this.startedSessionIds.delete(closedSession.id);

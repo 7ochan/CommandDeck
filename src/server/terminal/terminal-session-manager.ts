@@ -37,7 +37,9 @@ export class TerminalSessionManager {
    * Returns the existing session for this workspace if one is alive,
    * otherwise spawns a new PTY and registers it.
    */
-  getOrCreateForWorkspace(workspaceId = this.initialWorkspaceId): TerminalSession {
+  getOrCreateForWorkspace(
+    workspaceId = this.initialWorkspaceId,
+  ): TerminalSession {
     const existingId = this.workspaceSessions.get(workspaceId);
 
     if (existingId) {
