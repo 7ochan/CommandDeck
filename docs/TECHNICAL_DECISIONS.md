@@ -178,7 +178,17 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Reason:** Automatic execution records and user-maintained shortcuts have different lifecycles. Keeping the source History foreign key preserves provenance without copying execution metadata, while a separate definition is necessary because editing Deck command text must never alter the original History record. Reusable definitions also allow future workflows or other deliberate execution surfaces to reference the same command without changing History storage.
 
-**Consequences:** Adding a History entry to the Deck copies only its command text into a definition and creates one Deck item linked to both records in a transaction. Removing that item removes its now-unreferenced definition. Display name, description, and command edits affect only Deck-owned tables. Future tags, categories, favorites, and variables require their own decisions and migrations; they are not implemented by this separation.
+**Consequences:** Adding a History entry to the Deck copies only its command text into a definition and creates one Deck item linked to both records in a transaction. Removing that item removes its now-unreferenced definition. Display name, description, and command edits affect only Deck-owned tables. Future tags, categories, favorites, and richer variable metadata require their own decisions and migrations; they are not implied by this separation.
+
+## TD-018 — Plain Command Template substitution
+
+**Status:** Accepted
+
+**Decision:** Support Command Deck templates using exact, case-sensitive `{{name}}` tokens, with names limited initially to `[A-Za-z_][A-Za-z0-9_]*`. A shared browser-and-server-safe module owns parsing, ordered deduplication, occurrence spans, friendly labels, input validation, preview generation, and final expansion. Expansion replaces exact parsed occurrence spans with user-provided strings and performs no evaluation. Persist only the original template in `command_definitions`; values and expanded commands exist only for the immediate execution.
+
+**Reason:** Template syntax is domain behavior needed consistently by editor validation, execution UI, server boundaries, tests, and future approved reuse surfaces. A small explicit grammar prevents UI-specific parsing differences and avoids introducing an expression language or hidden shell behavior.
+
+**Consequences:** Malformed brace syntax, blank values, nested placeholders, and unresolved placeholders block saving or execution. Duplicate placeholders prompt once and reuse the same value, ordered by first appearance. Commands without placeholders retain immediate execution. Defaults, optional variables, environment lookup, and persisted values require a future versioned grammar decision and are not inferred by the initial parser.
 
 ## Open implementation parameters
 

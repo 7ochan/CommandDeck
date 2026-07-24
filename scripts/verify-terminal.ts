@@ -14,6 +14,7 @@ import {
   type TerminalServerMessage,
 } from '../src/shared/contracts/terminal.js';
 import { OscShellIntegrationParser } from '../src/server/shell-integration/parsers/osc-parser.js';
+import { expandCommandTemplate } from '../src/shared/command-template/index.js';
 import {
   commandDeckItemSchema,
   commandDeckResponseSchema,
@@ -255,7 +256,7 @@ try {
   );
   const editedDeckItem = await editDeckItem(deckItem.deckItemId, {
     displayName: 'Verification command',
-    command: "printf '__DECK_RUN__\\n'",
+    command: "printf '__DECK_{{value}}_{{value}}__\\n'",
     description: 'Edited independently from History.',
   });
   assert.equal(
@@ -272,11 +273,22 @@ try {
     'Editing a Deck item must not modify its source History entry',
   );
 
-  sendExecute(socket, sessionId, editedDeckItem.command);
+  const deckExpansion = expandCommandTemplate(editedDeckItem.command, {
+    value: 'RUN',
+  });
+  assert.ok(deckExpansion.ok, 'Deck template should expand successfully');
+  const expandedDeckCommand = deckExpansion.command;
+  assert.equal(
+    editedDeckItem.command,
+    "printf '__DECK_{{value}}_{{value}}__\\n'",
+    'Expanding a Deck command must not mutate its stored template',
+  );
+
+  sendExecute(socket, sessionId, expandedDeckCommand);
   const deckRunStarted = await waitForCommandMessage(
     messages,
     'command.started',
-    (message) => message.payload.command === editedDeckItem.command,
+    (message) => message.payload.command === expandedDeckCommand,
     'Deck command start',
   );
   const deckRunCompleted = await waitForCommandMessage(
@@ -325,7 +337,7 @@ try {
   );
 
   console.log(
-    'Terminal verification passed: lifecycle events, History persistence/search storage, Deck add/edit/run/restart behavior, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: lifecycle events, History persistence/search storage, Deck template add/edit/expand/run/restart behavior, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);

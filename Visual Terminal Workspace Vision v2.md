@@ -42,7 +42,7 @@ History actions:
 - Re-run
 - Add to Command Deck
 
-The Command Deck contains only commands explicitly chosen by the user. Deck items have an editable display name, command, and optional description, retain provenance to their source History entry, persist locally, and execute visibly through the active terminal.
+The Command Deck contains only commands explicitly chosen by the user. Deck items have an editable display name, command, and optional description, retain provenance to their source History entry, persist locally, and execute visibly through the active terminal. A Deck command may contain `{{variable}}` placeholders; CommandDeck requests each distinct value, previews the expanded command, and substitutes it only for that execution.
 
 This History-to-Deck flow is the product's defining feature.
 

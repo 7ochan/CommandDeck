@@ -4,7 +4,7 @@ CommandDeck is a local-first visual terminal workspace where every executed comm
 
 ## Project status
 
-The terminal, shell integration, Command History, and Command Deck vertical slice are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events, persist automatically as immutable History entries, and appear live beside the responsive xterm.js terminal. History can be searched and filtered; entries can be rerun, copied, or added to the curated Deck. Deck items can be renamed, described, edited independently of History, and executed through the active terminal.
+The terminal, shell integration, Command History, and Command Deck vertical slice are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events, persist automatically as immutable History entries, and appear live beside the responsive xterm.js terminal. History can be searched and filtered; entries can be rerun, copied, or added to the curated Deck. Deck items can be renamed, described, edited independently of History, and executed through the active terminal. Commands may use validated `{{variable}}` placeholders that are resolved in a preview dialog immediately before execution without changing the stored template.
 
 Zustand, broad output/note search, Electron, and AI functionality have not been implemented.
 

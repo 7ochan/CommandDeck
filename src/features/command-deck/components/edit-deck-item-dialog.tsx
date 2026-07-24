@@ -1,8 +1,18 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
+
+import { parseCommandTemplate } from '@/shared/command-template';
 
 import type { CommandDeckItem, CommandDeckItemUpdate } from '../types';
+import { CommandTemplateHighlight } from './command-template-highlight';
 
 type EditDeckItemDialogProps = {
   item: CommandDeckItem;
@@ -24,6 +34,10 @@ export function EditDeckItemDialog({
   const [description, setDescription] = useState(item.description ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const parsedTemplate = useMemo(
+    () => parseCommandTemplate(command),
+    [command],
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -45,6 +59,15 @@ export function EditDeckItemDialog({
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!parsedTemplate.isValid) {
+      setError(
+        parsedTemplate.errors[0]?.message ??
+          'Fix the template syntax before saving.',
+      );
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -115,6 +138,41 @@ export function EditDeckItemDialog({
           />
         </label>
 
+        <div
+          className={`mt-2 rounded-lg border p-3 ${
+            parsedTemplate.isValid
+              ? 'border-cyan-300/12 bg-cyan-300/4'
+              : 'border-rose-300/20 bg-rose-300/5'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-medium text-slate-400">
+              Template detection
+            </span>
+            <span className="font-mono text-[9px] text-slate-600">
+              {parsedTemplate.placeholders.length === 0
+                ? 'Runs immediately'
+                : `${parsedTemplate.placeholders.length} variable${
+                    parsedTemplate.placeholders.length === 1 ? '' : 's'
+                  }`}
+            </span>
+          </div>
+          <pre className="mt-2 max-h-28 overflow-auto font-mono text-[11px] leading-5 break-words whitespace-pre-wrap text-slate-300">
+            <CommandTemplateHighlight parsed={parsedTemplate} />
+          </pre>
+          {parsedTemplate.errors.length > 0 && (
+            <ul className="mt-2 space-y-1 text-[10px] leading-4 text-rose-300">
+              {parsedTemplate.errors.map((templateError, index) => (
+                <li
+                  key={`${templateError.code}:${templateError.start}:${index}`}
+                >
+                  {templateError.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         <label className="mt-3 block text-[11px] text-slate-400">
           Description <span className="text-slate-600">(optional)</span>
           <textarea
@@ -144,7 +202,12 @@ export function EditDeckItemDialog({
           <button
             type="submit"
             className="rounded-lg border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-200 hover:bg-emerald-300/15 focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:outline-none disabled:opacity-50"
-            disabled={isSaving || !displayName.trim() || !command.trim()}
+            disabled={
+              isSaving ||
+              !displayName.trim() ||
+              !command.trim() ||
+              !parsedTemplate.isValid
+            }
           >
             {isSaving ? 'Saving…' : 'Save changes'}
           </button>

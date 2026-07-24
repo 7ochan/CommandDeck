@@ -50,6 +50,10 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  if (result.outcome === 'invalid-template') {
+    return Response.json({ error: result.message }, { status: 422 });
+  }
+
   return Response.json(commandDeckItemSchema.parse(result.item), {
     status: result.outcome === 'created' ? 201 : 200,
   });

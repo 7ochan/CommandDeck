@@ -203,26 +203,30 @@ The initial Command History query performs literal case-insensitive command and 
 
 Command Deck CRUD uses a separate HTTP resource and application service. Adding from History is a server-side transaction that validates the source entry, creates an editable command definition, and creates a Deck item with source provenance. Deck execution itself is client-initiated through the active terminal's existing `terminal.execute` message; shell integration then creates an ordinary new History entry. The Deck service never writes History execution rows, and the History capture service never creates or edits Deck data.
 
+Command Templates are a shared, runtime-neutral domain module rather than React behavior. The initial grammar recognizes exact `{{name}}` tokens whose case-sensitive names match `[A-Za-z_][A-Za-z0-9_]*`. Parsing returns ordered unique placeholders, every occurrence span, and structured syntax errors. Validation rejects malformed templates, missing or whitespace-only values, and expanded commands that still contain placeholder syntax. Expansion performs only position-based plain string substitution: it does not evaluate expressions, shell syntax, nesting, defaults, environment variables, or template logic.
+
+Deck definitions continue to persist the exact template text. Placeholder values and expanded commands are transient UI state and are never written back to the definition. Commands without placeholders execute immediately. Commands with placeholders open a client dialog that deduplicates names by first appearance, shows a live read-only preview, and sends the validated expanded command through the same `terminal.execute` path. This keeps template parsing reusable by future approved consumers without coupling it to Deck presentation or implementing AI.
+
 ## Persistence
 
 SQLite is the only durable store. Use `better-sqlite3` as the Node.js driver and Drizzle for typed schema access and migrations. Enable foreign keys and WAL mode, and apply numbered schema migrations at application startup. FTS5 setup and other SQLite-specific features may use explicit SQL migrations where the schema tool does not model them directly.
 
 Initial domain model:
 
-| Entity                  | Purpose                                                            |
-| ----------------------- | ------------------------------------------------------------------ |
-| `workspaces`            | Named project roots and workspace metadata                         |
-| `terminal_sessions`     | Historical lifecycle metadata for terminal tabs                    |
-| `command_history`       | Immutable command, cwd, timing, completion, and exit data          |
-| `command_definitions`   | Editable reusable command text with optional History provenance    |
-| `command_deck_items`    | Curated display name, description, order, and definition reference |
-| `tags` / `command_tags` | User organization and filtering                                    |
-| `quick_action_groups`   | Ordered sidebar groups                                             |
-| `quick_actions`         | Reusable commands and insert/execute behavior                      |
-| `workflows`             | Workflow identity, description, and version                        |
-| `workflow_steps`        | Ordered commands and stop-on-failure rules                         |
-| `workflow_runs`         | Execution history and outcome                                      |
-| `settings`              | Application-level preferences                                      |
+| Entity                  | Purpose                                                               |
+| ----------------------- | --------------------------------------------------------------------- |
+| `workspaces`            | Named project roots and workspace metadata                            |
+| `terminal_sessions`     | Historical lifecycle metadata for terminal tabs                       |
+| `command_history`       | Immutable command, cwd, timing, completion, and exit data             |
+| `command_definitions`   | Exact reusable command/template text with optional History provenance |
+| `command_deck_items`    | Curated display name, description, order, and definition reference    |
+| `tags` / `command_tags` | User organization and filtering                                       |
+| `quick_action_groups`   | Ordered sidebar groups                                                |
+| `quick_actions`         | Reusable commands and insert/execute behavior                         |
+| `workflows`             | Workflow identity, description, and version                           |
+| `workflow_steps`        | Ordered commands and stop-on-failure rules                            |
+| `workflow_runs`         | Execution history and outcome                                         |
+| `settings`              | Application-level preferences                                         |
 
 An FTS5 index covers command text, searchable output, and notes. Workspace, date, status, tags, pins, and bookmarks remain structured filters rather than encoded search text.
 

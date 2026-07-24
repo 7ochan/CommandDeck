@@ -1,9 +1,13 @@
 'use client';
 
-import { memo, useId, useState, type KeyboardEvent } from 'react';
+import { memo, useId, useMemo, useState, type KeyboardEvent } from 'react';
+
+import { parseCommandTemplate } from '@/shared/command-template';
 
 import type { CommandDeckItem as CommandDeckItemModel } from '../types';
+import { CommandTemplateHighlight } from './command-template-highlight';
 import { EditDeckItemDialog } from './edit-deck-item-dialog';
+import { ExecuteCommandTemplateDialog } from './execute-command-template-dialog';
 
 type CommandDeckItemProps = {
   item: CommandDeckItemModel;
@@ -33,10 +37,29 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 }: CommandDeckItemProps) {
   const actionPanelId = useId();
   const [editOpen, setEditOpen] = useState(false);
+  const [executeTemplateOpen, setExecuteTemplateOpen] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const parsedTemplate = useMemo(
+    () => parseCommandTemplate(item.command),
+    [item.command],
+  );
 
   const run = () => {
+    if (!parsedTemplate.isValid) {
+      setStatusMessage(
+        parsedTemplate.errors[0]?.message ??
+          'Fix the template syntax before running this item.',
+      );
+      return false;
+    }
+
+    if (parsedTemplate.placeholders.length > 0) {
+      setStatusMessage(null);
+      setExecuteTemplateOpen(true);
+      return false;
+    }
+
     const executed = onRun(item.command);
     setStatusMessage(
       executed
@@ -102,7 +125,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
           </span>
         </div>
         <pre className="mt-2 overflow-hidden font-mono text-[10px] leading-4 break-words whitespace-pre-wrap text-slate-400">
-          {item.command}
+          <CommandTemplateHighlight parsed={parsedTemplate} />
         </pre>
         {item.description && (
           <p className="mt-2 text-[10px] leading-4 text-slate-500">
@@ -157,6 +180,21 @@ export const CommandDeckItem = memo(function CommandDeckItem({
         isOpen={editOpen}
         onCancel={() => setEditOpen(false)}
         onSave={(update) => onUpdate(item.deckItemId, update)}
+      />
+      <ExecuteCommandTemplateDialog
+        displayName={item.displayName}
+        template={item.command}
+        isOpen={executeTemplateOpen}
+        onCancel={() => setExecuteTemplateOpen(false)}
+        onExecute={(command) => {
+          const executed = onRun(command);
+          setStatusMessage(
+            executed
+              ? 'Expanded command sent to the active terminal.'
+              : 'The active terminal is not connected.',
+          );
+          return executed;
+        }}
       />
     </article>
   );

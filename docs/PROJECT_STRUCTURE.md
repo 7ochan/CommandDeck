@@ -19,7 +19,8 @@ command-deck/
 ├── src/
 │   ├── app/                        # Next.js App Router
 │   │   ├── api/                    # Durable HTTP route handlers
-│   │   │   ├── commands/
+│   │   │   ├── deck/
+│   │   │   ├── history/
 │   │   │   ├── quick-actions/
 │   │   │   ├── settings/
 │   │   │   ├── workflows/
@@ -56,7 +57,8 @@ command-deck/
 │   │   ├── application/            # Use cases shared by HTTP and WebSocket
 │   │   ├── commands/
 │   │   │   ├── command-capture.ts
-│   │   │   └── command-service.ts
+│   │   │   ├── deck-service.ts
+│   │   │   └── history-service.ts
 │   │   ├── db/
 │   │   │   ├── client.ts
 │   │   │   ├── schema.ts
@@ -77,6 +79,7 @@ command-deck/
 │   │       ├── terminal-gateway.ts
 │   │       └── websocket-server.ts
 │   └── shared/
+│       ├── command-template/       # Runtime-neutral parsing, validation, expansion
 │       ├── contracts/              # Versioned HTTP and WebSocket contracts
 │       ├── schemas/                # Runtime validation shared across boundary
 │       └── types/                  # Pure domain types with no runtime imports
@@ -121,6 +124,8 @@ Contains all privileged and server-only code: node-pty, filesystem access, SQLit
 
 Contains only code that is safe in both browser and Node.js runtimes. It may define serializable domain types, event envelopes, and Zod runtime schemas. It must not import React, Next.js server modules, node-pty, database drivers, or filesystem APIs.
 
+Command Template parsing, validation, and expansion live in `src/shared/command-template`. Feature components may render parser results but must not implement their own token grammar or substitution behavior.
+
 ### `server.ts`
 
 Is a small composition root, not a general business-logic file. It creates the HTTP server, prepares Next.js, attaches WebSocket upgrades, initializes services, and registers shutdown handling. Product logic belongs under `src/server`.
@@ -151,6 +156,7 @@ Dependencies point inward toward domain contracts and application services. Infr
 | Open tabs and selected tab        | Zustand terminal store, reconciled with server |
 | xterm.js instance and live buffer | Terminal React component/ref                   |
 | History filters and selections    | Feature hooks or URL state                     |
+| Template input values and preview | Command execution dialog; transient only       |
 
 The raw xterm.js buffer must not be copied into Zustand. High-frequency PTY output should travel directly from the terminal client adapter to the relevant xterm.js instance.
 

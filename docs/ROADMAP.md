@@ -80,6 +80,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Persist History and load it after restart
 - Curated persistent Command Deck referencing reusable definitions
 - Add from History; edit, remove, and execute Deck items
+- Validated Command Templates with ordered variable prompts and execution preview
 - Basic History-list virtualization
 - Early command/cwd live search and success, failed, and interrupted filters
 
@@ -94,6 +95,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Combined command/cwd search and status filters return accurate History entries without breaking History or Deck actions.
 - Editing or removing a Deck item never changes its source History entry.
 - Deck execution is visible and produces a new History entry.
+- Template placeholders are detected automatically, resolved once per distinct case-sensitive name, previewed, and expanded without mutating the stored Deck definition.
 
 ### Milestone
 

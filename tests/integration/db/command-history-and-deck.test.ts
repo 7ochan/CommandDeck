@@ -200,11 +200,14 @@ describe('Command History and Command Deck persistence', () => {
       'exists',
     );
 
-    const updated = deckService.updateDeckItem('deck-1', {
+    const updateResult = deckService.updateDeckItem('deck-1', {
       displayName: 'Tests with coverage',
       command: 'npm test -- --coverage',
       description: 'Run before pushing.',
     });
+    expect(updateResult.outcome).toBe('updated');
+    const updated =
+      updateResult.outcome === 'updated' ? updateResult.item : null;
     expect(updated).toMatchObject({
       deckItemId: 'deck-1',
       definitionId: 'definition-1',
@@ -222,6 +225,44 @@ describe('Command History and Command Deck persistence', () => {
     expect(new SqliteCommandDeckRepository(reopened.orm).list()).toEqual([
       updated,
     ]);
+  });
+
+  it('rejects malformed templates on Deck creation and editing', () => {
+    const { database } = createTemporaryDatabase();
+    const historyRepository = new SqliteCommandHistoryRepository(database.orm);
+    const deckRepository = new SqliteCommandDeckRepository(database.orm);
+    const invalidSource = historyEntry({
+      commandId: 'invalid-template-source',
+      command: 'git checkout {{ branch }}',
+    });
+    const validSource = historyEntry({
+      commandId: 'valid-template-source',
+      command: 'git checkout {{branch}}',
+    });
+    historyRepository.insert(invalidSource);
+    historyRepository.insert(validSource);
+    const ids = ['deck-template', 'definition-template'];
+    const deckService = new CommandDeckService(
+      deckRepository,
+      historyRepository,
+      () => ids.shift() ?? 'unexpected-id',
+      () => 5_000,
+    );
+
+    expect(deckService.addHistoryEntry(invalidSource.commandId)).toEqual(
+      expect.objectContaining({ outcome: 'invalid-template' }),
+    );
+    expect(deckService.addHistoryEntry(validSource.commandId).outcome).toBe(
+      'created',
+    );
+    expect(
+      deckService.updateDeckItem('deck-template', {
+        command: 'git checkout {{branch',
+      }),
+    ).toEqual(expect.objectContaining({ outcome: 'invalid-template' }));
+    expect(deckRepository.findById('deck-template')?.command).toBe(
+      validSource.command,
+    );
   });
 
   it('removes Deck-owned rows while retaining source History', () => {

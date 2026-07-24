@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { validateCommandTemplate } from '../command-template/index.ts';
 import type { CommandDeckItem } from '../types/deck';
 
 export const commandDeckItemSchema: z.ZodType<CommandDeckItem> = z.object({
@@ -26,7 +27,12 @@ const nonBlankCommandSchema = z
   .string()
   .min(1)
   .max(10_000)
-  .refine((value) => value.trim().length > 0, 'Command cannot be blank.');
+  .refine((value) => value.trim().length > 0, 'Command cannot be blank.')
+  .superRefine((value, context) => {
+    for (const error of validateCommandTemplate(value).errors) {
+      context.addIssue({ code: 'custom', message: error.message });
+    }
+  });
 
 export const updateCommandDeckItemSchema = z
   .object({

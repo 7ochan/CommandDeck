@@ -44,13 +44,17 @@ export async function PATCH(
     ...parsedUpdate.data,
     ...(parsedUpdate.data.description === '' ? { description: null } : {}),
   };
-  const item = getServerContainer().commandDeckService.updateDeckItem(
+  const result = getServerContainer().commandDeckService.updateDeckItem(
     parsedId.data,
     update,
   );
 
-  return item
-    ? Response.json(commandDeckItemSchema.parse(item))
+  if (result.outcome === 'invalid-template') {
+    return Response.json({ error: result.message }, { status: 422 });
+  }
+
+  return result.outcome === 'updated'
+    ? Response.json(commandDeckItemSchema.parse(result.item))
     : Response.json({ error: 'Command Deck item not found.' }, { status: 404 });
 }
 

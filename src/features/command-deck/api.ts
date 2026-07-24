@@ -27,7 +27,12 @@ export async function addHistoryEntryToDeck(
   });
 
   if (!response.ok) {
-    throw new Error(`Unable to add command to the Deck (${response.status}).`);
+    throw new Error(
+      await readApiError(
+        response,
+        `Unable to add command to the Deck (${response.status}).`,
+      ),
+    );
   }
 
   const payload: unknown = await response.json();
@@ -45,7 +50,12 @@ export async function updateCommandDeckItem(
   });
 
   if (!response.ok) {
-    throw new Error(`Unable to update Deck item (${response.status}).`);
+    throw new Error(
+      await readApiError(
+        response,
+        `Unable to update Deck item (${response.status}).`,
+      ),
+    );
   }
 
   const payload: unknown = await response.json();
@@ -62,4 +72,26 @@ export async function removeCommandDeckItem(deckItemId: string): Promise<void> {
   }
 
   throw new Error(`Unable to remove Deck item (${response.status}).`);
+}
+
+async function readApiError(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const payload: unknown = await response.json();
+
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'error' in payload &&
+      typeof payload.error === 'string'
+    ) {
+      return payload.error;
+    }
+  } catch {
+    // Use the transport-aware fallback when the response is not JSON.
+  }
+
+  return fallback;
 }

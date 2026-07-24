@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import { validateCommandTemplate } from '../../shared/command-template/index.js';
 import type {
   CommandDeckItem,
   CommandDeckItemUpdate,
@@ -10,7 +11,13 @@ import type { CommandHistoryRepository } from '../db/repositories/command-histor
 export type AddHistoryEntryToDeckResult =
   | { outcome: 'created'; item: CommandDeckItem }
   | { outcome: 'exists'; item: CommandDeckItem }
+  | { outcome: 'invalid-template'; message: string }
   | { outcome: 'history-not-found' };
+
+export type UpdateCommandDeckItemResult =
+  | { outcome: 'updated'; item: CommandDeckItem }
+  | { outcome: 'invalid-template'; message: string }
+  | { outcome: 'not-found' };
 
 export class CommandDeckService {
   constructor(
@@ -37,6 +44,17 @@ export class CommandDeckService {
       return { outcome: 'history-not-found' };
     }
 
+    const templateValidation = validateCommandTemplate(historyEntry.command);
+
+    if (!templateValidation.isValid) {
+      return {
+        outcome: 'invalid-template',
+        message:
+          templateValidation.errors[0]?.message ??
+          'This command contains malformed placeholder syntax.',
+      };
+    }
+
     const item = this.repository.create({
       deckItemId: this.createId(),
       definitionId: this.createId(),
@@ -52,8 +70,22 @@ export class CommandDeckService {
   updateDeckItem(
     deckItemId: string,
     update: CommandDeckItemUpdate,
-  ): CommandDeckItem | null {
-    return this.repository.update(deckItemId, update, this.clock());
+  ): UpdateCommandDeckItemResult {
+    if (update.command !== undefined) {
+      const templateValidation = validateCommandTemplate(update.command);
+
+      if (!templateValidation.isValid) {
+        return {
+          outcome: 'invalid-template',
+          message:
+            templateValidation.errors[0]?.message ??
+            'This command contains malformed placeholder syntax.',
+        };
+      }
+    }
+
+    const item = this.repository.update(deckItemId, update, this.clock());
+    return item ? { outcome: 'updated', item } : { outcome: 'not-found' };
   }
 
   removeDeckItem(deckItemId: string): boolean {
