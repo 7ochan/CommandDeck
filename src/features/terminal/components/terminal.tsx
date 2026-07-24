@@ -34,6 +34,7 @@ export type TerminalConnectionStatus =
 
 type TerminalProps = {
   workspaceId: string;
+  active?: boolean;
   onCommandCompleted?: (command: CommandCompletedPayload) => void;
   onConnectionStatusChange?: (status: TerminalConnectionStatus) => void;
 };
@@ -47,7 +48,12 @@ export type TerminalHandle = {
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
 
 function TerminalView(
-  { workspaceId, onCommandCompleted, onConnectionStatusChange }: TerminalProps,
+  {
+    workspaceId,
+    active = true,
+    onCommandCompleted,
+    onConnectionStatusChange,
+  }: TerminalProps,
   ref: ForwardedRef<TerminalHandle>,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,6 +68,9 @@ function TerminalView(
     resolve: (selected: boolean) => void;
     timeoutId: number;
   } | null>(null);
+  // Populated by the initialize effect so that the `active` effect can trigger
+  // a fit + focus without being inside the same closure.
+  const triggerFitAndFocusRef = useRef<(() => void) | null>(null);
   const reportConnectionStatus = useCallback(
     (status: TerminalConnectionStatus) =>
       onConnectionStatusChangeRef.current?.(status),
@@ -154,6 +163,15 @@ function TerminalView(
     void selectWorkspace(workspaceId);
   }, [selectWorkspace, workspaceId]);
 
+  // When this workspace's terminal becomes the visible one, snap to the
+  // correct dimensions and focus xterm. This handles the case where the
+  // window was resized while the terminal was CSS-hidden.
+  useEffect(() => {
+    if (active) {
+      triggerFitAndFocusRef.current?.();
+    }
+  }, [active]);
+
   useEffect(() => {
     const container = containerRef.current;
 
@@ -216,6 +234,13 @@ function TerminalView(
           resizeFrame = null;
           fit();
         });
+      };
+
+      // Allow the `active`-prop effect to trigger a fit+focus from outside
+      // this closure without adding initialize as an effect dependency.
+      triggerFitAndFocusRef.current = () => {
+        fit();
+        terminal?.focus();
       };
 
       inputSubscription = terminal.onData((data) => {
@@ -411,6 +436,7 @@ function TerminalView(
       socket?.close(1000, 'Terminal component unmounted');
       commandSections?.dispose();
       terminal?.dispose();
+      triggerFitAndFocusRef.current = null;
     };
   }, [reportConnectionStatus, selectWorkspace]);
 

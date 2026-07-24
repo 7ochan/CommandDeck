@@ -86,9 +86,26 @@ function ActiveWorkspaceLayout({
   onDeleteWorkspace,
   onRefreshWorkspaces,
 }: ActiveWorkspaceLayoutProps) {
-  const terminalRef = useRef<TerminalHandle>(null);
+  /**
+   * Workspaces that have been visited at least once.  We only mount a
+   * <Terminal> (and therefore spawn a PTY) when the user first activates a
+   * workspace.  Once mounted, the Terminal stays alive for the session so its
+   * xterm buffer is preserved across switches.
+   */
+  const [activatedWorkspaceIds, setActivatedWorkspaceIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set([activeWorkspace.workspaceId]));
+
+  /**
+   * Imperative handles keyed by workspace ID.  `runCommand` and
+   * `closeWorkspaceSession` are always dispatched to the active workspace's
+   * handle.
+   */
+  const terminalRefs = useRef(new Map<string, TerminalHandle>());
+
   const [terminalConnectionStatus, setTerminalConnectionStatus] =
     useState<TerminalConnectionStatus>('connecting');
+
   const {
     entries,
     paletteEntries,
@@ -104,6 +121,7 @@ function ActiveWorkspaceLayout({
     selectEntry,
     clearSelection,
   } = useCommandHistory(activeWorkspace.workspaceId);
+
   const {
     items: deckItems,
     isLoading: isDeckLoading,
@@ -112,10 +130,23 @@ function ActiveWorkspaceLayout({
     updateItem,
     removeItem,
   } = useCommandDeck(activeWorkspace.workspaceId);
-  const runCommandAgain = useCallback(
-    (command: string) => terminalRef.current?.runCommand(command) ?? false,
-    [],
+
+  // Ensure the active workspace's terminal is always activated (lazy-spawn on
+  // first visit; idempotent for subsequent selections).
+  if (!activatedWorkspaceIds.has(activeWorkspace.workspaceId)) {
+    setActivatedWorkspaceIds((prev) => new Set([...prev, activeWorkspace.workspaceId]));
+  }
+
+  const activeTerminal = useCallback(
+    () => terminalRefs.current.get(activeWorkspace.workspaceId) ?? null,
+    [activeWorkspace.workspaceId],
   );
+
+  const runCommandAgain = useCallback(
+    (command: string) => activeTerminal()?.runCommand(command) ?? false,
+    [activeTerminal],
+  );
+
   const handleCommandCompleted = useCallback(
     (command: CommandCompletedPayload) => {
       addCompletedCommand(command);
@@ -123,6 +154,7 @@ function ActiveWorkspaceLayout({
     },
     [addCompletedCommand, onRefreshWorkspaces],
   );
+
   const handleAddToDeck = useCallback(
     async (historyId: string) => {
       await addFromHistory(historyId);
@@ -130,6 +162,7 @@ function ActiveWorkspaceLayout({
     },
     [addFromHistory, onRefreshWorkspaces],
   );
+
   const handleRemoveFromDeck = useCallback(
     async (deckItemId: string) => {
       await removeItem(deckItemId);
@@ -137,6 +170,7 @@ function ActiveWorkspaceLayout({
     },
     [onRefreshWorkspaces, removeItem],
   );
+
   const openHistoryEntry = useCallback(
     (commandId: string) => {
       selectEntry(commandId);
@@ -144,14 +178,23 @@ function ActiveWorkspaceLayout({
     },
     [selectEntry],
   );
+
   const handleDeleteWorkspace = useCallback(
     async (workspaceId: string) => {
       if (workspaceId !== activeWorkspace.workspaceId) {
+        // Non-active workspace: delete from DB, close its PTY via the active
+        // terminal's socket, then unmount the terminal.
         await onDeleteWorkspace(workspaceId);
-        terminalRef.current?.closeWorkspaceSession(workspaceId);
+        activeTerminal()?.closeWorkspaceSession(workspaceId);
+        setActivatedWorkspaceIds((prev) => {
+          const next = new Set(prev);
+          next.delete(workspaceId);
+          return next;
+        });
         return;
       }
 
+      // Active workspace: switch to a fallback first.
       const fallback = workspaces.find(
         (workspace) => workspace.workspaceId !== workspaceId,
       );
@@ -160,31 +203,46 @@ function ActiveWorkspaceLayout({
         throw new Error('The final Workspace cannot be deleted.');
       }
 
-      const terminalSelected = await terminalRef.current?.selectWorkspace(
-        fallback.workspaceId,
-      );
+      // Activate the fallback terminal immediately (it may not have been
+      // visited yet).  The CSS stack ensures it is visible right away via the
+      // activeWorkspace prop change triggered by onSelectWorkspace.
+      setActivatedWorkspaceIds((prev) => {
+        if (prev.has(fallback.workspaceId)) return prev;
+        return new Set([...prev, fallback.workspaceId]);
+      });
 
-      if (!terminalSelected) {
-        throw new Error(
-          'Wait for the terminal to connect before deleting the active Workspace.',
-        );
-      }
+      // Switch the active workspace in state (and in the DB).  This is
+      // instant — no WS round-trip needed because each terminal maintains its
+      // own persistent WebSocket connection.
+      onSelectWorkspace(fallback.workspaceId);
 
       try {
         await onDeleteWorkspace(workspaceId);
-        terminalRef.current?.closeWorkspaceSession(workspaceId);
+        // Close the deleted workspace's PTY via the fallback terminal's socket.
+        terminalRefs.current
+          .get(fallback.workspaceId)
+          ?.closeWorkspaceSession(workspaceId);
       } catch (error) {
-        await terminalRef.current?.selectWorkspace(workspaceId);
+        // Roll back: re-select the original workspace.
+        onSelectWorkspace(workspaceId);
         throw error;
       }
+
+      // Unmount the deleted terminal after the PTY close message is sent.
+      setActivatedWorkspaceIds((prev) => {
+        const next = new Set(prev);
+        next.delete(workspaceId);
+        return next;
+      });
     },
-    [activeWorkspace.workspaceId, onDeleteWorkspace, workspaces],
+    [activeTerminal, activeWorkspace.workspaceId, onDeleteWorkspace, onSelectWorkspace, workspaces],
   );
 
   useRegisterHistoryPaletteActions({
     entries: paletteEntries,
     onOpen: openHistoryEntry,
   });
+
   useRegisterWorkspacePaletteActions({
     workspaces,
     activeWorkspaceId: activeWorkspace.workspaceId,
@@ -216,7 +274,7 @@ function ActiveWorkspaceLayout({
     const executeWhenReady = () => {
       attempts += 1;
 
-      if (terminalRef.current?.runCommand(pendingExecution.command)) {
+      if (activeTerminal()?.runCommand(pendingExecution.command)) {
         clearPendingTimelineExecution();
         window.clearInterval(timerId);
       } else if (attempts >= 100) {
@@ -227,7 +285,7 @@ function ActiveWorkspaceLayout({
     executeWhenReady();
 
     return () => window.clearInterval(timerId);
-  }, [activeWorkspace.workspaceId, onSelectWorkspace, workspaces]);
+  }, [activeTerminal, activeWorkspace.workspaceId, onSelectWorkspace, workspaces]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -244,12 +302,55 @@ function ActiveWorkspaceLayout({
       />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
-        <Terminal
-          ref={terminalRef}
-          workspaceId={activeWorkspace.workspaceId}
-          onCommandCompleted={handleCommandCompleted}
-          onConnectionStatusChange={setTerminalConnectionStatus}
-        />
+        {/*
+         * Terminal stack: one <Terminal> per activated workspace.
+         *
+         * All terminals are kept mounted (never unmounted on switch) so their
+         * xterm.js buffer — scrollback, cursor, colors — is fully preserved.
+         * The inactive ones are hidden with `visibility: hidden` rather than
+         * `display: none` so xterm can still measure the container dimensions
+         * and the ResizeObserver keeps the PTY cols/rows in sync.
+         *
+         * The active workspace's terminal sits on top (z-10) and receives
+         * pointer events.  Inactive terminals are pointer-inert and
+         * aria-hidden so they are invisible to assistive technology.
+         */}
+        <div className="relative flex min-h-0 min-w-0 flex-1">
+          {[...activatedWorkspaceIds].map((workspaceId) => {
+            const isActive = workspaceId === activeWorkspace.workspaceId;
+            return (
+              <div
+                key={workspaceId}
+                className={
+                  isActive
+                    ? 'absolute inset-0 z-10 flex'
+                    : 'absolute inset-0 z-0 flex'
+                }
+                style={isActive ? undefined : { visibility: 'hidden' }}
+                aria-hidden={!isActive}
+              >
+                <Terminal
+                  ref={(handle) => {
+                    if (handle) {
+                      terminalRefs.current.set(workspaceId, handle);
+                    } else {
+                      terminalRefs.current.delete(workspaceId);
+                    }
+                  }}
+                  workspaceId={workspaceId}
+                  active={isActive}
+                  onCommandCompleted={
+                    isActive ? handleCommandCompleted : undefined
+                  }
+                  onConnectionStatusChange={
+                    isActive ? setTerminalConnectionStatus : undefined
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+
         <DeveloperHub
           deckItems={deckItems}
           isDeckLoading={isDeckLoading}
