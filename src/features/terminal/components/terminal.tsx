@@ -266,6 +266,10 @@ function TerminalView(
         }
 
         if (message.type === 'terminal.started') {
+          if (sessionId && sessionId !== message.sessionId) {
+            terminal.reset();
+          }
+
           sessionId = message.sessionId;
           sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
@@ -281,7 +285,16 @@ function TerminalView(
             terminal.cols,
             terminal.rows,
           );
-          void selectWorkspace(desiredWorkspaceIdRef.current);
+          const pendingSelection = pendingWorkspaceSelectionRef.current;
+
+          if (pendingSelection?.workspaceId === message.payload.workspaceId) {
+            window.clearTimeout(pendingSelection.timeoutId);
+            pendingWorkspaceSelectionRef.current = null;
+            pendingSelection.resolve(true);
+          } else {
+            void selectWorkspace(desiredWorkspaceIdRef.current);
+          }
+
           terminal.focus();
           return;
         }

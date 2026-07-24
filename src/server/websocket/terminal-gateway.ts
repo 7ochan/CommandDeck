@@ -32,29 +32,12 @@ export class TerminalGateway {
   ) {}
 
   handleConnection(socket: WebSocket, requestedWorkspaceId?: string): void {
-    let session;
-
-    try {
-      const workspaceId = requestedWorkspaceId
-        ? requestedWorkspaceId
-        : this.workspaceAccess.initialWorkspaceId();
-
-      if (!this.workspaceAccess.workspaceExists(workspaceId)) {
-        socket.close(1008, 'Workspace not found');
-        return;
-      }
-
-      session = this.sessions.create(workspaceId);
-    } catch (error) {
-      console.error('Unable to create terminal session:', error);
-      socket.close(1011, 'Unable to create terminal session');
-      return;
-    }
-
-    const { id: sessionId } = session;
     let cleanedUp = false;
-    let outputBuffer = '';
-    let flushTimer: NodeJS.Timeout | null = null;
+    let activeBinding: {
+      session: ReturnType<TerminalSessionManager['create']>;
+      flushOutput: () => void;
+      dispose: () => void;
+    } | null = null;
 
     const send = (message: TerminalServerMessage) => {
       if (socket.readyState === WebSocket.OPEN) {
@@ -62,67 +45,167 @@ export class TerminalGateway {
       }
     };
 
-    const flushOutput = () => {
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-        flushTimer = null;
-      }
+    const attachSession = (workspaceId: string) => {
+      const session = this.sessions.create(workspaceId);
+      const { id: sessionId } = session;
+      let outputBuffer = '';
+      let flushTimer: NodeJS.Timeout | null = null;
 
-      if (outputBuffer.length === 0) {
-        return;
-      }
+      const flushOutput = () => {
+        if (flushTimer) {
+          clearTimeout(flushTimer);
+          flushTimer = null;
+        }
 
-      const data = outputBuffer;
-      outputBuffer = '';
-      send({
-        version: TERMINAL_PROTOCOL_VERSION,
-        type: 'terminal.output',
-        sessionId,
-        payload: { data },
-      });
-    };
+        if (outputBuffer.length === 0) {
+          return;
+        }
 
-    const queueOutput = (data: string) => {
-      outputBuffer += data;
+        const data = outputBuffer;
+        outputBuffer = '';
+        send({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'terminal.output',
+          sessionId,
+          payload: { data },
+        });
+      };
 
-      if (outputBuffer.length >= OUTPUT_FLUSH_THRESHOLD) {
+      const queueOutput = (data: string) => {
+        outputBuffer += data;
+
+        if (outputBuffer.length >= OUTPUT_FLUSH_THRESHOLD) {
+          flushOutput();
+          return;
+        }
+
+        flushTimer ??= setTimeout(flushOutput, OUTPUT_FLUSH_INTERVAL_MS);
+      };
+
+      const removeDataListener = session.onData(queueOutput);
+      const removeCommandListener = session.onCommand((event) => {
         flushOutput();
+
+        if (event.type === 'command.started') {
+          send({
+            version: TERMINAL_PROTOCOL_VERSION,
+            type: 'command.started',
+            sessionId,
+            payload: event.payload,
+          });
+        } else {
+          send({
+            version: TERMINAL_PROTOCOL_VERSION,
+            type: 'command.completed',
+            sessionId,
+            payload: event.payload,
+          });
+        }
+      });
+      const removeExitListener = session.onExit(({ exitCode, signal }) => {
+        if (activeBinding?.session.id !== sessionId) {
+          return;
+        }
+
+        flushOutput();
+        send({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'terminal.exited',
+          sessionId,
+          payload: { exitCode, signal: signal ?? null },
+        });
+        socket.close(1000, 'Shell exited');
+      });
+
+      const binding = {
+        session,
+        flushOutput,
+        dispose: () => {
+          removeDataListener();
+          removeCommandListener();
+          removeExitListener();
+
+          if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+          }
+        },
+      };
+
+      activeBinding = binding;
+      this.connections.add(sessionId, socket);
+      send({
+        version: TERMINAL_PROTOCOL_VERSION,
+        type: 'terminal.started',
+        sessionId,
+        payload: {
+          shell: session.shell,
+          cwd: session.cwd,
+          cols: session.cols,
+          rows: session.rows,
+          workspaceId: session.workspaceId,
+        },
+      });
+
+      return binding;
+    };
+
+    const detachActiveSession = (flushOutput: boolean) => {
+      const binding = activeBinding;
+
+      if (!binding) {
         return;
       }
 
-      flushTimer ??= setTimeout(flushOutput, OUTPUT_FLUSH_INTERVAL_MS);
+      activeBinding = null;
+
+      if (flushOutput) {
+        binding.flushOutput();
+      }
+
+      binding.dispose();
+      this.connections.deleteBySocket(socket);
+      this.sessions.close(binding.session.id);
     };
 
-    const removeDataListener = session.onData(queueOutput);
-    const removeCommandListener = session.onCommand((event) => {
-      flushOutput();
+    const startWorkspaceSession = (workspaceId: string): boolean => {
+      if (!this.workspaceAccess.workspaceExists(workspaceId)) {
+        const sessionId = activeBinding?.session.id;
 
-      if (event.type === 'command.started') {
-        send({
-          version: TERMINAL_PROTOCOL_VERSION,
-          type: 'command.started',
-          sessionId,
-          payload: event.payload,
-        });
-      } else {
-        send({
-          version: TERMINAL_PROTOCOL_VERSION,
-          type: 'command.completed',
-          sessionId,
-          payload: event.payload,
-        });
+        if (sessionId) {
+          send({
+            version: TERMINAL_PROTOCOL_VERSION,
+            type: 'terminal.error',
+            sessionId,
+            payload: { message: 'Workspace not found.' },
+          });
+        }
+
+        return false;
       }
-    });
-    const removeExitListener = session.onExit(({ exitCode, signal }) => {
-      flushOutput();
-      send({
-        version: TERMINAL_PROTOCOL_VERSION,
-        type: 'terminal.exited',
-        sessionId,
-        payload: { exitCode, signal: signal ?? null },
-      });
-      socket.close(1000, 'Shell exited');
-    });
+
+      const previousSessionId = activeBinding?.session.id;
+      detachActiveSession(true);
+
+      try {
+        attachSession(workspaceId);
+        return true;
+      } catch (error) {
+        console.error('Unable to create terminal session:', error);
+
+        if (previousSessionId) {
+          send({
+            version: TERMINAL_PROTOCOL_VERSION,
+            type: 'terminal.error',
+            sessionId: previousSessionId,
+            payload: { message: 'Unable to create terminal session.' },
+          });
+        }
+
+        socket.close(1011, 'Unable to create terminal session');
+        return false;
+      }
+    };
 
     const cleanup = () => {
       if (cleanedUp) {
@@ -130,19 +213,17 @@ export class TerminalGateway {
       }
 
       cleanedUp = true;
-      removeDataListener();
-      removeCommandListener();
-      removeExitListener();
-
-      if (flushTimer) {
-        clearTimeout(flushTimer);
-      }
-
-      this.connections.deleteBySocket(socket);
-      this.sessions.close(sessionId);
+      detachActiveSession(false);
     };
 
-    this.connections.add(sessionId, socket);
+    const initialWorkspaceId = requestedWorkspaceId
+      ? requestedWorkspaceId
+      : this.workspaceAccess.initialWorkspaceId();
+
+    if (!startWorkspaceSession(initialWorkspaceId)) {
+      socket.close(1008, 'Workspace not found');
+      return;
+    }
 
     socket.on('message', (data: RawData, isBinary: boolean) => {
       if (isBinary) {
@@ -151,8 +232,9 @@ export class TerminalGateway {
       }
 
       const message = parseTerminalClientMessage(data.toString());
+      const session = activeBinding?.session;
 
-      if (!message || message.sessionId !== sessionId) {
+      if (!message || !session || message.sessionId !== session.id) {
         socket.close(1008, 'Invalid terminal message');
         return;
       }
@@ -168,25 +250,17 @@ export class TerminalGateway {
       }
 
       if (message.type === 'terminal.workspace.select') {
-        if (
-          !this.workspaceAccess.workspaceExists(message.payload.workspaceId)
-        ) {
+        if (message.payload.workspaceId === session.workspaceId) {
           send({
             version: TERMINAL_PROTOCOL_VERSION,
-            type: 'terminal.error',
-            sessionId,
-            payload: { message: 'Workspace not found.' },
+            type: 'terminal.workspace.selected',
+            sessionId: session.id,
+            payload: { workspaceId: session.workspaceId },
           });
           return;
         }
 
-        session.setWorkspace(message.payload.workspaceId);
-        send({
-          version: TERMINAL_PROTOCOL_VERSION,
-          type: 'terminal.workspace.selected',
-          sessionId,
-          payload: { workspaceId: session.workspaceId },
-        });
+        startWorkspaceSession(message.payload.workspaceId);
         return;
       }
 
@@ -195,7 +269,7 @@ export class TerminalGateway {
         send({
           version: TERMINAL_PROTOCOL_VERSION,
           type: 'terminal.resized',
-          sessionId,
+          sessionId: session.id,
           payload: message.payload,
         });
         return;
@@ -206,19 +280,6 @@ export class TerminalGateway {
 
     socket.once('close', cleanup);
     socket.once('error', cleanup);
-
-    send({
-      version: TERMINAL_PROTOCOL_VERSION,
-      type: 'terminal.started',
-      sessionId,
-      payload: {
-        shell: session.shell,
-        cwd: session.cwd,
-        cols: session.cols,
-        rows: session.rows,
-        workspaceId: session.workspaceId,
-      },
-    });
   }
 
   closeAll(): void {

@@ -33,7 +33,7 @@ export class TerminalSession {
   private pendingData = '';
   private exitEvent: TerminalExit | null = null;
   private currentCwd: string;
-  private currentWorkspaceId: string;
+  private readonly currentWorkspaceId: string;
   private closed = false;
 
   constructor(id: string, launch: PtyLaunch, initialWorkspaceId: string) {
@@ -147,11 +147,6 @@ export class TerminalSession {
   onCwd(listener: CwdListener): () => void {
     this.cwdListeners.add(listener);
     return () => this.cwdListeners.delete(listener);
-  }
-
-  setWorkspace(workspaceId: string): void {
-    this.currentWorkspaceId = workspaceId;
-    this.commandCapture.setWorkspace(workspaceId);
   }
 
   write(data: string): void {

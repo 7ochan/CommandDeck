@@ -4,7 +4,7 @@ CommandDeck is a local-first multi-workspace terminal environment where each Wor
 
 ## Project status
 
-The terminal, shell integration, Workspaces, Command History, Command Deck, and Workspace Timeline vertical slice are initialized and verified. A default Workspace is created automatically and existing data migrates into it. Completed zsh commands are assigned to the Workspace selected for that terminal execution and persist as immutable History. Each Workspace loads only its own searchable History, curated Deck, and dynamically grouped Timeline, and remembers its last shell-reported working directory for new terminal sessions. Deck commands may use validated `{{variable}}` placeholders that are resolved immediately before execution without changing the stored template.
+The terminal, shell integration, Workspaces, Command History, Command Deck, and Workspace Timeline vertical slice are initialized and verified. A default Workspace is created automatically and existing data migrates into it. Completed zsh commands are assigned to the Workspace selected for that terminal execution and persist as immutable History. Each Workspace loads only its own searchable History, curated Deck, and dynamically grouped Timeline, owns an independent terminal session, and remembers its last shell-reported working directory for initial and replacement sessions. Deck commands may use validated `{{variable}}` placeholders that are resolved immediately before execution without changing the stored template.
 
 Zustand, broad output/note search, Electron, and AI functionality have not been implemented.
 

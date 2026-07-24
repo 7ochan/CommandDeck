@@ -34,7 +34,7 @@ describe('Workspace Terminal State', () => {
     );
   });
 
-  it('loads launch state for the selected Workspace and persists cwd markers by current assignment', () => {
+  it('loads and persists terminal state independently for each Workspace session', () => {
     const ptyAdapter = new FakePtyAdapter();
     const updates: Array<{
       workspaceId: string;
@@ -55,14 +55,21 @@ describe('Workspace Terminal State', () => {
       'default-workspace',
       terminalState,
     );
-    const session = manager.create('workspace-one');
+    const firstSession = manager.create('workspace-one');
 
-    expect(ptyAdapter.lastConfiguration).toEqual({
+    expect(ptyAdapter.configurations[0]).toEqual({
       cwd: '/saved/workspace-one',
     });
-    ptyAdapter.process.emitCwd('/reported/one');
-    session.setWorkspace('workspace-two');
-    ptyAdapter.process.emitCwd('/reported/two');
+    ptyAdapter.processes[0]?.emitCwd('/reported/one');
+    manager.close(firstSession.id);
+
+    const secondSession = manager.create('workspace-two');
+
+    expect(ptyAdapter.processes[0]?.killed).toBe(true);
+    expect(ptyAdapter.configurations[1]).toEqual({
+      cwd: '/saved/workspace-two',
+    });
+    ptyAdapter.processes[1]?.emitCwd('/reported/two');
 
     expect(updates).toEqual([
       {
@@ -74,25 +81,27 @@ describe('Workspace Terminal State', () => {
         update: { cwd: '/reported/two' },
       },
     ]);
-    manager.closeAll();
+    manager.close(secondSession.id);
   });
 });
 
 class FakePtyAdapter extends PtyAdapter {
-  readonly process = new FakePty();
-  lastConfiguration: PtyLaunchConfiguration | null = null;
+  readonly configurations: PtyLaunchConfiguration[] = [];
+  readonly processes: FakePty[] = [];
 
   override spawnDefaultShell(
     configuration: PtyLaunchConfiguration = {},
     cols = 80,
     rows = 24,
   ): PtyLaunch {
-    this.lastConfiguration = configuration;
-    this.process.cols = cols;
-    this.process.rows = rows;
+    const terminalProcess = new FakePty();
+    terminalProcess.cols = cols;
+    terminalProcess.rows = rows;
+    this.configurations.push(configuration);
+    this.processes.push(terminalProcess);
 
     return {
-      process: this.process as unknown as IPty,
+      process: terminalProcess as unknown as IPty,
       shell: '/bin/zsh',
       cwd: configuration.cwd ?? homedir(),
       cols,
@@ -106,6 +115,7 @@ class FakePtyAdapter extends PtyAdapter {
 class FakePty {
   cols = 80;
   rows = 24;
+  killed = false;
   private readonly dataListeners = new Set<(data: string) => void>();
   private readonly exitListeners = new Set<
     (event: { exitCode: number; signal?: number }) => void
@@ -139,6 +149,8 @@ class FakePty {
   }
 
   kill(): void {
+    this.killed = true;
+
     for (const listener of this.exitListeners) {
       listener({ exitCode: 0 });
     }

@@ -118,7 +118,9 @@ The terminal manager owns a registry of active sessions. Each session contains:
 
 It is responsible for create, input, resize, close, exit, disconnect, and shutdown behavior. PTY objects must never cross the server boundary.
 
-Workspace selection is terminal-session state, not a process-global singleton. The browser supplies the initial Workspace at the authenticated WebSocket connection boundary and sends a validated workspace-selection message on every subsequent switch. The terminal session snapshots its current Workspace ID into `command.started`; completion retains that snapshot even if the user switches while a command is running. This gives each future terminal tab an independent Workspace assignment and prevents a late completion from leaking into the newly active Workspace.
+Workspace selection is a terminal-session lifecycle boundary, not a process-global singleton or a mutable label on a running shell. The browser supplies the initial Workspace at the authenticated WebSocket connection boundary and sends a validated workspace-selection message on every subsequent switch. The gateway detaches the current session, terminates its PTY, creates a new session from the selected Workspace's launch configuration, and sends a new `terminal.started` event with a new session ID over the existing authenticated socket. The browser resets its xterm.js instance before binding to the replacement session.
+
+The terminal session snapshots its Workspace ID into `command.started`. If a Workspace switch terminates a running command, session-exit completion retains that snapshot and is persisted to the old Workspace before the replacement session begins. This prevents shell state and late command completion from leaking into the newly active Workspace.
 
 New terminal connections include the browser's active Workspace ID in the authenticated WebSocket upgrade URL. Before creating a PTY, the gateway validates the Workspace and the terminal manager requests a launch configuration from the Workspace Terminal State service. The service loads that Workspace's saved cwd; the PTY adapter accepts it only when it is an existing directory and otherwise uses the user's home directory. This validation occurs before every spawn.
 
@@ -126,7 +128,7 @@ New terminal connections include the browser's active Workspace ID in the authen
 
 Workspace Terminal State is a dedicated server component with its own repository and service. Its durable record is keyed by Workspace and initially contains the last cwd reported by shell integration plus an update timestamp. Repeated markers for the same cwd do not update the row or timestamp. The state and launch-configuration APIs use objects so later terminal preferences such as dimensions, environment selection, or shell profile can be added without coupling them to History, Deck, or Timeline.
 
-Shell cwd markers update the state of the Workspace currently assigned to that terminal session. Switching a live terminal's Workspace does not synthesize a cwd update or attempt to move the running shell. The next cwd marker updates the newly assigned Workspace, and every newly created terminal starts from that Workspace's independently persisted state.
+Shell cwd markers update the state of the Workspace that owns that terminal session. Switching Workspaces never reassigns a running shell: it terminates the old session and creates a new one from the selected Workspace's independently persisted state.
 
 ### Shell process
 
@@ -189,7 +191,7 @@ Client-to-server event families:
 
 Server-to-client event families:
 
-- `terminal.created`
+- `terminal.started`
 - `terminal.output`
 - `terminal.exited`
 - `terminal.error`

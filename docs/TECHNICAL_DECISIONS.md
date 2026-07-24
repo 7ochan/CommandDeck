@@ -194,11 +194,11 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Status:** Accepted
 
-**Decision:** Make Workspace the required root context for Command History, command definitions, and Command Deck items. Create `Default Workspace` during migration and assign every existing row to it. Keep active Workspace in the browser root, supply it at the authenticated WebSocket connection boundary for terminal creation, and use a versioned WebSocket message for subsequent session switches. Snapshot that ID when a command starts. Require an explicit Workspace ID for every History and Deck service/repository operation; do not introduce a process-global active Workspace.
+**Decision:** Make Workspace the required root context for Command History, command definitions, Command Deck items, and terminal sessions. Create `Default Workspace` during migration and assign every existing row to it. Keep active Workspace in the browser root, supply it at the authenticated WebSocket connection boundary for terminal creation, and use a versioned WebSocket message for subsequent session switches. A switch terminates the current PTY and creates a new terminal session for the target Workspace; it never reassigns the existing shell. Snapshot the owning Workspace ID when a command starts. Require an explicit Workspace ID for every History and Deck service/repository operation; do not introduce a process-global active Workspace.
 
 **Reason:** UI-only filtering cannot guarantee that asynchronous shell completions are stored in the correct context. Per-terminal assignment provides a durable event boundary, isolates concurrent or future terminals naturally, and keeps History and Deck services independent from workspace-selection state.
 
-**Consequences:** Workspace switches abort and replace active History/Deck loads, reset feature-local filters and template dialogs, and update terminal metadata. A command already running remains attributed to the Workspace in which it started. Workspace deletion cascades owned data, is forbidden for the final remaining Workspace, and requires selecting a remaining Workspace before deleting the active one. Workspace IDs lead History and Deck indexes and are validated at HTTP and WebSocket boundaries.
+**Consequences:** Workspace switches abort and replace active History/Deck loads, reset feature-local filters and template dialogs, terminate the old PTY, reset the browser terminal buffer, and bind the existing authenticated socket to a new server session ID. A command interrupted by switching remains attributed to the Workspace in which it started. Workspace deletion cascades owned data, is forbidden for the final remaining Workspace, and requires successfully starting a terminal for a remaining Workspace before deleting the active one. Workspace IDs lead History and Deck indexes and are validated at HTTP and WebSocket boundaries.
 
 ## TD-020 — Timeline is a derived History projection
 
@@ -218,7 +218,7 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Reason:** Browser refresh creates a new shell and must recover only durable launch context, not process or terminal-emulator state. Keeping this state outside History and Deck preserves their domain boundaries, while a launch-configuration object and patch-style state update allow future terminal preferences to be added without changing the terminal manager's persistence API.
 
-**Consequences:** Each Workspace restores its own last reported directory for newly created terminals. Workspace switching continues to assign the existing terminal session without implicitly changing its live shell directory; a subsequently created terminal uses the selected Workspace's saved state. Missing directories never reach node-pty as a cwd. PTYs, output, scrollback, and running processes are not persisted or restored.
+**Consequences:** Each Workspace restores its own last reported directory for initial and replacement terminal sessions. Workspace switching terminates the current PTY and creates a new one from the selected Workspace's saved state. Missing directories never reach node-pty as a cwd. PTYs, output, scrollback, and running processes are not persisted or restored.
 
 ## Open implementation parameters
 

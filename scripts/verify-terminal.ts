@@ -95,7 +95,7 @@ try {
     (message) => message.type === 'terminal.started',
     'terminal.started',
   );
-  const sessionId = started.sessionId;
+  let sessionId = started.sessionId;
   assert.equal(
     started.type === 'terminal.started'
       ? started.payload.workspaceId
@@ -353,12 +353,19 @@ try {
   assertCommandPair(deckRunStarted, deckRunCompleted, 0);
 
   const servicesWorkspace = await createWorkspace('Services');
-  await selectWorkspace(
+  const initialServicesTerminal = await selectWorkspace(
     socket,
     sessionId,
     messages,
     servicesWorkspace.workspaceId,
   );
+  assert.notEqual(
+    initialServicesTerminal.sessionId,
+    sessionId,
+    'Switching Workspace should replace the terminal session',
+  );
+  assert.equal(initialServicesTerminal.payload.cwd, homedir());
+  sessionId = initialServicesTerminal.sessionId;
   sendExecute(
     socket,
     sessionId,
@@ -436,6 +443,26 @@ try {
     servicesTemplateCompleted.payload.workspaceId,
     servicesWorkspace.workspaceId,
   );
+
+  const restoredDefaultTerminal = await selectWorkspace(
+    socket,
+    sessionId,
+    messages,
+    defaultWorkspaceId,
+  );
+  assert.notEqual(restoredDefaultTerminal.sessionId, sessionId);
+  assert.equal(restoredDefaultTerminal.payload.cwd, defaultWorkingDirectory);
+  sessionId = restoredDefaultTerminal.sessionId;
+
+  const restoredServicesTerminal = await selectWorkspace(
+    socket,
+    sessionId,
+    messages,
+    servicesWorkspace.workspaceId,
+  );
+  assert.notEqual(restoredServicesTerminal.sessionId, sessionId);
+  assert.equal(restoredServicesTerminal.payload.cwd, servicesWorkingDirectory);
+  sessionId = restoredServicesTerminal.sessionId;
 
   const defaultHistoryDuringServices =
     await loadCommandHistory(defaultWorkspaceId);
@@ -853,7 +880,8 @@ async function selectWorkspace(
   sessionId: string,
   messages: TerminalServerMessage[],
   workspaceId: string,
-): Promise<void> {
+): Promise<Extract<TerminalServerMessage, { type: 'terminal.started' }>> {
+  const messageOffset = messages.length;
   socket.send(
     serializeTerminalMessage({
       version: TERMINAL_PROTOCOL_VERSION,
@@ -862,13 +890,21 @@ async function selectWorkspace(
       payload: { workspaceId },
     }),
   );
-  await waitForMessage(
-    messages,
-    (message) =>
-      message.type === 'terminal.workspace.selected' &&
-      message.payload.workspaceId === workspaceId,
-    `terminal.workspace.selected(${workspaceId})`,
-  );
+  let started: TerminalServerMessage | undefined;
+
+  await waitFor(() => {
+    started = messages
+      .slice(messageOffset)
+      .find(
+        (message) =>
+          message.type === 'terminal.started' &&
+          message.payload.workspaceId === workspaceId,
+      );
+    return Boolean(started);
+  }, `terminal.started(${workspaceId})`);
+
+  assert.ok(started?.type === 'terminal.started');
+  return started;
 }
 
 async function waitForMessage(
