@@ -199,6 +199,8 @@ Next.js route handlers provide request-response operations for durable data:
 
 The HTTP API and WebSocket gateway call the same application services and repositories. UI components do not access SQLite or server modules directly.
 
+The initial command-card history query performs literal case-insensitive command and working-directory matching in the SQLite repository and combines it with structured status predicates. The HTTP query contract is intentionally extensible so later workspace, date, tag, pin, and bookmark filters can be added without moving filtering into presentation components. FTS5 remains the target for the broader command-output-note search once those durable fields are available.
+
 ## Persistence
 
 SQLite is the only durable store. Use `better-sqlite3` as the Node.js driver and Drizzle for typed schema access and migrations. Enable foreign keys and WAL mode, and apply numbered schema migrations at application startup. FTS5 setup and other SQLite-specific features may use explicit SQL migrations where the schema tool does not model them directly.

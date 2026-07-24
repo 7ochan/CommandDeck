@@ -23,4 +23,16 @@ export const commandCardSchema: z.ZodType<CommandCard> = z
 
 export const commandCardsResponseSchema = z.object({
   cards: z.array(commandCardSchema),
+  visibleCount: z.number().int().nonnegative(),
+});
+
+export const commandCardStatusSchema = z.enum([
+  'success',
+  'failed',
+  'interrupted',
+]);
+
+export const commandCardQuerySchema = z.object({
+  searchTerm: z.string().trim().max(200).default(''),
+  statuses: z.array(commandCardStatusSchema).max(3).default([]),
 });

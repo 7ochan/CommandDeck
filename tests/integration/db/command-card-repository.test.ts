@@ -105,6 +105,69 @@ describe('command card persistence', () => {
     expect(reopenedRepository.listNewestFirst()).toEqual([newer, older]);
   });
 
+  it('combines literal command and cwd search with status filters', () => {
+    const { database } = createTemporaryDatabase();
+    const repository = new SqliteCommandCardRepository(database.orm);
+    const success = persistedCommand({
+      commandId: 'success',
+      command: 'npm run Build',
+      cwd: '/Users/dev/command-deck',
+      exitCode: 0,
+      endedAt: 4_000,
+    });
+    const failed = persistedCommand({
+      commandId: 'failed',
+      command: 'npm test -- --coverage=100%',
+      cwd: '/Users/dev/command-deck',
+      exitCode: 1,
+      endedAt: 3_000,
+    });
+    const interrupted = persistedCommand({
+      commandId: 'interrupted',
+      command: 'npm run dev',
+      cwd: '/Users/dev/dashboard',
+      exitCode: 130,
+      endedAt: 2_000,
+    });
+    const sessionExit = persistedCommand({
+      commandId: 'session-exit',
+      command: 'long-running-task',
+      cwd: '/tmp',
+      exitCode: 0,
+      completionReason: 'session-exit',
+      endedAt: 1_000,
+    });
+
+    for (const card of [success, failed, interrupted, sessionExit]) {
+      repository.insert(card);
+    }
+
+    expect(
+      repository.listNewestFirst({ searchTerm: 'BUILD', statuses: [] }),
+    ).toEqual([success]);
+    expect(
+      repository.listNewestFirst({
+        searchTerm: 'command-deck',
+        statuses: ['failed'],
+      }),
+    ).toEqual([failed]);
+    expect(
+      repository.listNewestFirst({
+        searchTerm: '',
+        statuses: ['failed', 'interrupted'],
+      }),
+    ).toEqual([failed, interrupted, sessionExit]);
+    expect(
+      repository.listNewestFirst({ searchTerm: '100%', statuses: [] }),
+    ).toEqual([failed]);
+    expect(
+      repository.listNewestFirst({
+        searchTerm: 'dashboard',
+        statuses: ['success'],
+      }),
+    ).toEqual([]);
+  });
+
   it('deletes a card durably through the command service', () => {
     const { database, databasePath } = createTemporaryDatabase();
     const repository = new SqliteCommandCardRepository(database.orm);

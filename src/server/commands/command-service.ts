@@ -1,5 +1,6 @@
 import type {
   CommandCard,
+  CommandCardQuery,
   CommandLifecycleEvent,
 } from '../../shared/types/command.js';
 import type { CommandCardRepository } from '../db/repositories/command-card-repository.js';
@@ -23,8 +24,8 @@ export class CommandService {
     });
   }
 
-  listCommandCards(): CommandCard[] {
-    return this.repository.listNewestFirst();
+  listCommandCards(query?: CommandCardQuery): CommandCard[] {
+    return this.repository.listNewestFirst(query);
   }
 
   deleteCommandCard(commandId: string): boolean {

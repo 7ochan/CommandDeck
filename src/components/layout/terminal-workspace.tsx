@@ -14,9 +14,14 @@ export function TerminalWorkspace() {
   const {
     cards,
     selectedCardId,
+    query,
     isLoading,
+    isSearching,
     loadError,
     addCompletedCommand,
+    setSearchTerm,
+    toggleStatus,
+    clearQuery,
     selectCard,
     clearSelection,
     deleteCard,
@@ -32,8 +37,13 @@ export function TerminalWorkspace() {
       <CommandCardPanel
         cards={cards}
         selectedCardId={selectedCardId}
+        query={query}
         isLoading={isLoading}
+        isSearching={isSearching}
         loadError={loadError}
+        onSearchTermChange={setSearchTerm}
+        onToggleStatus={toggleStatus}
+        onClearQuery={clearQuery}
         onSelectCard={selectCard}
         onClearSelection={clearSelection}
         onRunAgain={runCommandAgain}

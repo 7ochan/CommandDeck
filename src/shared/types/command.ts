@@ -16,6 +16,13 @@ export type CommandCard = CommandCompletedPayload & {
   createdAt: number;
 };
 
+export type CommandCardStatus = 'success' | 'failed' | 'interrupted';
+
+export type CommandCardQuery = {
+  searchTerm: string;
+  statuses: CommandCardStatus[];
+};
+
 export type CommandLifecycleEvent =
   | { type: 'command.started'; payload: CommandStartedPayload }
   | { type: 'command.completed'; payload: CommandCompletedPayload };

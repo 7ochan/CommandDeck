@@ -160,6 +160,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Consequences:** Tests require deterministic shell fixtures, temporary SQLite databases, process cleanup checks, and selective serialization of native PTY suites.
 
+## TD-016 — Incremental command-card search
+
+**Status:** Accepted
+
+**Decision:** Introduce the first search slice as repository-backed, case-insensitive literal substring matching over command text and working directory, combined with structured derived-status filters. A command completed by the shell with exit code 0 is successful; exit code 130 or session-exit completion is interrupted; every other shell completion is failed. Keep these query semantics in shared domain helpers and HTTP contracts. Continue to reserve FTS5 for the broader command-output-note search planned in Phase 3.
+
+**Reason:** The current command-card table contains only command and working-directory search fields. Literal substring search matches the live-search interaction developers expect, treats shell metacharacters as ordinary text, and avoids introducing an FTS migration that would be replaced when output and notes become durable fields.
+
+**Consequences:** Filtering occurs in SQLite rather than over the loaded React list. The UI debounces and cancels superseded HTTP requests, while completed-command events may be merged optimistically when they match the active query. Search is not yet ranked, tokenized, or extended to output and notes.
+
 ## Open implementation parameters
 
 These details should be resolved by Phase 0 measurements without changing the architecture:

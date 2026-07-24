@@ -8,6 +8,9 @@ import {
   type KeyboardEvent,
 } from 'react';
 
+import { hasActiveCommandCardQuery } from '@/shared/command-card-status';
+import type { CommandCardQuery, CommandCardStatus } from '@/shared/types';
+
 import {
   getNavigatedCardId,
   hasNewLeadingCard,
@@ -16,13 +19,19 @@ import {
   type CardNavigationDirection,
 } from '../card-list-behavior';
 import { CommandCard } from './command-card';
+import { CommandCardSearchControls } from './command-card-search-controls';
 import type { CommandCard as CommandCardModel } from '../types';
 
 type CommandCardPanelProps = {
   cards: CommandCardModel[];
   selectedCardId: string | null;
+  query: CommandCardQuery;
   isLoading: boolean;
+  isSearching: boolean;
   loadError: string | null;
+  onSearchTermChange: (searchTerm: string) => void;
+  onToggleStatus: (status: CommandCardStatus) => void;
+  onClearQuery: () => void;
   onSelectCard: (commandId: string) => void;
   onClearSelection: () => void;
   onRunAgain: (command: string) => boolean;
@@ -32,8 +41,13 @@ type CommandCardPanelProps = {
 export function CommandCardPanel({
   cards,
   selectedCardId,
+  query,
   isLoading,
+  isSearching,
   loadError,
+  onSearchTermChange,
+  onToggleStatus,
+  onClearQuery,
   onSelectCard,
   onClearSelection,
   onRunAgain,
@@ -45,6 +59,7 @@ export function CommandCardPanel({
   const previousCardIdsRef = useRef<Set<string>>(new Set());
   const wasNearTopRef = useRef(true);
   const [interactionMessage, setInteractionMessage] = useState('');
+  const hasActiveQuery = hasActiveCommandCardQuery(query);
 
   useLayoutEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -156,11 +171,9 @@ export function CommandCardPanel({
           <h2 className="font-mono text-xs font-medium text-slate-300">
             Command cards
           </h2>
-          {cards.length > 0 && (
-            <span className="rounded-full bg-white/6 px-2 py-0.5 font-mono text-[10px] text-slate-500">
-              {cards.length}
-            </span>
-          )}
+          <span className="rounded-full bg-white/6 px-2 py-0.5 font-mono text-[10px] text-slate-500">
+            {cards.length} visible
+          </span>
         </div>
         <span
           className={`size-1.5 rounded-full transition-colors ${
@@ -169,12 +182,25 @@ export function CommandCardPanel({
         />
       </div>
 
+      <CommandCardSearchControls
+        query={query}
+        isSearching={isSearching}
+        onSearchTermChange={onSearchTermChange}
+        onToggleStatus={onToggleStatus}
+      />
+
       <p className="sr-only" aria-live="polite">
         {interactionMessage}
       </p>
 
       {cards.length === 0 ? (
-        <CommandCardEmptyState isLoading={isLoading} loadError={loadError} />
+        <CommandCardEmptyState
+          isLoading={isLoading}
+          isSearching={isSearching}
+          loadError={loadError}
+          hasActiveQuery={hasActiveQuery}
+          onClearQuery={onClearQuery}
+        />
       ) : (
         <div
           ref={scrollContainerRef}
@@ -200,9 +226,8 @@ export function CommandCardPanel({
                   card.commandId === selectedCardId ||
                   (!selectedCardId && index === 0)
                 }
-                buttonRef={(button) =>
-                  registerCardButton(card.commandId, button)
-                }
+                searchTerm={query.searchTerm}
+                registerButton={registerCardButton}
                 onSelect={onSelectCard}
                 onNavigate={navigateCards}
                 onRunAgain={rerunCommand}
@@ -218,23 +243,37 @@ export function CommandCardPanel({
 
 type CommandCardEmptyStateProps = {
   isLoading: boolean;
+  isSearching: boolean;
   loadError: string | null;
+  hasActiveQuery: boolean;
+  onClearQuery: () => void;
 };
 
 function CommandCardEmptyState({
   isLoading,
+  isSearching,
   loadError,
+  hasActiveQuery,
+  onClearQuery,
 }: CommandCardEmptyStateProps) {
   const title = isLoading
     ? 'Loading command cards'
-    : loadError
-      ? 'Command history unavailable'
-      : 'Your command history starts here';
+    : isSearching
+      ? 'Searching command cards'
+      : loadError
+        ? 'Command history unavailable'
+        : hasActiveQuery
+          ? 'No matching command cards'
+          : 'Your command history starts here';
   const description =
     loadError ??
     (isLoading
       ? 'Reading your local command history.'
-      : 'Run a command in the terminal and it will become a reusable card.');
+      : isSearching
+        ? 'Checking your local command history.'
+        : hasActiveQuery
+          ? 'Try a different command, directory, or status filter.'
+          : 'Run a command in the terminal and it will become a reusable card.');
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden px-8 text-center">
@@ -256,7 +295,16 @@ function CommandCardEmptyState({
       <p className="relative mt-2 max-w-56 text-xs leading-5 text-slate-500">
         {description}
       </p>
-      {!isLoading && !loadError && (
+      {!isLoading && !isSearching && !loadError && hasActiveQuery && (
+        <button
+          type="button"
+          className="relative mt-5 rounded-md border border-emerald-300/20 bg-emerald-300/8 px-3 py-1.5 text-xs text-emerald-200 transition-colors hover:bg-emerald-300/12 focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:outline-none"
+          onClick={onClearQuery}
+        >
+          Clear search and filters
+        </button>
+      )}
+      {!isLoading && !isSearching && !loadError && !hasActiveQuery && (
         <span className="relative mt-5 rounded-md border border-white/8 bg-white/3 px-2.5 py-1 font-mono text-[10px] text-slate-600">
           Commands appear here automatically
         </span>

@@ -1,11 +1,14 @@
+import type { CommandCardsResponse } from '@/shared/contracts';
 import { commandCardsResponseSchema } from '@/shared/schemas';
+import type { CommandCardQuery } from '@/shared/types';
 
-import type { CommandCard } from './types';
+import { buildCommandCardsUrl } from './query';
 
 export async function loadCommandCards(
+  query: CommandCardQuery,
   signal?: AbortSignal,
-): Promise<CommandCard[]> {
-  const response = await fetch('/api/commands', {
+): Promise<CommandCardsResponse> {
+  const response = await fetch(buildCommandCardsUrl(query), {
     cache: 'no-store',
     signal,
   });
@@ -15,8 +18,10 @@ export async function loadCommandCards(
   }
 
   const payload: unknown = await response.json();
-  return commandCardsResponseSchema.parse(payload).cards;
+  return commandCardsResponseSchema.parse(payload);
 }
+
+export { buildCommandCardsUrl } from './query';
 
 export async function deleteCommandCard(commandId: string): Promise<void> {
   const response = await fetch(

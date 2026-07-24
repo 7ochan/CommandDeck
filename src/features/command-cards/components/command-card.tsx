@@ -1,4 +1,6 @@
-import { useId, type KeyboardEvent, type Ref } from 'react';
+import { memo, useCallback, useId, type KeyboardEvent } from 'react';
+
+import { getCommandCardStatus } from '@/shared/command-card-status';
 
 import {
   getCardNavigationDirection,
@@ -6,13 +8,15 @@ import {
   type CardNavigationDirection,
 } from '../card-list-behavior';
 import { CommandCardActions } from './command-card-actions';
+import { HighlightedText } from './highlighted-text';
 import type { CommandCard as CommandCardModel } from '../types';
 
 type CommandCardProps = {
   card: CommandCardModel;
   isSelected: boolean;
   isTabStop: boolean;
-  buttonRef: Ref<HTMLButtonElement>;
+  searchTerm: string;
+  registerButton: (commandId: string, button: HTMLButtonElement | null) => void;
   onSelect: (commandId: string) => void;
   onNavigate: (commandId: string, direction: CardNavigationDirection) => void;
   onRunAgain: (command: string) => boolean;
@@ -25,18 +29,24 @@ const TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
   second: '2-digit',
 });
 
-export function CommandCard({
+export const CommandCard = memo(function CommandCard({
   card,
   isSelected,
   isTabStop,
-  buttonRef,
+  searchTerm,
+  registerButton,
   onSelect,
   onNavigate,
   onRunAgain,
   onDelete,
 }: CommandCardProps) {
-  const succeeded = card.exitCode === 0;
+  const status = getCommandCardStatus(card);
   const actionPanelId = useId();
+  const buttonRef = useCallback(
+    (button: HTMLButtonElement | null) =>
+      registerButton(card.commandId, button),
+    [card.commandId, registerButton],
+  );
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (shouldRerunSelectedCard(event.key, isSelected)) {
       event.preventDefault();
@@ -82,22 +92,24 @@ export function CommandCard({
       >
         <div className="flex items-start justify-between gap-3">
           <span className="block min-w-0 flex-1 overflow-hidden font-mono text-[13px] leading-5 break-words whitespace-pre-wrap text-slate-200">
-            {card.command}
+            <HighlightedText text={card.command} searchTerm={searchTerm} />
           </span>
           <span
             className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[10px] font-medium ${
-              succeeded
+              status === 'success'
                 ? 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'
-                : 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                : status === 'failed'
+                  ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
+                  : 'border-amber-300/25 bg-amber-300/10 text-amber-200'
             }`}
-            aria-label={
-              succeeded
-                ? 'Success, exit code 0'
-                : `Failed, exit code ${card.exitCode}`
-            }
+            aria-label={getStatusAriaLabel(status, card.exitCode)}
           >
             <span aria-hidden="true">
-              {succeeded ? '✓ Success' : `× Failed · ${card.exitCode}`}
+              {status === 'success'
+                ? '✓ Success'
+                : status === 'failed'
+                  ? `× Failed · ${card.exitCode}`
+                  : '■ Interrupted'}
             </span>
           </span>
         </div>
@@ -106,7 +118,7 @@ export function CommandCard({
           className="mt-3 truncate font-mono text-[11px] text-slate-500"
           title={card.cwd}
         >
-          {card.cwd}
+          <HighlightedText text={card.cwd} searchTerm={searchTerm} />
         </p>
 
         <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/6 pt-3 font-mono text-[10px] text-slate-500">
@@ -152,6 +164,21 @@ export function CommandCard({
       </div>
     </article>
   );
+});
+
+function getStatusAriaLabel(
+  status: ReturnType<typeof getCommandCardStatus>,
+  exitCode: number,
+): string {
+  if (status === 'success') {
+    return 'Success, exit code 0';
+  }
+
+  if (status === 'interrupted') {
+    return `Interrupted, exit code ${exitCode}`;
+  }
+
+  return `Failed, exit code ${exitCode}`;
 }
 
 function formatDuration(durationMs: number): string {

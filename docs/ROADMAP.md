@@ -79,6 +79,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Initial SQLite schema, migrations, and repositories
 - Persist cards and load them after restart
 - Basic card-list virtualization
+- Early command/cwd live search and success, failed, and interrupted filters
 
 ### Exit criteria
 
@@ -88,6 +89,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Failed and interrupted commands have accurate status.
 - Unsupported capture degrades visibly without breaking the terminal.
 - A long card list remains responsive.
+- Combined command/cwd search and status filters return accurate cards without breaking card actions.
 
 ### Milestone
 
@@ -104,7 +106,7 @@ Turn captured cards into useful personal terminal history.
 - Workspace creation and project-root association
 - Notes, tags, pin, and bookmark actions
 - SQLite FTS5 index
-- Search across command, output, and notes
+- Extend search across command, output, and notes
 - Date, workspace, status, tag, pin, and bookmark filters
 - Timeline navigation and card detail view
 - Large-output truncation behavior
