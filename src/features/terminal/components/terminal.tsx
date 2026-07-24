@@ -21,6 +21,7 @@ import {
   sendTerminalResize,
   selectTerminalWorkspace,
 } from '../terminal-client';
+import { TERMINAL_PRESENTATION_OPTIONS } from '../terminal-presentation';
 
 type ConnectionStatus =
   'connecting' | 'connected' | 'disconnected' | 'error' | 'exited';
@@ -166,39 +167,7 @@ function TerminalView(
       }
 
       const fitAddon = new FitAddon();
-      terminal = new TerminalEmulator({
-        allowProposedApi: false,
-        cursorBlink: true,
-        cursorStyle: 'bar',
-        fontFamily:
-          "'SFMono-Regular', 'Cascadia Code', 'Liberation Mono', Menlo, monospace",
-        fontSize: 14,
-        lineHeight: 1.2,
-        scrollback: 5_000,
-        theme: {
-          background: '#070b11',
-          foreground: '#d8e2ef',
-          cursor: '#6ee7b7',
-          cursorAccent: '#070b11',
-          selectionBackground: '#334155aa',
-          black: '#0f172a',
-          red: '#fb7185',
-          green: '#6ee7b7',
-          yellow: '#fbbf24',
-          blue: '#60a5fa',
-          magenta: '#c084fc',
-          cyan: '#22d3ee',
-          white: '#e2e8f0',
-          brightBlack: '#64748b',
-          brightRed: '#fda4af',
-          brightGreen: '#a7f3d0',
-          brightYellow: '#fde68a',
-          brightBlue: '#93c5fd',
-          brightMagenta: '#d8b4fe',
-          brightCyan: '#67e8f9',
-          brightWhite: '#f8fafc',
-        },
-      });
+      terminal = new TerminalEmulator(TERMINAL_PRESENTATION_OPTIONS);
       terminal.loadAddon(fitAddon);
       terminal.open(container);
 
@@ -400,30 +369,41 @@ function TerminalView(
   }, [selectWorkspace]);
 
   return (
-    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#070b11] shadow-2xl shadow-black/30">
-      <div className="flex h-10 shrink-0 items-center justify-between border-b border-white/8 bg-white/3 px-4">
-        <div className="flex min-w-0 items-center gap-2 font-mono text-xs text-slate-400">
-          <span className="size-2 rounded-full bg-emerald-300" />
-          <span className="truncate">{shellName}</span>
-          <span className="text-slate-700" aria-hidden="true">
-            /
-          </span>
-          <span className="truncate text-cyan-200/70">{workspaceName}</span>
+    <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#080c12] shadow-2xl shadow-black/30">
+      <div className="flex min-h-12 shrink-0 items-center justify-between gap-4 border-b border-white/8 bg-white/[0.025] px-4 py-2 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span
+            className="size-1.5 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.45)]"
+            aria-hidden="true"
+          />
+          <p
+            className="min-w-0 truncate text-xs text-slate-300"
+            aria-label={`Workspace: ${workspaceName}`}
+            aria-live="polite"
+          >
+            <span className="text-slate-500">Workspace:</span>{' '}
+            <span className="font-medium text-cyan-100/90">
+              {workspaceName}
+            </span>
+          </p>
         </div>
-        <span
-          className="font-mono text-[11px] text-slate-500"
-          aria-live="polite"
-        >
-          {assignedWorkspaceId !== workspaceId
-            ? 'Switching workspace…'
-            : STATUS_LABELS[status]}
-        </span>
+        <div className="flex shrink-0 items-center gap-2 font-mono text-[10px] tracking-wide text-slate-500 sm:text-[11px]">
+          <span className="hidden text-slate-600 sm:inline">{shellName}</span>
+          <span className="hidden text-slate-700 sm:inline" aria-hidden="true">
+            ·
+          </span>
+          <span aria-live="polite">
+            {assignedWorkspaceId !== workspaceId
+              ? 'Switching workspace…'
+              : STATUS_LABELS[status]}
+          </span>
+        </div>
       </div>
 
-      <div className="min-h-0 flex-1 p-3">
+      <div className="min-h-0 flex-1 p-3 sm:p-4 lg:p-5">
         <div
           ref={containerRef}
-          className="commanddeck-terminal h-full w-full"
+          className="commanddeck-terminal h-full min-h-0 w-full min-w-0"
           aria-label="Interactive local terminal"
         />
       </div>

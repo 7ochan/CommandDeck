@@ -36,11 +36,22 @@ select {
   font: inherit;
 }
 
+.commanddeck-terminal {
+  background: #080c12;
+  transition: box-shadow 160ms ease;
+}
+
+.commanddeck-terminal:focus-within {
+  box-shadow: 0 0 0 1px rgb(103 232 249 / 12%);
+}
+
 .commanddeck-terminal .xterm {
   height: 100%;
+  min-width: 0;
 }
 
 .commanddeck-terminal .xterm-viewport {
+  overscroll-behavior: contain;
   scrollbar-color: #334155 transparent;
   scrollbar-width: thin;
 }

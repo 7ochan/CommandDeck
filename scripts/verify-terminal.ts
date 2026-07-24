@@ -103,6 +103,14 @@ try {
     defaultWorkspaceId,
     'The first terminal should start in Default Workspace',
   );
+  assert.equal(
+    started.type === 'terminal.started' ? started.payload.cwd : undefined,
+    homedir(),
+  );
+  await waitForOutput(
+    () => normalizeTerminalText(output).includes('~\n❯ '),
+    'minimal cwd-only prompt',
+  );
 
   socket.send(
     serializeTerminalMessage({
@@ -144,6 +152,17 @@ try {
     'first command completion',
   );
   assertCommandPair(firstStarted, firstCompleted, 0);
+  await waitForOutput(() => {
+    const terminalText = normalizeTerminalText(output);
+    const commandOutputIndex = terminalText.lastIndexOf('__COMMAND_ONE__');
+    const nextPromptIndex = terminalText.indexOf('❯ ', commandOutputIndex);
+
+    return (
+      commandOutputIndex >= 0 &&
+      nextPromptIndex > commandOutputIndex &&
+      /\n[ \t]*\n/.test(terminalText.slice(commandOutputIndex, nextPromptIndex))
+    );
+  }, 'command-boundary spacing before the next prompt');
 
   sendInput(socket, sessionId, "printf '__COMMAND_TWO__\\n'\r");
   const secondStarted = await waitForCommandMessage(
@@ -605,7 +624,7 @@ try {
   await deleteWorkspace(defaultWorkspaceId, 409);
 
   console.log(
-    'Terminal verification passed: per-Workspace cwd restoration and invalid-directory fallback, Workspace CRUD/switching/isolation/restart behavior, lifecycle ownership, History persistence/search, Deck templates, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: minimal prompt and command spacing, per-Workspace cwd restoration and invalid-directory fallback, Workspace CRUD/switching/isolation/restart behavior, lifecycle ownership, History persistence/search, Deck templates, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
@@ -680,6 +699,13 @@ async function closeTerminal(
 
 function shellQuote(value: string): string {
   return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function normalizeTerminalText(value: string): string {
+  return value
+    .replace(/\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g, '')
+    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
+    .replaceAll('\r', '');
 }
 
 async function loadCommandHistory(

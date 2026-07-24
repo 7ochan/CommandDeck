@@ -220,6 +220,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Consequences:** Each Workspace restores its own last reported directory for initial and replacement terminal sessions. Workspace switching terminates the current PTY and creates a new one from the selected Workspace's saved state. Missing directories never reach node-pty as a cwd. PTYs, output, scrollback, and running processes are not persisted or restored.
 
+## TD-022 — Terminal modernization preserves native rendering
+
+**Status:** Accepted
+
+**Decision:** Keep xterm.js as the only terminal renderer and keep all terminal input, output, resize, and execution traffic unchanged. Isolate browser typography, theme, cursor, and contrast options in a terminal presentation module. For the reference zsh integration, install a CommandDeck-owned two-line prompt that displays only abbreviated cwd and `❯`, clears the right prompt, and uses the existing prompt markers. Emit a single newline after an integrated command completion to create subtle visual separation before the next prompt.
+
+**Reason:** A modern terminal can be easier to scan without creating a second rendering model. Prompt rendering belongs to the shell, xterm appearance belongs to browser presentation, and command lifecycle remains owned by the existing structured shell protocol.
+
+**Consequences:** User zsh startup files and shell behavior still load normally, but their visible primary and right prompts are replaced inside CommandDeck. Unsupported shells retain their native prompts. Command separation is not a React card, decoration, persisted record, or output rewrite. Rich command blocks, custom renderers, and terminal-output restoration remain outside this phase.
+
 ## Open implementation parameters
 
 These details should be resolved by Phase 0 measurements without changing the architecture:

@@ -1,4 +1,6 @@
-export const ZSH_INTEGRATION_SCRIPT =
+import { ZSH_PROMPT_PRESENTATION_SCRIPT } from './zsh-prompt.js';
+
+export const ZSH_INTEGRATION_SCRIPT = (
   String.raw`# CommandDeck zsh shell integration
 
 if [[ -n "\${COMMANDDECK_SHELL_INTEGRATION_LOADED:-}" ]]; then
@@ -74,21 +76,26 @@ __commanddeck_preexec() {
 
 __commanddeck_precmd() {
   builtin local exit_code="$?"
+  builtin local command_completed=0
 
   if (( __commanddeck_command_active )); then
     builtin printf '\e]633;D;%d;%s\a' \
       "$exit_code" \
       "$__commanddeck_nonce"
+    command_completed=1
     __commanddeck_command_active=0
     __commanddeck_current_command=''
   fi
 
   __commanddeck_emit_cwd
+
+  if (( command_completed )); then
+    __commanddeck_render_command_separator
+  fi
 }
 
 builtin autoload -Uz add-zsh-hook
 add-zsh-hook precmd __commanddeck_precmd
 add-zsh-hook preexec __commanddeck_preexec
-
-PROMPT="%{$(__commanddeck_emit_prompt_start)%}\${PROMPT}%{$(__commanddeck_emit_prompt_end)%}"
-`.replaceAll('\\${', '${');
+` + ZSH_PROMPT_PRESENTATION_SCRIPT
+).replaceAll('\\${', '${');

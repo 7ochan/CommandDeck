@@ -53,6 +53,7 @@ command-deck/
 │   │   ├── terminal/
 │   │   │   ├── components/
 │   │   │   ├── hooks/
+│   │   │   ├── terminal-presentation.ts # Browser-only xterm appearance options
 │   │   │   ├── terminal-store.ts
 │   │   │   └── terminal-client.ts
 │   │   ├── timeline/
@@ -80,7 +81,7 @@ command-deck/
 │   │   ├── runtime/                # Service initialization and shutdown
 │   │   ├── shell-integration/
 │   │   │   ├── parsers/
-│   │   │   ├── scripts/
+│   │   │   ├── scripts/                # Protocol and shell-native prompt presentation
 │   │   │   └── shell-profiles.ts
 │   │   ├── terminal/
 │   │   │   ├── pty-adapter.ts

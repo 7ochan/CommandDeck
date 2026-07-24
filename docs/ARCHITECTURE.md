@@ -89,6 +89,12 @@ Each terminal tab owns one xterm.js instance in the browser and corresponds to o
 
 The application does not implement its own terminal emulator.
 
+### Terminal presentation
+
+Terminal presentation remains layered over the existing xterm.js and shell-integration boundaries. A browser-only terminal presentation module owns xterm typography, cursor, contrast, and color options; React owns the lightweight Workspace context header and responsive frame styling. Neither layer parses terminal output or changes input, resize, copy/paste, or command execution behavior.
+
+On the reference zsh profile, a dedicated prompt-presentation script replaces the user's visible primary prompt inside CommandDeck with a compact two-line prompt containing only the abbreviated current directory and a `❯` command indicator. The existing OSC prompt markers still surround the prompt and remain the command-capture boundary. After a detected command completes, the shell integration emits one presentation-only newline before the next prompt. This spacing is ordinary terminal output: xterm.js remains the renderer, interactive applications keep direct PTY behavior, and no React command blocks or custom output model are introduced.
+
 ### Zustand
 
 Zustand stores transient browser state only, including:
