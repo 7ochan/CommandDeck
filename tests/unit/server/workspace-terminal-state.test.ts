@@ -55,15 +55,21 @@ describe('Workspace Terminal State', () => {
       'default-workspace',
       terminalState,
     );
-    const firstSession = manager.create('workspace-one');
+    const firstSession = manager.getOrCreateForWorkspace('workspace-one');
 
     expect(ptyAdapter.configurations[0]).toEqual({
       cwd: '/saved/workspace-one',
     });
     ptyAdapter.processes[0]?.emitCwd('/reported/one');
+
+    // Same workspace returns the same session without spawning a new PTY.
+    const sameSession = manager.getOrCreateForWorkspace('workspace-one');
+    expect(sameSession.id).toBe(firstSession.id);
+    expect(ptyAdapter.processes).toHaveLength(1);
+
     manager.close(firstSession.id);
 
-    const secondSession = manager.create('workspace-two');
+    const secondSession = manager.getOrCreateForWorkspace('workspace-two');
 
     expect(ptyAdapter.processes[0]?.killed).toBe(true);
     expect(ptyAdapter.configurations[1]).toEqual({

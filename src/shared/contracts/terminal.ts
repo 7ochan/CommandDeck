@@ -3,7 +3,7 @@ import type {
   CommandStartedPayload,
 } from '../types/command';
 
-export const TERMINAL_PROTOCOL_VERSION = 2 as const;
+export const TERMINAL_PROTOCOL_VERSION = 3 as const;
 export const TERMINAL_WEBSOCKET_PATH = '/ws/terminal';
 
 const MAX_INPUT_LENGTH = 64 * 1024;
@@ -23,6 +23,7 @@ export type TerminalClientMessage =
   | TerminalMessage<'terminal.input', { data: string }>
   | TerminalMessage<'terminal.execute', { command: string }>
   | TerminalMessage<'terminal.workspace.select', { workspaceId: string }>
+  | TerminalMessage<'terminal.workspace.close', { workspaceId: string }>
   | TerminalMessage<'terminal.resize', { cols: number; rows: number }>
   | TerminalMessage<'terminal.close', Record<string, never>>;
 
@@ -39,7 +40,10 @@ export type TerminalServerMessage =
     >
   | TerminalMessage<'terminal.output', { data: string }>
   | TerminalMessage<'terminal.resized', { cols: number; rows: number }>
-  | TerminalMessage<'terminal.workspace.selected', { workspaceId: string }>
+  | TerminalMessage<
+      'terminal.workspace.selected',
+      { workspaceId: string; sessionId: string; bufferedOutput: string }
+    >
   | TerminalMessage<
       'terminal.exited',
       { exitCode: number; signal: number | null }
@@ -80,6 +84,19 @@ export function parseTerminalClientMessage(
   }
 
   if (type === 'terminal.workspace.select') {
+    return typeof payload.workspaceId === 'string' &&
+      payload.workspaceId.length > 0 &&
+      payload.workspaceId.length <= 200
+      ? {
+          version,
+          type,
+          sessionId,
+          payload: { workspaceId: payload.workspaceId },
+        }
+      : null;
+  }
+
+  if (type === 'terminal.workspace.close') {
     return typeof payload.workspaceId === 'string' &&
       payload.workspaceId.length > 0 &&
       payload.workspaceId.length <= 200
@@ -139,12 +156,19 @@ export function parseTerminalServerMessage(
 
   if (type === 'terminal.workspace.selected') {
     return typeof payload.workspaceId === 'string' &&
-      payload.workspaceId.length > 0
+      payload.workspaceId.length > 0 &&
+      typeof payload.sessionId === 'string' &&
+      payload.sessionId.length > 0 &&
+      typeof payload.bufferedOutput === 'string'
       ? {
           version,
           type,
           sessionId,
-          payload: { workspaceId: payload.workspaceId },
+          payload: {
+            workspaceId: payload.workspaceId,
+            sessionId: payload.sessionId,
+            bufferedOutput: payload.bufferedOutput,
+          },
         }
       : null;
   }

@@ -148,6 +148,7 @@ function ActiveWorkspaceLayout({
     async (workspaceId: string) => {
       if (workspaceId !== activeWorkspace.workspaceId) {
         await onDeleteWorkspace(workspaceId);
+        terminalRef.current?.closeWorkspaceSession(workspaceId);
         return;
       }
 
@@ -171,6 +172,7 @@ function ActiveWorkspaceLayout({
 
       try {
         await onDeleteWorkspace(workspaceId);
+        terminalRef.current?.closeWorkspaceSession(workspaceId);
       } catch (error) {
         await terminalRef.current?.selectWorkspace(workspaceId);
         throw error;

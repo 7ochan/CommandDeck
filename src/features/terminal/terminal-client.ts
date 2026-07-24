@@ -53,6 +53,19 @@ export function selectTerminalWorkspace(
   });
 }
 
+export function closeTerminalWorkspace(
+  socket: WebSocket,
+  sessionId: string,
+  workspaceId: string,
+): void {
+  send(socket, {
+    version: TERMINAL_PROTOCOL_VERSION,
+    type: 'terminal.workspace.close',
+    sessionId,
+    payload: { workspaceId },
+  });
+}
+
 export function sendTerminalResize(
   socket: WebSocket,
   sessionId: string,

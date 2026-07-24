@@ -15,6 +15,7 @@ import type { CommandCompletedPayload } from '@/shared/types';
 
 import {
   createTerminalWebSocket,
+  closeTerminalWorkspace,
   executeTerminalCommand,
   sendTerminalInput,
   sendTerminalResize,
@@ -40,6 +41,7 @@ type TerminalProps = {
 export type TerminalHandle = {
   runCommand: (command: string) => boolean;
   selectWorkspace: (workspaceId: string) => Promise<boolean>;
+  closeWorkspaceSession: (workspaceId: string) => void;
 };
 
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
@@ -129,6 +131,14 @@ function TerminalView(
       return true;
     },
     selectWorkspace,
+    closeWorkspaceSession: (workspaceId: string) => {
+      const socket = socketRef.current;
+      const sessionId = sessionIdRef.current;
+
+      if (socket && sessionId && socket.readyState === WebSocket.OPEN) {
+        closeTerminalWorkspace(socket, sessionId, workspaceId);
+      }
+    },
   }));
 
   useEffect(() => {
@@ -275,18 +285,29 @@ function TerminalView(
           return;
         }
 
-        if (message.sessionId !== sessionId) {
-          return;
-        }
-
-        if (message.type === 'terminal.output') {
-          terminal.write(message.payload.data);
-          return;
-        }
-
+        // Both terminal.started and terminal.workspace.selected are session-
+        // establishment messages. They must be processed before the sessionId
+        // guard because the client sessionId is null until one of them arrives.
         if (message.type === 'terminal.workspace.selected') {
+          // Existing PTY reattached: update session ID and replay buffered
+          // output. Do NOT reset xterm — scrollback and state are preserved.
+          sessionId = message.payload.sessionId;
+          sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
           reportConnectionStatus('connected');
+
+          if (message.payload.bufferedOutput.length > 0) {
+            terminal.write(message.payload.bufferedOutput);
+          }
+
+          fit();
+          sendTerminalResize(
+            socket as WebSocket,
+            sessionId,
+            terminal.cols,
+            terminal.rows,
+          );
+
           const pendingSelection = pendingWorkspaceSelectionRef.current;
 
           if (pendingSelection?.workspaceId === message.payload.workspaceId) {
@@ -294,6 +315,17 @@ function TerminalView(
             pendingWorkspaceSelectionRef.current = null;
             pendingSelection.resolve(true);
           }
+
+          terminal.focus();
+          return;
+        }
+
+        if (message.sessionId !== sessionId) {
+          return;
+        }
+
+        if (message.type === 'terminal.output') {
+          terminal.write(message.payload.data);
           return;
         }
 

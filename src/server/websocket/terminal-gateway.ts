@@ -13,6 +13,13 @@ import { ConnectionRegistry } from './connection-registry.js';
 const OUTPUT_FLUSH_INTERVAL_MS = 8;
 const OUTPUT_FLUSH_THRESHOLD = 64 * 1024;
 
+/**
+ * Maximum bytes buffered for a detached workspace session (1 MiB).
+ * The tail is kept when the limit is exceeded so the most recent terminal
+ * state is always available on reattachment.
+ */
+const DETACHED_OUTPUT_BUFFER_LIMIT = 1024 * 1024;
+
 type WorkspaceAccess = {
   workspaceExists: (workspaceId: string) => boolean;
   initialWorkspaceId: () => string;
@@ -23,8 +30,28 @@ const defaultWorkspaceAccess: WorkspaceAccess = {
   initialWorkspaceId: () => DEFAULT_WORKSPACE_ID,
 };
 
+/**
+ * Output accumulated for a session while no socket is attached to it.
+ * Keyed by session ID.
+ */
+type DetachedBuffer = {
+  output: string;
+  removeDataListener: () => void;
+};
+
 export class TerminalGateway {
   private readonly connections = new ConnectionRegistry();
+
+  /** Output accumulated per session while it has no attached socket. */
+  private readonly detachedBuffers = new Map<string, DetachedBuffer>();
+
+  /**
+   * Session IDs that have been fully started (PTY spawned and first
+   * `terminal.started` already sent to at least one client). Used to
+   * distinguish "brand-new session → reset xterm" from "reattachment →
+   * replay only".
+   */
+  private readonly startedSessionIds = new Set<string>();
 
   constructor(
     private readonly sessions = new TerminalSessionManager(),
@@ -33,8 +60,9 @@ export class TerminalGateway {
 
   handleConnection(socket: WebSocket, requestedWorkspaceId?: string): void {
     let cleanedUp = false;
+
     let activeBinding: {
-      session: ReturnType<TerminalSessionManager['create']>;
+      session: ReturnType<TerminalSessionManager['getOrCreateForWorkspace']>;
       flushOutput: () => void;
       dispose: () => void;
     } | null = null;
@@ -45,8 +73,11 @@ export class TerminalGateway {
       }
     };
 
-    const attachSession = (workspaceId: string) => {
-      const session = this.sessions.create(workspaceId);
+    // ─── Attach socket to a session ───────────────────────────────────────────
+
+    const attachToSession = (
+      session: ReturnType<TerminalSessionManager['getOrCreateForWorkspace']>,
+    ) => {
       const { id: sessionId } = session;
       let outputBuffer = '';
       let flushTimer: NodeJS.Timeout | null = null;
@@ -83,6 +114,7 @@ export class TerminalGateway {
       };
 
       const removeDataListener = session.onData(queueOutput);
+
       const removeCommandListener = session.onCommand((event) => {
         flushOutput();
 
@@ -102,6 +134,7 @@ export class TerminalGateway {
           });
         }
       });
+
       const removeExitListener = session.onExit(({ exitCode, signal }) => {
         if (activeBinding?.session.id !== sessionId) {
           return;
@@ -134,23 +167,53 @@ export class TerminalGateway {
 
       activeBinding = binding;
       this.connections.add(sessionId, socket);
-      send({
-        version: TERMINAL_PROTOCOL_VERSION,
-        type: 'terminal.started',
-        sessionId,
-        payload: {
-          shell: session.shell,
-          cwd: session.cwd,
-          cols: session.cols,
-          rows: session.rows,
-          workspaceId: session.workspaceId,
-        },
-      });
+
+      // Drain the detached buffer accumulated while this session had no socket.
+      const detachedBuffer = this.detachedBuffers.get(sessionId);
+      const bufferedOutput = detachedBuffer?.output ?? '';
+
+      if (detachedBuffer) {
+        detachedBuffer.removeDataListener();
+        this.detachedBuffers.delete(sessionId);
+      }
+
+      const isFirstStart = !this.startedSessionIds.has(sessionId);
+      this.startedSessionIds.add(sessionId);
+
+      if (isFirstStart) {
+        // Brand-new PTY: tell the client to reset xterm and begin a fresh session.
+        send({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'terminal.started',
+          sessionId,
+          payload: {
+            shell: session.shell,
+            cwd: session.cwd,
+            cols: session.cols,
+            rows: session.rows,
+            workspaceId: session.workspaceId,
+          },
+        });
+      } else {
+        // Existing PTY reattached: keep xterm state, replay buffered output.
+        send({
+          version: TERMINAL_PROTOCOL_VERSION,
+          type: 'terminal.workspace.selected',
+          sessionId,
+          payload: {
+            workspaceId: session.workspaceId,
+            sessionId,
+            bufferedOutput,
+          },
+        });
+      }
 
       return binding;
     };
 
-    const detachActiveSession = (flushOutput: boolean) => {
+    // ─── Detach socket from current session (PTY keeps running) ──────────────
+
+    const detachActiveSession = (flushBeforeDetach: boolean) => {
       const binding = activeBinding;
 
       if (!binding) {
@@ -159,16 +222,40 @@ export class TerminalGateway {
 
       activeBinding = null;
 
-      if (flushOutput) {
+      if (flushBeforeDetach) {
         binding.flushOutput();
       }
 
       binding.dispose();
       this.connections.deleteBySocket(socket);
-      this.sessions.close(binding.session.id);
+
+      // Start buffering output for this session while it runs unattached.
+      const { session } = binding;
+      const sessionId = session.id;
+
+      const bufferWhileDetached = (data: string) => {
+        const entry = this.detachedBuffers.get(sessionId);
+
+        if (!entry) {
+          return;
+        }
+
+        entry.output += data;
+
+        if (entry.output.length > DETACHED_OUTPUT_BUFFER_LIMIT) {
+          entry.output = entry.output.slice(
+            entry.output.length - DETACHED_OUTPUT_BUFFER_LIMIT,
+          );
+        }
+      };
+
+      const removeDataListener = session.onData(bufferWhileDetached);
+      this.detachedBuffers.set(sessionId, { output: '', removeDataListener });
     };
 
-    const startWorkspaceSession = (workspaceId: string): boolean => {
+    // ─── Switch to a different workspace ─────────────────────────────────────
+
+    const switchWorkspaceSession = (workspaceId: string): boolean => {
       if (!this.workspaceAccess.workspaceExists(workspaceId)) {
         const sessionId = activeBinding?.session.id;
 
@@ -184,28 +271,21 @@ export class TerminalGateway {
         return false;
       }
 
-      const previousSessionId = activeBinding?.session.id;
       detachActiveSession(true);
 
       try {
-        attachSession(workspaceId);
+        const session = this.sessions.getOrCreateForWorkspace(workspaceId);
+        attachToSession(session);
         return true;
       } catch (error) {
-        console.error('Unable to create terminal session:', error);
-
-        if (previousSessionId) {
-          send({
-            version: TERMINAL_PROTOCOL_VERSION,
-            type: 'terminal.error',
-            sessionId: previousSessionId,
-            payload: { message: 'Unable to create terminal session.' },
-          });
-        }
+        console.error('Unable to attach terminal session:', error);
 
         socket.close(1011, 'Unable to create terminal session');
         return false;
       }
     };
+
+    // ─── Full cleanup on socket close ─────────────────────────────────────────
 
     const cleanup = () => {
       if (cleanedUp) {
@@ -213,17 +293,31 @@ export class TerminalGateway {
       }
 
       cleanedUp = true;
+      // Detach listeners only; PTYs keep running for future reattachment.
       detachActiveSession(false);
     };
+
+    // ─── Initial attachment ───────────────────────────────────────────────────
 
     const initialWorkspaceId = requestedWorkspaceId
       ? requestedWorkspaceId
       : this.workspaceAccess.initialWorkspaceId();
 
-    if (!startWorkspaceSession(initialWorkspaceId)) {
+    if (!this.workspaceAccess.workspaceExists(initialWorkspaceId)) {
       socket.close(1008, 'Workspace not found');
       return;
     }
+
+    try {
+      const session = this.sessions.getOrCreateForWorkspace(initialWorkspaceId);
+      attachToSession(session);
+    } catch (error) {
+      console.error('Unable to create initial terminal session:', error);
+      socket.close(1011, 'Unable to create terminal session');
+      return;
+    }
+
+    // ─── Incoming message handling ────────────────────────────────────────────
 
     socket.on('message', (data: RawData, isBinary: boolean) => {
       if (isBinary) {
@@ -251,16 +345,46 @@ export class TerminalGateway {
 
       if (message.type === 'terminal.workspace.select') {
         if (message.payload.workspaceId === session.workspaceId) {
+          // Already on this workspace — confirm without doing anything.
           send({
             version: TERMINAL_PROTOCOL_VERSION,
             type: 'terminal.workspace.selected',
             sessionId: session.id,
-            payload: { workspaceId: session.workspaceId },
+            payload: {
+              workspaceId: session.workspaceId,
+              sessionId: session.id,
+              bufferedOutput: '',
+            },
           });
           return;
         }
 
-        startWorkspaceSession(message.payload.workspaceId);
+        switchWorkspaceSession(message.payload.workspaceId);
+        return;
+      }
+
+      if (message.type === 'terminal.workspace.close') {
+        // Terminate the PTY for a workspace that is being deleted.
+        // The session being closed must NOT be the currently active one
+        // (the client should switch away first).
+        const targetWorkspaceId = message.payload.workspaceId;
+
+        if (targetWorkspaceId !== session.workspaceId) {
+          const closedSession = this.sessions.getForWorkspace(targetWorkspaceId);
+
+          if (closedSession) {
+            const detachedBuf = this.detachedBuffers.get(closedSession.id);
+
+            if (detachedBuf) {
+              detachedBuf.removeDataListener();
+              this.detachedBuffers.delete(closedSession.id);
+            }
+
+            this.startedSessionIds.delete(closedSession.id);
+            this.sessions.close(closedSession.id);
+          }
+        }
+
         return;
       }
 
@@ -283,6 +407,12 @@ export class TerminalGateway {
   }
 
   closeAll(): void {
+    for (const buffer of this.detachedBuffers.values()) {
+      buffer.removeDataListener();
+    }
+
+    this.detachedBuffers.clear();
+    this.startedSessionIds.clear();
     this.sessions.closeAll();
     this.connections.closeAll();
   }
