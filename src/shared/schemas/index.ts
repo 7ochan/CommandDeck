@@ -1,1 +1,2 @@
-export * from './command-card';
+export * from './deck';
+export * from './history';

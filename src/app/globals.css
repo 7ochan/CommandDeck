@@ -49,7 +49,8 @@ select {
   image-rendering: auto;
 }
 
-.command-card-scrollbar {
+.command-history-scrollbar,
+.command-deck-scrollbar {
   scrollbar-color: #273449 transparent;
   scrollbar-width: thin;
 }

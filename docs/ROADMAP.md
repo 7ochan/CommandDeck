@@ -4,7 +4,7 @@
 
 Development advances through capability gates, not calendar dates. A phase is complete only when its acceptance criteria pass in an actual browser against a real local shell. Features from later phases should not be pulled forward unless they remove a demonstrated blocker.
 
-The initial reference platform is macOS with zsh. Cross-platform work begins after the command-card vertical slice is reliable.
+The initial reference platform is macOS with zsh. Cross-platform work begins after the Command History and Deck vertical slice is reliable.
 
 ## Phase 0 — Technical validation
 
@@ -31,14 +31,14 @@ Prove the highest-risk terminal and command-capture assumptions with the smalles
 - Resize works without corrupting display state.
 - At least the agreed command fixture set is captured without prompt regexes.
 - PTY and WebSocket resources close cleanly.
-- Interactive applications remain usable even if their output is not card-compatible.
+- Interactive applications remain usable even if their output is not History-compatible.
 - The team has measured output throughput and selected an initial capture-limit policy.
 
 ## Phase 1 — Terminal foundation
 
 ### Goal
 
-Build a reliable multi-tab terminal workspace before adding durable command cards.
+Build a reliable multi-tab terminal workspace before adding durable History and Deck data.
 
 ### Scope
 
@@ -61,7 +61,7 @@ Build a reliable multi-tab terminal workspace before adding durable command card
 - Server shutdown leaves no managed shell processes behind.
 - The UI communicates connection failures without losing control of other tabs.
 
-## Phase 2 — Command-card vertical slice
+## Phase 2 — Command History and Deck vertical slice
 
 ### Goal
 
@@ -71,35 +71,39 @@ Deliver the smallest complete version of the product's defining feature.
 
 - Production-quality shell-integration parser for zsh
 - Command lifecycle state machine
-- Live running card and completed card states
+- Live running and completed History states
 - Command, output, cwd, timestamp, duration, exit code, and status
 - Interrupted and capture-unavailable states
 - Copy command and copy output
 - Deliberate re-run through the active managed terminal session
 - Initial SQLite schema, migrations, and repositories
-- Persist cards and load them after restart
-- Basic card-list virtualization
+- Persist History and load it after restart
+- Curated persistent Command Deck referencing reusable definitions
+- Add from History; edit, remove, and execute Deck items
+- Basic History-list virtualization
 - Early command/cwd live search and success, failed, and interrupted filters
 
 ### Exit criteria
 
-- Supported non-interactive commands produce one correctly bounded card each.
+- Supported non-interactive commands produce one correctly bounded History entry each.
 - Commands remain linked to the correct session and workspace.
-- Completed cards survive a server restart.
+- Completed History and curated Deck items survive a server restart.
 - Failed and interrupted commands have accurate status.
 - Unsupported capture degrades visibly without breaking the terminal.
-- A long card list remains responsive.
-- Combined command/cwd search and status filters return accurate cards without breaking card actions.
+- A long History list remains responsive.
+- Combined command/cwd search and status filters return accurate History entries without breaking History or Deck actions.
+- Editing or removing a Deck item never changes its source History entry.
+- Deck execution is visible and produces a new History entry.
 
 ### Milestone
 
-**MVP Alpha:** CommandDeck demonstrates its unique terminal-to-card workflow end to end.
+**MVP Alpha:** CommandDeck demonstrates its unique terminal-to-History-to-Deck workflow end to end.
 
 ## Phase 3 — Durable organization
 
 ### Goal
 
-Turn captured cards into useful personal terminal history.
+Turn captured History into deeply organized personal terminal context.
 
 ### Scope
 
@@ -108,7 +112,7 @@ Turn captured cards into useful personal terminal history.
 - SQLite FTS5 index
 - Extend search across command, output, and notes
 - Date, workspace, status, tag, pin, and bookmark filters
-- Timeline navigation and card detail view
+- History navigation and entry detail view
 - Large-output truncation behavior
 - Recovery of commands left running after an unclean shutdown
 - Database backup/export baseline
@@ -131,25 +135,25 @@ Make useful commands deliberately reusable without creating an automation platfo
 
 - Quick-action create, edit, delete, reorder, group, and icon selection
 - Explicit insert-versus-execute action mode
-- Convert a command card into a quick action
+- Convert a History entry or Deck item into a quick action
 - Ordered workflow definitions
 - Workflow variables with preview before execution
 - Stop-on-failure behavior
 - Visible workflow execution in a terminal
 - Workflow-run history
-- Convert selected or repeated command cards into a draft workflow
+- Convert selected or repeated History entries or Deck items into a draft workflow
 
 ### Exit criteria
 
 - No stored action executes through an ambiguous interaction.
-- Workflow steps create ordinary command cards.
+- Workflow steps create ordinary History entries.
 - Failure stops or continues exactly according to the saved rule.
 - Variables are resolved and shown before commands are sent.
-- A failed workflow can be understood from its command cards and run history.
+- A failed workflow can be understood from its History entries and workflow-run history.
 
 ### Milestone
 
-**MVP Complete:** terminal, command cards, persistence, search, quick actions, and simple workflows form one coherent product.
+**MVP Complete:** terminal, History, Command Deck, persistence, search, quick actions, and simple workflows form one coherent product.
 
 ## Phase 5 — Reliability and broader shell support
 
@@ -175,7 +179,7 @@ Make the MVP dependable outside the initial development setup.
 - Every supported shell passes the shared command-capture fixture suite.
 - Supported operating systems pass production-build smoke tests.
 - Large output cannot cause unbounded memory growth.
-- Keyboard-only users can operate the terminal workspace and cards.
+- Keyboard-only users can operate the terminal workspace, History, and Deck.
 - Upgrade and recovery procedures have automated coverage.
 
 ## Phase 6 — Final product and portfolio release
@@ -202,7 +206,7 @@ Finish the core experience to release quality and present it convincingly.
 - All MVP capabilities meet documented acceptance tests.
 - No critical terminal lifecycle, data-loss, or command-capture defects remain.
 - The product communicates unsupported states rather than silently failing.
-- A new user can start the local server, open a shell, create cards, search history, and reuse a workflow from documented instructions.
+- A new user can start the local server, open a shell, search History, curate a Deck item, and reuse a workflow from documented instructions.
 - The portfolio presentation explains both product value and engineering trade-offs.
 
 ### Milestone

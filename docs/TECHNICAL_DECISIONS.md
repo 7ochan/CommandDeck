@@ -54,7 +54,7 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Reason:** Keyboard and prompt heuristics cannot reliably identify exact commands, output boundaries, working directories, or exit codes.
 
-**Consequences:** Integration scripts must be maintained per supported shell. Unsupported shells retain terminal functionality but may not produce command cards.
+**Consequences:** Integration scripts must be maintained per supported shell. Unsupported shells retain terminal functionality but may not produce Command History entries.
 
 **Reference:** [VS Code terminal shell-integration protocol](https://code.visualstudio.com/docs/terminal/shell-integration)
 
@@ -104,7 +104,7 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Status:** Accepted
 
-**Decision:** Initial workflows consist of ordered command steps, explicit variables, and stop-on-failure behavior. They run visibly through a managed terminal and produce normal command cards.
+**Decision:** Initial workflows consist of ordered command steps, explicit variables, and stop-on-failure behavior. They run visibly through a managed terminal and produce normal Command History entries.
 
 **Reason:** This delivers command reuse without turning the project into a scheduler or general automation engine.
 
@@ -144,11 +144,11 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Status:** Accepted
 
-**Decision:** Quick actions declare whether they insert or execute a command. Workflows preview resolved variables and execute through visible managed terminal sessions. The explicit Command Card Run Again action executes the exact stored command through the active managed terminal session.
+**Decision:** Quick actions declare whether they insert or execute a command. Workflows preview resolved variables and execute through visible managed terminal sessions. Explicit Run Again actions from History and Run actions from the Command Deck execute their stored command through the active managed terminal session.
 
 **Reason:** Stored command execution has the same permissions and risk as manual terminal input.
 
-**Consequences:** There is no hidden background execution. The UI and protocol must preserve a clear distinction between editing, inserting, and executing commands. Re-run remains an explicit labeled action and never bypasses the terminal session architecture.
+**Consequences:** There is no hidden background execution. The UI and protocol must preserve a clear distinction between editing, inserting, and executing commands. History and Deck execution remain explicit and never bypass the terminal session architecture; successful execution is captured back into History through the ordinary shell-integration path.
 
 ## TD-015 — Test at protocol and process boundaries
 
@@ -160,15 +160,25 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Consequences:** Tests require deterministic shell fixtures, temporary SQLite databases, process cleanup checks, and selective serialization of native PTY suites.
 
-## TD-016 — Incremental command-card search
+## TD-016 — Incremental Command History search
 
 **Status:** Accepted
 
-**Decision:** Introduce the first search slice as repository-backed, case-insensitive literal substring matching over command text and working directory, combined with structured derived-status filters. A command completed by the shell with exit code 0 is successful; exit code 130 or session-exit completion is interrupted; every other shell completion is failed. Keep these query semantics in shared domain helpers and HTTP contracts. Continue to reserve FTS5 for the broader command-output-note search planned in Phase 3.
+**Decision:** Introduce the first Command History search slice as repository-backed, case-insensitive literal substring matching over command text and working directory, combined with structured derived-status filters. A command completed by the shell with exit code 0 is successful; exit code 130 or session-exit completion is interrupted; every other shell completion is failed. Keep these query semantics in shared domain helpers and HTTP contracts. Continue to reserve FTS5 for the broader command-output-note search planned in Phase 3.
 
-**Reason:** The current command-card table contains only command and working-directory search fields. Literal substring search matches the live-search interaction developers expect, treats shell metacharacters as ordinary text, and avoids introducing an FTS migration that would be replaced when output and notes become durable fields.
+**Reason:** The current History table contains only command and working-directory search fields. Literal substring search matches the live-search interaction developers expect, treats shell metacharacters as ordinary text, and avoids introducing an FTS migration that would be replaced when output and notes become durable fields.
 
 **Consequences:** Filtering occurs in SQLite rather than over the loaded React list. The UI debounces and cancels superseded HTTP requests, while completed-command events may be merged optimistically when they match the active query. Search is not yet ranked, tokenized, or extended to output and notes.
+
+## TD-017 — Immutable History and curated Command Deck
+
+**Status:** Accepted
+
+**Decision:** Separate automatically captured Command History from the user-curated Command Deck. History entries are immutable execution facts owned by the capture service. A Deck item stores presentation metadata and references a reusable command definition; that definition stores the editable command snapshot and optionally references the History entry from which it originated. History and Deck use separate repositories, application services, HTTP contracts, and browser features. Deck execution sends the stored definition through the existing visible terminal execution pipeline.
+
+**Reason:** Automatic execution records and user-maintained shortcuts have different lifecycles. Keeping the source History foreign key preserves provenance without copying execution metadata, while a separate definition is necessary because editing Deck command text must never alter the original History record. Reusable definitions also allow future workflows or other deliberate execution surfaces to reference the same command without changing History storage.
+
+**Consequences:** Adding a History entry to the Deck copies only its command text into a definition and creates one Deck item linked to both records in a transaction. Removing that item removes its now-unreferenced definition. Display name, description, and command edits affect only Deck-owned tables. Future tags, categories, favorites, and variables require their own decisions and migrations; they are not implemented by this separation.
 
 ## Open implementation parameters
 

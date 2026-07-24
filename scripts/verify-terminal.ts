@@ -14,8 +14,13 @@ import {
   type TerminalServerMessage,
 } from '../src/shared/contracts/terminal.js';
 import { OscShellIntegrationParser } from '../src/server/shell-integration/parsers/osc-parser.js';
-import { commandCardsResponseSchema } from '../src/shared/schemas/command-card.js';
-import type { CommandCard } from '../src/shared/types/command.js';
+import {
+  commandDeckItemSchema,
+  commandDeckResponseSchema,
+  commandHistoryResponseSchema,
+} from '../src/shared/schemas/index.js';
+import type { CommandHistoryEntry } from '../src/shared/types/command.js';
+import type { CommandDeckItem } from '../src/shared/types/deck.js';
 
 const port = Number.parseInt(process.env.COMMANDDECK_VERIFY_PORT ?? '3210', 10);
 const hostname = '127.0.0.1';
@@ -245,6 +250,43 @@ try {
   );
   assertCommandPair(afterInterruptStarted, afterInterruptCompleted, 0);
 
+  const deckItem = await addHistoryEntryToDeck(
+    firstCompleted.payload.commandId,
+  );
+  const editedDeckItem = await editDeckItem(deckItem.deckItemId, {
+    displayName: 'Verification command',
+    command: "printf '__DECK_RUN__\\n'",
+    description: 'Edited independently from History.',
+  });
+  assert.equal(
+    editedDeckItem.sourceHistoryId,
+    firstCompleted.payload.commandId,
+    'Deck item should retain History provenance',
+  );
+  const historyAfterDeckEdit = await loadCommandHistory();
+  assert.equal(
+    historyAfterDeckEdit.find(
+      ({ commandId }) => commandId === firstCompleted.payload.commandId,
+    )?.command,
+    firstCompleted.payload.command,
+    'Editing a Deck item must not modify its source History entry',
+  );
+
+  sendExecute(socket, sessionId, editedDeckItem.command);
+  const deckRunStarted = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) => message.payload.command === editedDeckItem.command,
+    'Deck command start',
+  );
+  const deckRunCompleted = await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) => message.payload.commandId === deckRunStarted.payload.commandId,
+    'Deck command completion',
+  );
+  assertCommandPair(deckRunStarted, deckRunCompleted, 0);
+
   socket.send(
     serializeTerminalMessage({
       version: TERMINAL_PROTOCOL_VERSION,
@@ -264,45 +306,26 @@ try {
     rerunMultilineCompleted.payload.commandId,
     interruptedCompleted.payload.commandId,
     afterInterruptCompleted.payload.commandId,
+    deckRunCompleted.payload.commandId,
   ];
-  const cardsBeforeRestart = await loadCommandCards();
-  assertCommandCardsPersisted(cardsBeforeRestart, expectedCommandIds);
-
-  await deleteCommandCard(firstCompleted.payload.commandId);
-  const expectedIdsAfterDelete = expectedCommandIds.filter(
-    (commandId) => commandId !== firstCompleted.payload.commandId,
-  );
-  const cardsAfterDelete = await loadCommandCards();
-  assertCommandCardsPersisted(cardsAfterDelete, expectedIdsAfterDelete);
-  assert.ok(
-    cardsAfterDelete.every(
-      ({ commandId }) => commandId !== firstCompleted.payload.commandId,
-    ),
-    'Deleted card should disappear from the Command Card API immediately',
-  );
-
-  const cardsAfterRefresh = await loadCommandCards();
-  assert.deepEqual(
-    cardsAfterRefresh,
-    cardsAfterDelete,
-    'Deleted cards should remain absent after a repeated data load',
-  );
+  const historyBeforeRestart = await loadCommandHistory();
+  assertHistoryPersisted(historyBeforeRestart, expectedCommandIds);
 
   await stopServer(server);
   server = startServer(dataDirectory);
   await waitForServer(server);
 
-  const cardsAfterRestart = await loadCommandCards();
-  assertCommandCardsPersisted(cardsAfterRestart, expectedIdsAfterDelete);
-  assert.ok(
-    cardsAfterRestart.every(
-      ({ commandId }) => commandId !== firstCompleted.payload.commandId,
-    ),
-    'Deleted cards should remain absent after server restart',
+  const historyAfterRestart = await loadCommandHistory();
+  assertHistoryPersisted(historyAfterRestart, expectedCommandIds);
+  const deckAfterRestart = await loadCommandDeck();
+  assert.deepEqual(
+    deckAfterRestart,
+    [editedDeckItem],
+    'Edited Command Deck should persist across server restart',
   );
 
   console.log(
-    'Terminal verification passed: lifecycle events, reruns, deletion persistence, refresh/restart recovery, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: lifecycle events, History persistence/search storage, Deck add/edit/run/restart behavior, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
@@ -322,30 +345,56 @@ function startServer(commandDeckDataDirectory: string): ChildProcess {
   });
 }
 
-async function loadCommandCards(): Promise<CommandCard[]> {
-  const response = await fetch(`${origin}/api/commands`, { cache: 'no-store' });
+async function loadCommandHistory(): Promise<CommandHistoryEntry[]> {
+  const response = await fetch(`${origin}/api/history`, { cache: 'no-store' });
   assert.equal(
     response.status,
     200,
-    'Command Card API should respond successfully',
+    'Command History API should respond successfully',
   );
   const payload: unknown = await response.json();
-  return commandCardsResponseSchema.parse(payload).cards;
+  return commandHistoryResponseSchema.parse(payload).entries;
 }
 
-async function deleteCommandCard(commandId: string): Promise<void> {
+async function addHistoryEntryToDeck(
+  historyId: string,
+): Promise<CommandDeckItem> {
+  const response = await fetch(`${origin}/api/deck`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ historyId }),
+  });
+  assert.equal(response.status, 201, 'Adding a History entry should succeed');
+  return commandDeckItemSchema.parse(await response.json());
+}
+
+async function editDeckItem(
+  deckItemId: string,
+  update: { displayName: string; command: string; description: string },
+): Promise<CommandDeckItem> {
   const response = await fetch(
-    `${origin}/api/commands/${encodeURIComponent(commandId)}`,
-    { method: 'DELETE' },
+    `${origin}/api/deck/${encodeURIComponent(deckItemId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(update),
+    },
   );
-  assert.equal(response.status, 204, 'Command Card delete should succeed');
+  assert.equal(response.status, 200, 'Editing a Deck item should succeed');
+  return commandDeckItemSchema.parse(await response.json());
 }
 
-function assertCommandCardsPersisted(
-  cards: CommandCard[],
+async function loadCommandDeck(): Promise<CommandDeckItem[]> {
+  const response = await fetch(`${origin}/api/deck`, { cache: 'no-store' });
+  assert.equal(response.status, 200, 'Command Deck API should respond');
+  return commandDeckResponseSchema.parse(await response.json()).items;
+}
+
+function assertHistoryPersisted(
+  entries: CommandHistoryEntry[],
   expectedCommandIds: string[],
 ): void {
-  const persistedIds = new Set(cards.map(({ commandId }) => commandId));
+  const persistedIds = new Set(entries.map(({ commandId }) => commandId));
 
   for (const commandId of expectedCommandIds) {
     assert.ok(
@@ -354,10 +403,10 @@ function assertCommandCardsPersisted(
     );
   }
 
-  for (let index = 1; index < cards.length; index += 1) {
+  for (let index = 1; index < entries.length; index += 1) {
     assert.ok(
-      cards[index - 1].endedAt >= cards[index].endedAt,
-      'Persisted cards should remain newest-first',
+      entries[index - 1].endedAt >= entries[index].endedAt,
+      'Persisted History should remain newest-first',
     );
   }
 }

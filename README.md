@@ -1,10 +1,10 @@
 # CommandDeck
 
-CommandDeck is a local-first visual terminal workspace where every executed command becomes a persistent, searchable, and reusable object instead of disappearing into terminal scrollback.
+CommandDeck is a local-first visual terminal workspace where every executed command remains searchable in Command History and useful commands become an editable, persistent Command Deck.
 
 ## Project status
 
-The terminal, shell-integration, and persistent Command Card MVP are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events, persist to SQLite, and appear live as selectable cards beside the responsive xterm.js terminal. Cards can be searched by command or working directory, filtered by success, failure, or interruption, rerun in the active terminal, copied, or deleted from local history.
+The terminal, shell integration, Command History, and Command Deck vertical slice are initialized and verified. Completed zsh commands emit nonce-validated lifecycle events, persist automatically as immutable History entries, and appear live beside the responsive xterm.js terminal. History can be searched and filtered; entries can be rerun, copied, or added to the curated Deck. Deck items can be renamed, described, edited independently of History, and executed through the active terminal.
 
 Zustand, broad output/note search, Electron, and AI functionality have not been implemented.
 
@@ -20,7 +20,7 @@ npm install
 npm run dev
 ```
 
-The custom server listens on `http://127.0.0.1:3000` by default. Command Cards are stored in the operating system's application data directory. Copy `.env.example` to `.env` to change the loopback port or set `COMMANDDECK_DATA_DIR`.
+The custom server listens on `http://127.0.0.1:3000` by default. Command History and Deck data are stored in the operating system's application data directory. Copy `.env.example` to `.env` to change the loopback port or set `COMMANDDECK_DATA_DIR`.
 
 ## Available scripts
 
@@ -56,4 +56,4 @@ These documents are the implementation baseline. Architectural changes should up
 - Does not use Electron during initial development.
 - Does not include AI in the MVP or current roadmap.
 
-The project is implementing the Phase 2 Command Card vertical slice in the [roadmap](./docs/ROADMAP.md).
+The project is implementing the Phase 2 Command History and Deck vertical slice in the [roadmap](./docs/ROADMAP.md).

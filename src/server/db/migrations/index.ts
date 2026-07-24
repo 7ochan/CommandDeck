@@ -1,8 +1,12 @@
 import type Database from 'better-sqlite3';
 
-import { createCommandCardsMigration } from './0001-command-cards.js';
+import { createLegacyCommandHistoryMigration } from './0001-command-cards.js';
+import { createCommandHistoryAndDeckMigration } from './0002-command-history-and-deck.js';
 
-const migrations = [createCommandCardsMigration] as const;
+const migrations = [
+  createLegacyCommandHistoryMigration,
+  createCommandHistoryAndDeckMigration,
+] as const;
 
 export function runMigrations(sqlite: Database.Database): void {
   sqlite.exec(`

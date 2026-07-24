@@ -12,15 +12,15 @@ export type CommandCompletedPayload = CommandStartedPayload & {
   completionReason: 'shell' | 'session-exit';
 };
 
-export type CommandCard = CommandCompletedPayload & {
+export type CommandHistoryEntry = CommandCompletedPayload & {
   createdAt: number;
 };
 
-export type CommandCardStatus = 'success' | 'failed' | 'interrupted';
+export type CommandHistoryStatus = 'success' | 'failed' | 'interrupted';
 
-export type CommandCardQuery = {
+export type CommandHistoryQuery = {
   searchTerm: string;
-  statuses: CommandCardStatus[];
+  statuses: CommandHistoryStatus[];
 };
 
 export type CommandLifecycleEvent =

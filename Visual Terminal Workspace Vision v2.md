@@ -2,17 +2,17 @@
 
 ## Core identity
 
-> **A terminal where every command becomes a reusable visual object instead of disappearing into scrollback.**
+> **A terminal where every command remains searchable in History and useful commands become a curated Command Deck.**
 
 Everything else exists to support this idea.
 
 ## Product principles
 
-1. **Command cards are the product.** The terminal, timeline, actions, and workflows exist to make executed commands easier to understand, find, and reuse.
+1. **History records; the Deck reuses.** The terminal automatically preserves execution facts in Command History, while users deliberately curate editable commands into the Command Deck.
 2. **Terminal reliability comes first.** Visual features must not weaken normal shell behavior, resize handling, interactive programs, or process lifecycle management.
 3. **Local-first by default.** Terminal processes and command history remain on the user's machine.
 4. **The user remains in control.** Re-running commands and triggering quick actions must be deliberate and visible.
-5. **Build depth before breadth.** The core terminal-to-card experience must be complete before plugins, collaboration, remote access, or desktop packaging are considered.
+5. **Build depth before breadth.** The core terminal-to-History-to-Deck experience must be complete before plugins, collaboration, remote access, or desktop packaging are considered.
 
 ## MVP
 
@@ -25,9 +25,9 @@ Everything else exists to support this idea.
 
 Nothing decorative should take priority over terminal reliability.
 
-### 2. Visual command cards
+### 2. Command History and Command Deck
 
-Every detected command becomes a card containing:
+Every detected command becomes an immutable History entry containing:
 
 - Command text
 - Output
@@ -36,17 +36,15 @@ Every detected command becomes a card containing:
 - Timestamp
 - Working directory or project context
 
-Card actions:
+History actions:
 
-- Pin
-- Bookmark
 - Copy
 - Re-run
-- Add a note
-- Add tags
-- Convert to a workflow
+- Add to Command Deck
 
-This is the product's defining feature.
+The Command Deck contains only commands explicitly chosen by the user. Deck items have an editable display name, command, and optional description, retain provenance to their source History entry, persist locally, and execute visibly through the active terminal.
+
+This History-to-Deck flow is the product's defining feature.
 
 ### 3. Quick-action sidebar
 
@@ -61,7 +59,7 @@ Users can add, edit, reorder, group, and assign icons to actions. Actions must c
 
 ### 4. Searchable timeline
 
-Command history becomes a structured timeline that can:
+Command History can:
 
 - Search commands, output, and notes
 - Filter by workspace or project
@@ -99,18 +97,18 @@ Electron is postponed until the web product is stable and feature-complete. AI f
 - Remote terminals
 - Desktop packaging
 
-These are not allowed to delay or complicate the core command-card product.
+These are not allowed to delay or complicate the core History-and-Deck product.
 
 ## Success criteria
 
 The core product is successful when a user can:
 
 1. Open reliable local terminal sessions in the browser.
-2. See normal commands captured accurately as durable cards.
+2. See normal commands captured accurately as durable History entries.
 3. Find a past command or error faster than by searching raw scrollback.
-4. Reuse commands safely through cards, quick actions, and simple workflows.
+4. Curate and reuse commands safely through the Command Deck and simple workflows.
 5. Restart CommandDeck without losing saved command history or organization.
 
 ## Product pitch
 
-A local browser-based terminal workspace where commands become searchable, reusable workflow objects instead of disappearing forever.
+A local browser-based terminal workspace where every command stays searchable in History and useful commands become an editable, persistent Command Deck.

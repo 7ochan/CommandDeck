@@ -1,7 +1,9 @@
 import { CommandEventBus } from '../commands/command-events.js';
-import { CommandService } from '../commands/command-service.js';
+import { CommandDeckService } from '../commands/deck-service.js';
+import { CommandHistoryService } from '../commands/history-service.js';
 import { openCommandDeckDatabase } from '../db/client.js';
-import { SqliteCommandCardRepository } from '../db/repositories/command-card-repository.js';
+import { SqliteCommandDeckRepository } from '../db/repositories/command-deck-repository.js';
+import { SqliteCommandHistoryRepository } from '../db/repositories/command-history-repository.js';
 import { TerminalSessionManager } from '../terminal/terminal-session-manager.js';
 import { TerminalGateway } from '../websocket/terminal-gateway.js';
 import {
@@ -19,15 +21,24 @@ export function initializeServerContainer(): ServerContainer {
   }
 
   const database = openCommandDeckDatabase();
-  const repository = new SqliteCommandCardRepository(database.orm);
+  const historyRepository = new SqliteCommandHistoryRepository(database.orm);
+  const deckRepository = new SqliteCommandDeckRepository(database.orm);
   const commandEvents = new CommandEventBus();
-  const commandService = new CommandService(repository, commandEvents);
+  const commandHistoryService = new CommandHistoryService(
+    historyRepository,
+    commandEvents,
+  );
+  const commandDeckService = new CommandDeckService(
+    deckRepository,
+    historyRepository,
+  );
   const sessions = new TerminalSessionManager(undefined, commandEvents);
   const terminalGateway = new TerminalGateway(sessions);
   let closed = false;
 
   const container: ServerContainer = {
-    commandService,
+    commandHistoryService,
+    commandDeckService,
     terminalGateway,
     databasePath: database.path,
     close: () => {
@@ -36,7 +47,7 @@ export function initializeServerContainer(): ServerContainer {
       }
 
       closed = true;
-      commandService.close();
+      commandHistoryService.close();
       commandEvents.clear();
       database.close();
       unregisterServerContainer(container);

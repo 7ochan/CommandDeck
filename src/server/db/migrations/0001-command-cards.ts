@@ -1,4 +1,4 @@
-export const createCommandCardsMigration = {
+export const createLegacyCommandHistoryMigration = {
   id: 1,
   name: 'command_cards',
   sql: `

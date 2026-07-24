@@ -31,7 +31,12 @@ command-deck/
 │   │   ├── layout/                 # Shared application layout primitives
 │   │   └── ui/                     # Generic accessible UI primitives
 │   ├── features/
-│   │   ├── command-cards/
+│   │   ├── command-history/
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── api.ts
+│   │   │   └── types.ts
+│   │   ├── command-deck/
 │   │   │   ├── components/
 │   │   │   ├── hooks/
 │   │   │   ├── api.ts
@@ -106,7 +111,7 @@ Contains browser-facing product features. A feature may own components, hooks, b
 
 ### `src/components/ui`
 
-Contains genuinely reusable, domain-neutral components. Command cards and terminal tabs belong in their features, not in the generic component folder.
+Contains genuinely reusable, domain-neutral components. History entries, Deck items, and terminal tabs belong in their features, not in the generic component folder. A layout component may compose the independent History and Deck feature sections without owning their durable state.
 
 ### `src/server`
 
@@ -137,15 +142,15 @@ Dependencies point inward toward domain contracts and application services. Infr
 
 ## State ownership
 
-| State                              | Owner                                          |
-| ---------------------------------- | ---------------------------------------------- |
-| Active node-pty process            | Server terminal manager                        |
-| Command-capture state machine      | Server terminal session                        |
-| Durable cards, actions, workflows  | SQLite through repositories                    |
-| WebSocket connection status        | Zustand terminal store                         |
-| Open tabs and selected tab         | Zustand terminal store, reconciled with server |
-| xterm.js instance and live buffer  | Terminal React component/ref                   |
-| Timeline filters and selected card | Feature-level Zustand store or URL state       |
+| State                             | Owner                                          |
+| --------------------------------- | ---------------------------------------------- |
+| Active node-pty process           | Server terminal manager                        |
+| Command-capture state machine     | Server terminal session                        |
+| Durable History, Deck, workflows  | SQLite through repositories                    |
+| WebSocket connection status       | Zustand terminal store                         |
+| Open tabs and selected tab        | Zustand terminal store, reconciled with server |
+| xterm.js instance and live buffer | Terminal React component/ref                   |
+| History filters and selections    | Feature hooks or URL state                     |
 
 The raw xterm.js buffer must not be copied into Zustand. High-frequency PTY output should travel directly from the terminal client adapter to the relevant xterm.js instance.
 

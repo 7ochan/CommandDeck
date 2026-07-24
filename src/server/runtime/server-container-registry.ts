@@ -1,10 +1,12 @@
-import type { CommandService } from '../commands/command-service';
+import type { CommandDeckService } from '../commands/deck-service';
+import type { CommandHistoryService } from '../commands/history-service';
 import type { TerminalGateway } from '../websocket/terminal-gateway';
 
 const CONTAINER_KEY = '__commandDeckServerContainer__';
 
 export type ServerContainer = {
-  commandService: CommandService;
+  commandHistoryService: CommandHistoryService;
+  commandDeckService: CommandDeckService;
   terminalGateway: TerminalGateway;
   databasePath: string;
   close: () => void;

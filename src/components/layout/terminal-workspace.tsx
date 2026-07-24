@@ -2,18 +2,19 @@
 
 import { useCallback, useRef } from 'react';
 
-import { CommandCardPanel } from '@/features/command-cards/components/command-card-panel';
-import { useCommandCards } from '@/features/command-cards/hooks/use-command-cards';
+import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
+import { useCommandHistory } from '@/features/command-history/hooks/use-command-history';
 import {
   Terminal,
   type TerminalHandle,
 } from '@/features/terminal/components/terminal';
+import { CommandSidebar } from './command-sidebar';
 
 export function TerminalWorkspace() {
   const terminalRef = useRef<TerminalHandle>(null);
   const {
-    cards,
-    selectedCardId,
+    entries,
+    selectedEntryId,
     query,
     isLoading,
     isSearching,
@@ -22,10 +23,17 @@ export function TerminalWorkspace() {
     setSearchTerm,
     toggleStatus,
     clearQuery,
-    selectCard,
+    selectEntry,
     clearSelection,
-    deleteCard,
-  } = useCommandCards();
+  } = useCommandHistory();
+  const {
+    items: deckItems,
+    isLoading: isDeckLoading,
+    loadError: deckLoadError,
+    addFromHistory,
+    updateItem,
+    removeItem,
+  } = useCommandDeck();
   const runCommandAgain = useCallback(
     (command: string) => terminalRef.current?.runCommand(command) ?? false,
     [],
@@ -34,20 +42,25 @@ export function TerminalWorkspace() {
   return (
     <div className="flex min-h-0 flex-1 gap-3">
       <Terminal ref={terminalRef} onCommandCompleted={addCompletedCommand} />
-      <CommandCardPanel
-        cards={cards}
-        selectedCardId={selectedCardId}
-        query={query}
-        isLoading={isLoading}
-        isSearching={isSearching}
-        loadError={loadError}
-        onSearchTermChange={setSearchTerm}
-        onToggleStatus={toggleStatus}
-        onClearQuery={clearQuery}
-        onSelectCard={selectCard}
-        onClearSelection={clearSelection}
-        onRunAgain={runCommandAgain}
-        onDeleteCard={deleteCard}
+      <CommandSidebar
+        deckItems={deckItems}
+        isDeckLoading={isDeckLoading}
+        deckLoadError={deckLoadError}
+        historyEntries={entries}
+        selectedHistoryEntryId={selectedEntryId}
+        historyQuery={query}
+        isHistoryLoading={isLoading}
+        isHistorySearching={isSearching}
+        historyLoadError={loadError}
+        onHistorySearchTermChange={setSearchTerm}
+        onToggleHistoryStatus={toggleStatus}
+        onClearHistoryQuery={clearQuery}
+        onSelectHistoryEntry={selectEntry}
+        onClearHistorySelection={clearSelection}
+        onAddHistoryToDeck={addFromHistory}
+        onUpdateDeckItem={updateItem}
+        onRemoveDeckItem={removeItem}
+        onRunCommand={runCommandAgain}
       />
     </div>
   );

@@ -8,7 +8,7 @@ Accepted architecture for the initial web application. This document describes t
 
 - Preserve normal terminal behavior while adding structured command history.
 - Keep terminal access and stored data on the local machine.
-- Make command cards the primary durable domain object.
+- Keep immutable Command History and curated Command Deck items as distinct durable domain objects.
 - Use one understandable application runtime rather than distributed services.
 - Keep live terminal traffic separate from durable data operations.
 - Establish boundaries that can be tested independently.
@@ -28,7 +28,7 @@ Browser
 ┌────────────────────────────────────────────────────────────┐
 │ Next.js / React UI                                         │
 │                                                            │
-│  xterm.js terminals  command cards  timeline  quick actions│
+│  xterm.js terminals  command history  command deck        │
 │          │                    │                    │         │
 │          └──── Zustand: transient client state ───┘         │
 └───────────────┬────────────────────────┬───────────────────┘
@@ -83,7 +83,7 @@ Each terminal tab owns one xterm.js instance in the browser and corresponds to o
 
 - Sends keyboard input and resize events.
 - Receives ordered PTY output.
-- Renders the live terminal independently of the command-card timeline.
+- Renders the live terminal independently of History and Deck views.
 - Disposes terminal instances and event listeners when tabs close.
 
 The application does not implement its own terminal emulator.
@@ -95,7 +95,7 @@ Zustand stores transient browser state only, including:
 - Open tab metadata and active tab ID
 - WebSocket connection state
 - Current layout and sidebar state
-- Timeline filters and selected cards
+- History filters and selected History or Deck entries
 - Optimistic state awaiting server confirmation
 
 SQLite remains the source of truth for durable entities. Persisting domain records directly in browser storage is not permitted.
@@ -144,17 +144,17 @@ prompt ready
     → command running
     → output accumulated
     → completion marker received
-    → command card finalized and persisted
+    → Command History entry finalized and persisted
 ```
 
-If the PTY exits while a command is running, the command is finalized as `interrupted`. If rich shell integration is unavailable, the terminal must continue working while card capture is marked unavailable rather than guessing incorrect boundaries.
+If the PTY exits while a command is running, the command is finalized as `interrupted`. If rich shell integration is unavailable, the terminal must continue working while History capture is marked unavailable rather than guessing incorrect boundaries.
 
 ### Interactive applications
 
 Programs such as Vim, `top`, REPLs, SSH sessions, and alternate-screen TUIs do not map cleanly to normal command output. The initial product will:
 
 - Preserve their live xterm.js behavior.
-- Create an interactive-session card with command and lifecycle metadata where detection is possible.
+- Create an interactive History entry with command and lifecycle metadata where detection is possible.
 - Avoid promising a replayable or visually exact transcript.
 
 Interactive-program support must never damage the underlying terminal session.
@@ -199,7 +199,9 @@ Next.js route handlers provide request-response operations for durable data:
 
 The HTTP API and WebSocket gateway call the same application services and repositories. UI components do not access SQLite or server modules directly.
 
-The initial command-card history query performs literal case-insensitive command and working-directory matching in the SQLite repository and combines it with structured status predicates. The HTTP query contract is intentionally extensible so later workspace, date, tag, pin, and bookmark filters can be added without moving filtering into presentation components. FTS5 remains the target for the broader command-output-note search once those durable fields are available.
+The initial Command History query performs literal case-insensitive command and working-directory matching in the SQLite repository and combines it with structured status predicates. The HTTP query contract is intentionally extensible so later workspace and date filters can be added without moving filtering into presentation components. FTS5 remains the target for broader command-output-note search once those durable fields are available.
+
+Command Deck CRUD uses a separate HTTP resource and application service. Adding from History is a server-side transaction that validates the source entry, creates an editable command definition, and creates a Deck item with source provenance. Deck execution itself is client-initiated through the active terminal's existing `terminal.execute` message; shell integration then creates an ordinary new History entry. The Deck service never writes History execution rows, and the History capture service never creates or edits Deck data.
 
 ## Persistence
 
@@ -207,18 +209,20 @@ SQLite is the only durable store. Use `better-sqlite3` as the Node.js driver and
 
 Initial domain model:
 
-| Entity                  | Purpose                                                  |
-| ----------------------- | -------------------------------------------------------- |
-| `workspaces`            | Named project roots and workspace metadata               |
-| `terminal_sessions`     | Historical lifecycle metadata for terminal tabs          |
-| `command_runs`          | Command text, output, cwd, timing, status, and exit code |
-| `tags` / `command_tags` | User organization and filtering                          |
-| `quick_action_groups`   | Ordered sidebar groups                                   |
-| `quick_actions`         | Reusable commands and insert/execute behavior            |
-| `workflows`             | Workflow identity, description, and version              |
-| `workflow_steps`        | Ordered commands and stop-on-failure rules               |
-| `workflow_runs`         | Execution history and outcome                            |
-| `settings`              | Application-level preferences                            |
+| Entity                  | Purpose                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| `workspaces`            | Named project roots and workspace metadata                         |
+| `terminal_sessions`     | Historical lifecycle metadata for terminal tabs                    |
+| `command_history`       | Immutable command, cwd, timing, completion, and exit data          |
+| `command_definitions`   | Editable reusable command text with optional History provenance    |
+| `command_deck_items`    | Curated display name, description, order, and definition reference |
+| `tags` / `command_tags` | User organization and filtering                                    |
+| `quick_action_groups`   | Ordered sidebar groups                                             |
+| `quick_actions`         | Reusable commands and insert/execute behavior                      |
+| `workflows`             | Workflow identity, description, and version                        |
+| `workflow_steps`        | Ordered commands and stop-on-failure rules                         |
+| `workflow_runs`         | Execution history and outcome                                      |
+| `settings`              | Application-level preferences                                      |
 
 An FTS5 index covers command text, searchable output, and notes. Workspace, date, status, tags, pins, and bookmarks remain structured filters rather than encoded search text.
 
@@ -235,7 +239,7 @@ A quick action has an explicit execution mode:
 
 Potentially destructive defaults should use `insert` mode. There is no hidden or background command execution.
 
-Initial workflows are ordered command steps, optional variables, and stop-on-failure behavior. They execute visibly in a terminal session and emit normal command cards. Parallel graphs, scheduling, background automation, and arbitrary plugin code are outside the current scope.
+Initial workflows are ordered command steps, optional variables, and stop-on-failure behavior. They execute visibly in a terminal session and emit normal Command History entries. Parallel graphs, scheduling, background automation, and arbitrary plugin code are outside the current scope.
 
 ## Security model
 
@@ -258,7 +262,7 @@ Public network access, multi-user authentication, remote terminals, and collabor
 
 - Batch frequent PTY output events while preserving ordering.
 - Apply node-pty flow control or bounded queues when the browser cannot keep up.
-- Virtualize long command-card timelines.
+- Virtualize long Command History lists.
 - Keep live PTY buffers out of global React state.
 - Limit and visibly mark persisted output truncation.
 - Use database transactions when finalizing commands and related search records.
@@ -270,7 +274,7 @@ Public network access, multi-user authentication, remote terminals, and collabor
 1. **Unit tests:** protocol validation, streaming OSC parsing, reducers/stores, duration/status calculation, and command sanitization.
 2. **Repository tests:** migrations, CRUD behavior, FTS queries, filters, and recovery using temporary SQLite databases.
 3. **PTY integration tests:** real shell startup, input, resize, exit codes, multiline commands, large output, and interruption.
-4. **Component tests:** cards, terminal tabs, sidebar editing, timeline filters, and error states.
+4. **Component tests:** History entries, Deck item editing and execution, terminal tabs, filters, and error states.
 5. **End-to-end tests:** browser-to-WebSocket-to-PTY flows and persistence across restart.
 6. **Packaged local runtime tests:** production build behavior on every supported operating system.
 
