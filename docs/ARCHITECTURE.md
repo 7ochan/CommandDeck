@@ -215,6 +215,12 @@ Command Templates are a shared, runtime-neutral domain module rather than React 
 
 Deck definitions continue to persist the exact template text. Placeholder values and expanded commands are transient UI state and are never written back to the definition. Commands without placeholders execute immediately. Commands with placeholders open a client dialog that deduplicates names by first appearance, shows a live read-only preview, and sends the validated expanded command through the same `terminal.execute` path. This keeps template parsing reusable by future approved consumers without coupling it to Deck presentation or implementing AI.
 
+### Workspace Timeline
+
+The dedicated `/timeline` route consumes the same active-Workspace History query as the sidebar. It does not introduce a Timeline API, table, repository, or durable session record. A runtime-neutral grouping module sorts visible History chronologically and starts a new Activity Session when the gap between the previous completion and next start exceeds 15 minutes or the normalized working-directory context changes. The initial directory-context heuristic keeps commands under the same home-directory project root together; explicit persisted project roots can replace that heuristic later without changing History.
+
+Search and status filters stay repository-backed and are shared with the History UI. Grouping is memoized over the returned immutable entries. Sessions render as collapsible boundaries, events use memoized row components, and only expanded sessions render their events in bounded batches of 100. Selecting an event opens transient details. Copy and Add to Deck call existing feature adapters; Run Again queues a one-time browser handoff, navigates to the terminal route, and executes through the existing visible `terminal.execute` pipeline after the matching Workspace terminal assignment is acknowledged.
+
 ## Persistence
 
 SQLite is the only durable store. Use `better-sqlite3` as the Node.js driver and Drizzle for typed schema access and migrations. Enable foreign keys and WAL mode, and apply numbered schema migrations at application startup. FTS5 setup and other SQLite-specific features may use explicit SQL migrations where the schema tool does not model them directly.
@@ -278,6 +284,7 @@ Public network access, multi-user authentication, remote terminals, and collabor
 - Apply node-pty flow control or bounded queues when the browser cannot keep up.
 - Virtualize long Command History lists.
 - Query and render only the active Workspace's History and Deck; abort superseded loads on switching.
+- Derive Timeline Activity Sessions only from the active Workspace's queried History; memoize grouping and avoid rendering events inside collapsed sessions.
 - Keep live PTY buffers out of global React state.
 - Limit and visibly mark persisted output truncation.
 - Use database transactions when finalizing commands and related search records.

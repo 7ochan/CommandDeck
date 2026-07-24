@@ -27,7 +27,9 @@ command-deck/
 │   │   │   └── workspaces/
 │   │   ├── globals.css
 │   │   ├── layout.tsx
-│   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   └── timeline/
+│   │       └── page.tsx            # Dedicated active-Workspace Timeline route
 │   ├── components/
 │   │   ├── layout/                 # Shared application layout primitives
 │   │   └── ui/                     # Generic accessible UI primitives
@@ -54,6 +56,9 @@ command-deck/
 │   │   │   ├── terminal-store.ts
 │   │   │   └── terminal-client.ts
 │   │   ├── timeline/
+│   │   │   ├── components/         # Timeline, Activity Sessions, event details
+│   │   │   ├── activity-sessions.ts # Pure dynamic History grouping
+│   │   │   └── pending-execution.ts # One-time visible terminal handoff
 │   │   ├── workflows/
 │   │   └── workspaces/
 │   ├── lib/                        # Browser-safe utilities and configuration
@@ -163,6 +168,7 @@ Dependencies point inward toward domain contracts and application services. Infr
 | Open tabs and selected tab        | Zustand terminal store, reconciled with server  |
 | xterm.js instance and live buffer | Terminal React component/ref                    |
 | History filters and selections    | Feature hooks or URL state                      |
+| Timeline groups and selection     | Derived feature state; never persisted          |
 | Template input values and preview | Command execution dialog; transient only        |
 | Active Workspace selection        | Root client hook; assigned per terminal session |
 

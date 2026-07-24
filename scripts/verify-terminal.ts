@@ -44,6 +44,12 @@ try {
 
   const response = await fetch(origin);
   assert.equal(response.status, 200, 'Homepage should respond successfully');
+  const timelineResponse = await fetch(`${origin}/timeline`);
+  assert.equal(
+    timelineResponse.status,
+    200,
+    'Workspace Timeline page should respond successfully',
+  );
 
   const cookie = response.headers.get('set-cookie')?.split(';')[0];
   assert.ok(cookie, 'Homepage should issue a terminal session cookie');

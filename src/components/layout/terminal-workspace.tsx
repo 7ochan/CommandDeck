@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
 import { useCommandHistory } from '@/features/command-history/hooks/use-command-history';
@@ -8,6 +8,10 @@ import {
   Terminal,
   type TerminalHandle,
 } from '@/features/terminal/components/terminal';
+import {
+  clearPendingTimelineExecution,
+  loadPendingTimelineExecution,
+} from '@/features/timeline/pending-execution';
 import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-switcher';
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
 import type { CommandCompletedPayload, WorkspaceSummary } from '@/shared/types';
@@ -147,6 +151,44 @@ function ActiveWorkspaceLayout({
     },
     [activeWorkspace.workspaceId, onDeleteWorkspace, workspaces],
   );
+
+  useEffect(() => {
+    const pendingExecution = loadPendingTimelineExecution();
+
+    if (!pendingExecution) {
+      return;
+    }
+
+    if (
+      !workspaces.some(
+        ({ workspaceId }) => workspaceId === pendingExecution.workspaceId,
+      )
+    ) {
+      clearPendingTimelineExecution();
+      return;
+    }
+
+    if (pendingExecution.workspaceId !== activeWorkspace.workspaceId) {
+      onSelectWorkspace(pendingExecution.workspaceId);
+      return;
+    }
+
+    let attempts = 0;
+    const executeWhenReady = () => {
+      attempts += 1;
+
+      if (terminalRef.current?.runCommand(pendingExecution.command)) {
+        clearPendingTimelineExecution();
+        window.clearInterval(timerId);
+      } else if (attempts >= 100) {
+        window.clearInterval(timerId);
+      }
+    };
+    const timerId = window.setInterval(executeWhenReady, 50);
+    executeWhenReady();
+
+    return () => window.clearInterval(timerId);
+  }, [activeWorkspace.workspaceId, onSelectWorkspace, workspaces]);
 
   return (
     <div className="flex min-h-0 flex-1 gap-3">

@@ -200,6 +200,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Consequences:** Workspace switches abort and replace active History/Deck loads, reset feature-local filters and template dialogs, and update terminal metadata. A command already running remains attributed to the Workspace in which it started. Workspace deletion cascades owned data, is forbidden for the final remaining Workspace, and requires selecting a remaining Workspace before deleting the active one. Workspace IDs lead History and Deck indexes and are validated at HTTP and WebSocket boundaries.
 
+## TD-020 — Timeline is a derived History projection
+
+**Status:** Accepted
+
+**Decision:** Implement the Workspace Timeline as a browser-side projection of the existing workspace-scoped Command History query. Do not store Timeline events or Activity Sessions. Group visible entries chronologically using a fixed 15-minute inactivity boundary and a pure normalized working-directory context heuristic. Keep grouping outside React, memoize it at the view boundary, and render event rows only for expanded sessions. Reuse the existing History search/status query, Deck mutation, clipboard, and visible terminal execution paths.
+
+**Reason:** Timeline and History describe the same immutable executions but answer different questions. A second durable activity model would duplicate facts and create synchronization failures. Pure grouping is deterministic, independently testable, and can later consume explicit project-root metadata without migrating Timeline records.
+
+**Consequences:** Filtering may change the visible Activity Session projection because sessions are derived from the filtered History result. Timeline selection, collapse state, and one-time terminal handoff are transient. Run Again navigates to the terminal view and waits for the matching Workspace assignment before sending the command. Expanded sessions reveal events in batches of 100; the event boundary remains suitable for future viewport virtualization but is not yet virtualized. Analytics, charts, and persisted session annotations remain out of scope.
+
 ## Open implementation parameters
 
 These details should be resolved by Phase 0 measurements without changing the architecture:

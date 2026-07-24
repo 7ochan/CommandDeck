@@ -63,7 +63,9 @@ Users can add, edit, reorder, group, and assign icons to actions. Actions must c
 
 ### 5. Searchable timeline
 
-Command History can:
+Each Workspace can project its immutable History into a chronological Timeline. Consecutive commands are grouped into collapsible Activity Sessions using inactivity and working-directory context, while search and status filters remain backed by History. Timeline events expose command details and the same deliberate Copy, Add to Deck, and Run Again actions without creating a second durable activity model.
+
+Command History and Timeline can:
 
 - Search commands, output, and notes
 - Filter by workspace or project
