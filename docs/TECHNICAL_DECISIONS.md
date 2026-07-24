@@ -250,6 +250,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Consequences:** Developer Hub state is transient presentation state and introduces no protocol, database, API, or durable model changes. History and Deck lifecycle, search, selection, template execution, and mutations remain owned by their current features. Future approved modules can add a tab and panel at this boundary, but Workflows, AI, and Analytics are not implemented or registered in this phase; TD-013 continues to govern AI. Responsive collapse changes only visibility and sizing, never terminal or feature ownership.
 
+## TD-025 — Global Command Palette uses feature-owned action registration
+
+**Status:** Accepted
+
+**Decision:** Add one root browser-only Command Palette provider with a registry API for plain searchable action descriptors. Feature adapters independently register Deck and Template execution, History opening, Workspace management/switching, and application navigation actions through their existing callbacks. Normalize registry fields when registrations change and rank live queries in exact, prefix, then substring buckets with stable priority/order tie-breaking and a bounded rendered result count. Capture `Cmd+K` / `Ctrl+K` before xterm input handling, render the palette as a modal overlay, and restore prior focus on ordinary close without altering PTY state.
+
+**Reason:** A feature-agnostic registry makes the palette an instant keyboard entry point without turning it into a second domain store or coupling future modules to a central search switch statement. Precomputed normalized fields and bounded DOM output keep thousands of History entries responsive.
+
+**Consequences:** Palette registrations and queries are transient and introduce no API, protocol, database, or durable model changes. The History hook retains an unfiltered catalog of entries already loaded for the active Workspace so its own visible filters do not narrow palette discovery. Deck templates continue through the existing variable dialog and all terminal execution remains visible. Future approved modules may register descriptors through the same API, but Workflows, AI, and Analytics actions are not implemented; TD-013 continues to govern AI.
+
 ## Open implementation parameters
 
 These details should be resolved by Phase 0 measurements without changing the architecture:

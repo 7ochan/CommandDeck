@@ -90,7 +90,8 @@ select {
 }
 
 .command-history-scrollbar,
-.command-deck-scrollbar {
+.command-deck-scrollbar,
+.command-palette-scrollbar {
   scrollbar-color: #273449 transparent;
   scrollbar-width: thin;
 }

@@ -85,6 +85,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Workspace-scoped terminal cwd persistence and validated restore on initial and replacement sessions
 - Minimal zsh prompt, subtle xterm-anchored completed-command sections, and modern xterm presentation without a custom renderer
 - Terminal-first responsive workspace with a tabbed Deck/History Developer Hub
+- Global keyboard-first Command Palette with registered navigation and reuse actions
 - Workspace Timeline derived from History with collapsible inactivity/directory-based Activity Sessions
 - Basic History-list virtualization
 - Early command/cwd live search and success, failed, and interrupted filters
@@ -105,6 +106,7 @@ Deliver the smallest complete version of the product's defining feature.
 - Refreshing or reopening a terminal restores the selected Workspace's last existing cwd and safely falls back to the user's home directory.
 - The reference zsh prompt shows only abbreviated cwd and a command indicator, completed commands gain lightweight marker-backed separation, and interactive programs, resize, shortcuts, and raw terminal rendering remain intact.
 - The terminal remains the dominant surface while the Developer Hub switches instantly between state-preserving Deck and History panels and collapses below it on smaller screens.
+- `Cmd+K` / `Ctrl+K` searches registered Deck, Template, History, Workspace, and navigation actions with deterministic ranking without interrupting the active terminal.
 - Timeline reflects the active Workspace's History, preserves existing filters/actions, and stores no duplicate event or session data.
 
 ### Milestone

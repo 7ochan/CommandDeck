@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import { CommandPaletteProvider } from '@/features/command-palette/command-palette-provider';
+
 import '@xterm/xterm/css/xterm.css';
 import './globals.css';
 
@@ -14,7 +16,9 @@ export default function RootLayout({
 }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <CommandPaletteProvider>{children}</CommandPaletteProvider>
+      </body>
     </html>
   );
 }

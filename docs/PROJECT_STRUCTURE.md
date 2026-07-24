@@ -34,6 +34,7 @@ command-deck/
 │   │   ├── layout/                 # App shell, terminal workspace, and typed tabbed Developer Hub
 │   │   └── ui/                     # Generic accessible UI primitives
 │   ├── features/
+│   │   ├── command-palette/        # Global registry, ranked search, modal, and navigation actions
 │   │   ├── command-history/
 │   │   │   ├── components/
 │   │   │   ├── hooks/
@@ -174,6 +175,7 @@ Dependencies point inward toward domain contracts and application services. Infr
 | xterm.js instance and live buffer | Terminal React component/ref                    |
 | History filters and selections    | Feature hooks or URL state                      |
 | Active Developer Hub tab/collapse | Developer Hub layout component                  |
+| Command Palette registry/query    | Root client provider; transient only            |
 | Timeline groups and selection     | Derived feature state; never persisted          |
 | Template input values and preview | Command execution dialog; transient only        |
 | Active Workspace selection        | Root client hook; assigned per terminal session |

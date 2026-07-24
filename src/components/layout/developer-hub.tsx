@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -23,6 +25,10 @@ import {
   getDeveloperHubTabForKey,
   type DeveloperHubTab,
 } from './developer-hub-tabs';
+import {
+  consumePendingDeveloperHubTab,
+  subscribeToDeveloperHubTabRequests,
+} from './developer-hub-navigation';
 
 type DeveloperHubProps = {
   deckItems: CommandDeckItem[];
@@ -85,10 +91,33 @@ export function DeveloperHub({
     history: historyEntries.length,
   };
 
-  const selectTab = (tab: DeveloperHubTab) => {
+  const selectTab = useCallback((tab: DeveloperHubTab) => {
     setActiveTab(tab);
     setIsMobileExpanded(true);
-  };
+  }, []);
+
+  useEffect(() => {
+    let subscribed = true;
+    const openRequestedTab = (tab: DeveloperHubTab) => {
+      consumePendingDeveloperHubTab();
+      selectTab(tab);
+    };
+    const pendingTab = consumePendingDeveloperHubTab();
+
+    if (pendingTab) {
+      queueMicrotask(() => {
+        if (subscribed) {
+          selectTab(pendingTab);
+        }
+      });
+    }
+
+    const unsubscribe = subscribeToDeveloperHubTabRequests(openRequestedTab);
+    return () => {
+      subscribed = false;
+      unsubscribe();
+    };
+  }, [selectTab]);
 
   const handleTabKeyDown = (
     event: KeyboardEvent<HTMLButtonElement>,

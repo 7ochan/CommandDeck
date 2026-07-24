@@ -86,6 +86,16 @@ The Developer Hub is a layout composition boundary, not a new domain or data lay
 
 On smaller screens, the Hub moves beneath the terminal and collapses to its tab bar by default. Expanding or switching a tab reveals the same mounted panel; the terminal retains the flexible majority of the available height. Future approved browser modules can add a tab definition and panel without changing terminal, Workspace, History, or Deck ownership. Workflows, AI, and Analytics are not implemented or registered by this decision; AI remains deferred under TD-013.
 
+### Global Command Palette
+
+A root client-side Command Palette provider owns only transient open state, focus restoration, and a registry of searchable action descriptors. The palette core has no imports from Deck, History, Workspaces, Timeline, or terminal implementations. Feature-owned adapters register stable descriptor arrays containing identity, label, group, optional search aliases, availability, priority, and an execution callback that invokes the feature's existing public behavior. Registrations are removed automatically when their owning route or feature unmounts.
+
+The provider installs a capture-phase `Cmd+K` / `Ctrl+K` listener so the shortcut opens the overlay before xterm can forward the keystroke to the PTY. Opening the palette never unmounts, blurs programmatically, resizes, closes, or writes to the terminal session. Escape and completed actions close the overlay; focus returns to the previously focused element when it is still present and no newer modal has taken focus.
+
+Searchable fields are normalized once when the registry changes. Each live query performs one linear pass over that index, buckets matches as exact, prefix, then substring, and applies stable priority/order tie-breaking inside each bucket. The visible result window is bounded so thousands of History descriptors do not create thousands of DOM rows. Command History retains an unfiltered in-memory catalog of the already loaded active-Workspace entries while its visible list can continue using repository-backed search and status filters.
+
+Deck registration distinguishes plain commands from templates by using the shared template parser and reuses the existing variable-resolution dialog before visible terminal execution. Workspace and navigation registrations reuse the existing selection, management dialog, router, and state-preserving Developer Hub handoff. Only the current Deck, Templates, History, Workspaces, and application navigation sources register actions. Workflows, AI, and Analytics remain unimplemented; a future approved module can register descriptors without modifying palette search or interaction code.
+
 ### xterm.js
 
 Each terminal tab owns one xterm.js instance in the browser and corresponds to one server-side PTY session. The frontend:

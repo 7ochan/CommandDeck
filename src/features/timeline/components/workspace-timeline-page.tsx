@@ -3,9 +3,13 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
+import { CommandDeckPaletteSource } from '@/features/command-deck/components/command-deck-palette-source';
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
+import { useRegisterHistoryPaletteActions } from '@/features/command-history/command-palette';
 import { useCommandHistory } from '@/features/command-history/hooks/use-command-history';
 import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-switcher';
+import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/command-palette';
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
 import type { WorkspaceSummary } from '@/shared/types';
 
@@ -66,6 +70,7 @@ function ActiveWorkspaceTimeline({
 }: ActiveWorkspaceTimelineProps) {
   const router = useRouter();
   const history = useCommandHistory(activeWorkspace.workspaceId);
+  const selectHistoryEntry = history.selectEntry;
   const { items: deckItems, addFromHistory } = useCommandDeck(
     activeWorkspace.workspaceId,
   );
@@ -100,6 +105,24 @@ function ActiveWorkspaceTimeline({
     },
     [activeWorkspace.workspaceId, router],
   );
+  const openHistoryEntry = useCallback(
+    (commandId: string) => {
+      selectHistoryEntry(commandId);
+      requestDeveloperHubTab('history');
+      router.push('/');
+    },
+    [router, selectHistoryEntry],
+  );
+
+  useRegisterHistoryPaletteActions({
+    entries: history.paletteEntries,
+    onOpen: openHistoryEntry,
+  });
+  useRegisterWorkspacePaletteActions({
+    workspaces,
+    activeWorkspaceId: activeWorkspace.workspaceId,
+    onSelect: onSelectWorkspace,
+  });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -143,6 +166,8 @@ function ActiveWorkspaceTimeline({
         onRunAgain={runAgain}
         onAddToDeck={addToDeck}
       />
+
+      <CommandDeckPaletteSource items={deckItems} onRun={runAgain} />
     </div>
   );
 }

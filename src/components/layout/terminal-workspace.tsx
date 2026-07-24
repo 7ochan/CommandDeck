@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
+import { CommandDeckPaletteSource } from '@/features/command-deck/components/command-deck-palette-source';
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
+import { useRegisterHistoryPaletteActions } from '@/features/command-history/command-palette';
 import { useCommandHistory } from '@/features/command-history/hooks/use-command-history';
 import {
   Terminal,
@@ -14,6 +17,7 @@ import {
   loadPendingTimelineExecution,
 } from '@/features/timeline/pending-execution';
 import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-switcher';
+import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/command-palette';
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
 import type { CommandCompletedPayload, WorkspaceSummary } from '@/shared/types';
 
@@ -87,6 +91,7 @@ function ActiveWorkspaceLayout({
     useState<TerminalConnectionStatus>('connecting');
   const {
     entries,
+    paletteEntries,
     selectedEntryId,
     query,
     isLoading,
@@ -132,6 +137,13 @@ function ActiveWorkspaceLayout({
     },
     [onRefreshWorkspaces, removeItem],
   );
+  const openHistoryEntry = useCallback(
+    (commandId: string) => {
+      selectEntry(commandId);
+      requestDeveloperHubTab('history');
+    },
+    [selectEntry],
+  );
   const handleDeleteWorkspace = useCallback(
     async (workspaceId: string) => {
       if (workspaceId !== activeWorkspace.workspaceId) {
@@ -166,6 +178,16 @@ function ActiveWorkspaceLayout({
     },
     [activeWorkspace.workspaceId, onDeleteWorkspace, workspaces],
   );
+
+  useRegisterHistoryPaletteActions({
+    entries: paletteEntries,
+    onOpen: openHistoryEntry,
+  });
+  useRegisterWorkspacePaletteActions({
+    workspaces,
+    activeWorkspaceId: activeWorkspace.workspaceId,
+    onSelect: onSelectWorkspace,
+  });
 
   useEffect(() => {
     const pendingExecution = loadPendingTimelineExecution();
@@ -247,6 +269,12 @@ function ActiveWorkspaceLayout({
           onRunCommand={runCommandAgain}
         />
       </div>
+
+      <CommandDeckPaletteSource
+        key={activeWorkspace.workspaceId}
+        items={deckItems}
+        onRun={runCommandAgain}
+      />
     </div>
   );
 }

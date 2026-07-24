@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   EMPTY_COMMAND_HISTORY_QUERY,
+  hasActiveCommandHistoryQuery,
   matchesCommandHistoryQuery,
 } from '@/shared/history-status';
 import type {
@@ -22,6 +23,7 @@ import type { CommandHistoryEntry } from '../types';
 
 type CommandHistoryState = {
   entries: CommandHistoryEntry[];
+  paletteEntries: CommandHistoryEntry[];
   selectedEntryId: string | null;
   query: CommandHistoryQuery;
   isLoading: boolean;
@@ -53,6 +55,10 @@ export function useCommandHistory(workspaceId: string): CommandHistoryState {
     workspaceId: string;
     commandId: string | null;
   }>({ workspaceId, commandId: null });
+  const [catalog, setCatalog] = useState<{
+    workspaceId: string;
+    entries: CommandHistoryEntry[];
+  }>({ workspaceId, entries: [] });
   const [queryState, setQueryState] = useState<{
     workspaceId: string;
     query: CommandHistoryQuery;
@@ -97,6 +103,10 @@ export function useCommandHistory(workspaceId: string): CommandHistoryState {
               isSearching: false,
               loadError: null,
             });
+
+            if (!hasActiveCommandHistoryQuery(query)) {
+              setCatalog({ workspaceId, entries: visibleEntries });
+            }
             setSelection((currentSelection) => {
               const visibleIds = new Set(
                 visibleEntries.map(({ commandId }) => commandId),
@@ -138,6 +148,10 @@ export function useCommandHistory(workspaceId: string): CommandHistoryState {
                     ? error.message
                     : 'Unable to load Command History.',
               });
+
+              if (!hasActiveCommandHistoryQuery(query)) {
+                setCatalog({ workspaceId, entries: [] });
+              }
             }
           })
           .finally(() => {
@@ -163,6 +177,16 @@ export function useCommandHistory(workspaceId: string): CommandHistoryState {
       };
 
       liveEntriesRef.current.set(entry.commandId, entry);
+
+      if (entry.workspaceId === activeWorkspaceIdRef.current) {
+        setCatalog((currentCatalog) => ({
+          workspaceId: entry.workspaceId,
+          entries:
+            currentCatalog.workspaceId === entry.workspaceId
+              ? mergeHistoryEntries(currentCatalog.entries, [entry])
+              : [entry],
+        }));
+      }
 
       const activeQuery = activeQueryRef.current;
 
@@ -255,6 +279,7 @@ export function useCommandHistory(workspaceId: string): CommandHistoryState {
 
   return {
     entries: hasCurrentData ? data.entries : [],
+    paletteEntries: catalog.workspaceId === workspaceId ? catalog.entries : [],
     selectedEntryId:
       selection.workspaceId === workspaceId ? selection.commandId : null,
     query,
