@@ -77,6 +77,13 @@ CommandDeck transforms the command-line interface from a volatile text buffer in
 - **Global Event Interception**: Capture-phase keyboard listener preventing shortcut forwarding to xterm.
 - **Registry Search Engine**: Searches registered actions across workspace selection, deck execution, history queries, templates, and app navigation with deterministic match scoring (exact, prefix, substring).
 
+### Settings
+
+- **Central Entry Point**: Open Settings from the application header or Command Palette.
+- **SQLite Persistence**: General, Terminal, Appearance, and Developer Hub preferences survive restarts.
+- **Immediate Feedback**: Theme and active terminal presentation update without restarting the shell.
+- **Durable Context**: Active Workspace restoration no longer depends on browser local storage.
+
 ---
 
 ## Why CommandDeck?
@@ -228,7 +235,7 @@ Planned future features as outlined in the development roadmap:
 
 - **Workflows**: Multi-step command pipelines with variable bindings, step execution history, and configurable stop-on-failure rules.
 - **AI Assistant**: Local context-aware command suggestions and error diagnosis.
-- **Settings & Preferences UI**: Graphical interface for shell profile configuration, custom prompt settings, and private history exclusions.
+- **Additional Settings**: Shell profile configuration, custom prompt settings, and private history exclusions.
 - **Electron Desktop App**: Cross-platform desktop application package with native OS window management.
 - **Auto Updates**: Integrated update mechanism for desktop distributions.
 - **Broader Shell Support**: First-class shell integration support for Bash, Fish, and Windows PowerShell (ConPTY).

@@ -12,6 +12,7 @@ import {
 
 import { parseTerminalServerMessage } from '@/shared/contracts';
 import type { CommandCompletedPayload } from '@/shared/types';
+import { useSettings } from '@/features/settings/settings-provider';
 
 import {
   createTerminalWebSocket,
@@ -22,7 +23,7 @@ import {
   selectTerminalWorkspace,
 } from '../terminal-client';
 import { TerminalCommandSections } from '../terminal-command-sections';
-import { TERMINAL_PRESENTATION_OPTIONS } from '../terminal-presentation';
+import { getTerminalPresentationOptions } from '../terminal-presentation';
 
 export type TerminalConnectionStatus =
   | 'connecting'
@@ -56,7 +57,12 @@ function TerminalView(
   }: TerminalProps,
   ref: ForwardedRef<TerminalHandle>,
 ) {
+  const { settings, resolvedTheme } = useSettings();
   const containerRef = useRef<HTMLDivElement>(null);
+  const terminalRef = useRef<XtermTerminal | null>(null);
+  const terminalSettingsRef = useRef(settings.terminal);
+  const resolvedThemeRef = useRef(resolvedTheme);
+  const autoFocusRef = useRef(settings.general.autoFocusTerminalAfterSwitching);
   const onCommandCompletedRef = useRef(onCommandCompleted);
   const onConnectionStatusChangeRef = useRef(onConnectionStatusChange);
   const socketRef = useRef<WebSocket | null>(null);
@@ -70,7 +76,9 @@ function TerminalView(
   } | null>(null);
   // Populated by the initialize effect so that the `active` effect can trigger
   // a fit + focus without being inside the same closure.
-  const triggerFitAndFocusRef = useRef<(() => void) | null>(null);
+  const triggerFitAndFocusRef = useRef<
+    ((shouldFocus?: boolean) => void) | null
+  >(null);
   const reportConnectionStatus = useCallback(
     (status: TerminalConnectionStatus) =>
       onConnectionStatusChangeRef.current?.(status),
@@ -163,12 +171,37 @@ function TerminalView(
     void selectWorkspace(workspaceId);
   }, [selectWorkspace, workspaceId]);
 
+  useEffect(() => {
+    terminalSettingsRef.current = settings.terminal;
+    resolvedThemeRef.current = resolvedTheme;
+    autoFocusRef.current = settings.general.autoFocusTerminalAfterSwitching;
+
+    const terminal = terminalRef.current;
+
+    if (terminal) {
+      const options = getTerminalPresentationOptions(
+        settings.terminal,
+        resolvedTheme,
+      );
+      terminal.options.fontSize = options.fontSize;
+      terminal.options.cursorStyle = options.cursorStyle;
+      terminal.options.cursorBlink = options.cursorBlink;
+      terminal.options.scrollback = options.scrollback;
+      terminal.options.theme = options.theme;
+      triggerFitAndFocusRef.current?.(false);
+    }
+  }, [
+    resolvedTheme,
+    settings.general.autoFocusTerminalAfterSwitching,
+    settings.terminal,
+  ]);
+
   // When this workspace's terminal becomes the visible one, snap to the
   // correct dimensions and focus xterm. This handles the case where the
   // window was resized while the terminal was CSS-hidden.
   useEffect(() => {
     if (active) {
-      triggerFitAndFocusRef.current?.();
+      triggerFitAndFocusRef.current?.(autoFocusRef.current);
     }
   }, [active]);
 
@@ -203,7 +236,13 @@ function TerminalView(
       }
 
       const fitAddon = new FitAddon();
-      terminal = new TerminalEmulator(TERMINAL_PRESENTATION_OPTIONS);
+      terminal = new TerminalEmulator(
+        getTerminalPresentationOptions(
+          terminalSettingsRef.current,
+          resolvedThemeRef.current,
+        ),
+      );
+      terminalRef.current = terminal;
       terminal.loadAddon(fitAddon);
       terminal.open(container);
       const sectionPresentation = new TerminalCommandSections(terminal);
@@ -238,9 +277,9 @@ function TerminalView(
 
       // Allow the `active`-prop effect to trigger a fit+focus from outside
       // this closure without adding initialize as an effect dependency.
-      triggerFitAndFocusRef.current = () => {
+      triggerFitAndFocusRef.current = (shouldFocus = true) => {
         fit();
-        terminal?.focus();
+        if (shouldFocus) terminal?.focus();
       };
 
       inputSubscription = terminal.onData((data) => {
@@ -314,7 +353,7 @@ function TerminalView(
             void selectWorkspace(desiredWorkspaceIdRef.current);
           }
 
-          terminal.focus();
+          if (autoFocusRef.current) terminal.focus();
           return;
         }
 
@@ -352,7 +391,7 @@ function TerminalView(
             pendingSelection.resolve(true);
           }
 
-          terminal.focus();
+          if (autoFocusRef.current) terminal.focus();
           return;
         }
 
@@ -447,6 +486,7 @@ function TerminalView(
       socket?.close(1000, 'Terminal component unmounted');
       commandSections?.dispose();
       terminal?.dispose();
+      terminalRef.current = null;
       triggerFitAndFocusRef.current = null;
     };
   }, [reportConnectionStatus, selectWorkspace]);

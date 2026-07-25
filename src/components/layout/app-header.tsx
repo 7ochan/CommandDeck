@@ -11,6 +11,7 @@ import {
   useRegisterCommandPaletteActions,
 } from '@/features/command-palette/command-palette-provider';
 import type { CommandPaletteAction } from '@/features/command-palette/types';
+import { useSettings } from '@/features/settings/settings-provider';
 
 type AppHeaderProps = {
   activeView: 'terminal' | 'timeline';
@@ -19,9 +20,20 @@ type AppHeaderProps = {
 export function AppHeader({ activeView }: AppHeaderProps) {
   const router = useRouter();
   const { openPalette } = useCommandPalette();
+  const { openSettings } = useSettings();
   const shortcutLabel = '⌘K';
   const navigationActions = useMemo<CommandPaletteAction[]>(
     () => [
+      {
+        id: 'open-settings',
+        label: 'Open Settings',
+        description: 'Configure CommandDeck preferences',
+        group: 'Navigation',
+        icon: '⚙',
+        keywords: ['preferences', 'terminal font', 'theme'],
+        priority: 115,
+        execute: openSettings,
+      },
       {
         id: 'open-terminal',
         label: 'Open Terminal',
@@ -71,7 +83,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         },
       },
     ],
-    [router],
+    [openSettings, router],
   );
 
   useRegisterCommandPaletteActions('app-navigation', navigationActions);
@@ -111,17 +123,28 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         </ViewLink>
       </nav>
 
-      <button
-        type="button"
-        className="cd-button h-9 shrink-0 px-2.5 sm:px-3"
-        aria-label="Open Command Palette, Command K or Control K"
-        title="Open Command Palette"
-        onClick={openPalette}
-      >
-        <Icon name="search" size={15} />
-        <span className="hidden sm:inline">Commands</span>
-        <kbd className="cd-kbd hidden md:inline-flex">{shortcutLabel}</kbd>
-      </button>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <button
+          type="button"
+          className="cd-button h-9 px-2.5 sm:px-3"
+          aria-label="Open Command Palette, Command K or Control K"
+          title="Open Command Palette"
+          onClick={openPalette}
+        >
+          <Icon name="search" size={15} />
+          <span className="hidden sm:inline">Commands</span>
+          <kbd className="cd-kbd hidden md:inline-flex">{shortcutLabel}</kbd>
+        </button>
+        <button
+          type="button"
+          className="cd-icon-button h-9 w-9"
+          aria-label="Open Settings"
+          title="Settings"
+          onClick={openSettings}
+        >
+          <Icon name="settings" size={16} />
+        </button>
+      </div>
     </header>
   );
 }

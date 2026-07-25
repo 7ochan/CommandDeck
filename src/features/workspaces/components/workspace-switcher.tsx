@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 
 import { Icon } from '@/components/ui/icon';
 import type { WorkspaceSummary } from '@/shared/types';
+import { useSettings } from '@/features/settings/settings-provider';
 
 type WorkspaceSwitcherProps = {
   workspaces: WorkspaceSummary[];
@@ -27,6 +28,7 @@ export function WorkspaceSwitcher({
   onRename,
   onDelete,
 }: WorkspaceSwitcherProps) {
+  const { settings } = useSettings();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [isManaging, setIsManaging] = useState(false);
@@ -93,9 +95,10 @@ export function WorkspaceSwitcher({
   const remove = async (workspace: WorkspaceSummary) => {
     if (
       workspaces.length === 1 ||
-      !window.confirm(
-        `Delete “${workspace.name}” and all of its History and Deck items?`,
-      )
+      (settings.general.confirmBeforeDeletingWorkspace &&
+        !window.confirm(
+          `Delete “${workspace.name}” and all of its History and Deck items?`,
+        ))
     ) {
       return;
     }

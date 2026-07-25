@@ -26,6 +26,10 @@
   --warning-soft: rgb(232 185 106 / 10%);
   --danger: #ef8d98;
   --danger-soft: rgb(239 141 152 / 10%);
+  --dialog-bg: #151c24;
+  --input-focus: #11171e;
+  --backdrop: rgb(2 4 6 / 76%);
+  --highlight-text: #f4d59d;
   --radius-sm: 6px;
   --radius-md: 9px;
   --radius-lg: 12px;
@@ -53,6 +57,54 @@
   --font-mono:
     'SFMono-Regular', 'SF Mono', 'Cascadia Code', 'Liberation Mono', Menlo,
     monospace;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --canvas: #e9edf1;
+  --canvas-raised: #f3f5f7;
+  --surface-1: #f8f9fa;
+  --surface-2: #eef1f4;
+  --surface-3: #e4e9ed;
+  --surface-hover: #e0e6eb;
+  --terminal: #f7f8fa;
+  --border: #cbd3da;
+  --border-soft: #d9dfe4;
+  --border-strong: #aeb9c3;
+  --text-primary: #202b35;
+  --text-secondary: #4b5965;
+  --text-muted: #6d7984;
+  --text-subtle: #8c969f;
+  --accent: #187a59;
+  --accent-strong: #126646;
+  --accent-soft: rgb(24 122 89 / 10%);
+  --accent-border: rgb(24 122 89 / 28%);
+  --info: #256e9f;
+  --info-soft: rgb(37 110 159 / 9%);
+  --warning: #8a5d12;
+  --warning-soft: rgb(138 93 18 / 9%);
+  --danger: #b43e4b;
+  --danger-soft: rgb(180 62 75 / 9%);
+  --dialog-bg: #f8f9fa;
+  --input-focus: #ffffff;
+  --backdrop: rgb(28 35 41 / 45%);
+  --highlight-text: #744b08;
+  --shadow-surface:
+    inset 0 1px 0 rgb(255 255 255 / 90%), inset 0 -1px 0 rgb(94 108 120 / 8%),
+    -3px -3px 10px rgb(255 255 255 / 70%), 7px 9px 22px rgb(79 93 105 / 13%);
+  --shadow-toolbar:
+    inset 0 1px 0 rgb(255 255 255 / 85%), 0 4px 12px rgb(79 93 105 / 10%);
+  --shadow-raised:
+    inset 0 1px 0 rgb(255 255 255 / 95%), inset 0 -1px 0 rgb(94 108 120 / 9%),
+    -2px -2px 6px rgb(255 255 255 / 70%), 4px 5px 12px rgb(79 93 105 / 13%);
+  --shadow-pressed:
+    inset 2px 2px 5px rgb(79 93 105 / 16%),
+    inset -1px -1px 3px rgb(255 255 255 / 75%);
+  --shadow-recessed:
+    inset 3px 3px 8px rgb(79 93 105 / 13%),
+    inset -1px -1px 4px rgb(255 255 255 / 88%);
+  --shadow-dialog:
+    inset 0 1px 0 rgb(255 255 255 / 95%), 0 24px 70px rgb(47 58 67 / 28%);
 }
 
 * {
@@ -180,7 +232,7 @@ button.cd-clay-tile:active:not(:disabled) {
 
 .cd-input:focus {
   border-color: var(--accent-border);
-  background: #11171e;
+  background: var(--input-focus);
   box-shadow:
     var(--shadow-recessed),
     0 0 0 3px var(--accent-soft);
@@ -293,13 +345,13 @@ button.cd-clay-tile:active:not(:disabled) {
   overflow: hidden;
   border: 1px solid var(--border-strong);
   border-radius: 18px;
-  background: #151c24;
+  background: var(--dialog-bg);
   color: var(--text-primary);
   box-shadow: var(--shadow-dialog);
 }
 
 .cd-dialog::backdrop {
-  background: rgb(2 4 6 / 76%);
+  background: var(--backdrop);
 }
 
 .cd-dialog[open] {

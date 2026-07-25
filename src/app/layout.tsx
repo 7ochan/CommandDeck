@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 import { CommandPaletteProvider } from '@/features/command-palette/command-palette-provider';
+import { SettingsProvider } from '@/features/settings/settings-provider';
 
 import '@xterm/xterm/css/xterm.css';
 import './globals.css';
@@ -15,9 +16,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body>
-        <CommandPaletteProvider>{children}</CommandPaletteProvider>
+        <SettingsProvider>
+          <CommandPaletteProvider>{children}</CommandPaletteProvider>
+        </SettingsProvider>
       </body>
     </html>
   );

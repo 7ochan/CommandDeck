@@ -57,6 +57,7 @@ describe('Command History and Command Deck persistence', () => {
       'command_history_and_deck',
       'workspaces',
       'workspace_terminal_state',
+      'settings',
     ]);
     expect(
       database.sqlite
@@ -72,6 +73,7 @@ describe('Command History and Command Deck persistence', () => {
         'command_history',
         'workspaces',
         'workspace_terminal_state',
+        'settings',
       ]),
     );
   });

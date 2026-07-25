@@ -13,6 +13,7 @@ import {
 import { CommandDeckSection } from '@/features/command-deck/components/command-deck-section';
 import { CommandHistorySection } from '@/features/command-history/components/command-history-section';
 import { Icon } from '@/components/ui/icon';
+import { useSettings } from '@/features/settings/settings-provider';
 import type {
   CommandDeckItem,
   CommandDeckItemUpdate,
@@ -75,7 +76,17 @@ export function DeveloperHub({
   onRemoveDeckItem,
   onRunCommand,
 }: DeveloperHubProps) {
-  const [activeTab, setActiveTab] = useState<DeveloperHubTab>('deck');
+  const {
+    settings,
+    state: settingsState,
+    updateState: updateSettingsState,
+  } = useSettings();
+  const [activeTab, setActiveTab] = useState<DeveloperHubTab>(() =>
+    settings.developerHub.rememberLastSelectedTab &&
+    settingsState.lastDeveloperHubTab
+      ? settingsState.lastDeveloperHubTab
+      : 'deck',
+  );
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
   const tabRefs = useRef(new Map<DeveloperHubTab, HTMLButtonElement>());
   const deckHistoryIds = useMemo(
@@ -92,10 +103,38 @@ export function DeveloperHub({
     history: historyEntries.length,
   };
 
-  const selectTab = useCallback((tab: DeveloperHubTab) => {
-    setActiveTab(tab);
-    setIsMobileExpanded(true);
-  }, []);
+  const selectTab = useCallback(
+    (tab: DeveloperHubTab) => {
+      setActiveTab(tab);
+      setIsMobileExpanded(true);
+
+      if (
+        settings.developerHub.rememberLastSelectedTab &&
+        settingsState.lastDeveloperHubTab !== tab
+      ) {
+        updateSettingsState({ lastDeveloperHubTab: tab });
+      }
+    },
+    [
+      settings.developerHub.rememberLastSelectedTab,
+      settingsState.lastDeveloperHubTab,
+      updateSettingsState,
+    ],
+  );
+
+  useEffect(() => {
+    if (
+      settings.developerHub.rememberLastSelectedTab &&
+      settingsState.lastDeveloperHubTab !== activeTab
+    ) {
+      updateSettingsState({ lastDeveloperHubTab: activeTab });
+    }
+  }, [
+    activeTab,
+    settings.developerHub.rememberLastSelectedTab,
+    settingsState.lastDeveloperHubTab,
+    updateSettingsState,
+  ]);
 
   useEffect(() => {
     let subscribed = true;

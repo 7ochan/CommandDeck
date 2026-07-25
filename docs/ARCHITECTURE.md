@@ -249,6 +249,8 @@ Command Deck CRUD uses a separate HTTP resource and application service. Adding 
 
 Workspace CRUD uses its own repository and service. Every History and Deck service method receives a Workspace ID explicitly; neither service reads an ambient active Workspace. HTTP routes require Workspace IDs and repositories include Workspace predicates in every query or mutation. The browser root owns the active selection, while each terminal session owns the server-authoritative assignment used by capture. Deleting the last Workspace is rejected.
 
+Application Settings follow the same HTTP, service, and repository boundary. A typed Settings snapshot separates user-editable preferences from durable UI context such as the last active Workspace and Developer Hub tab. The SQLite repository stores each leaf under a stable key with a JSON-encoded typed value and update timestamp; missing or invalid values fall back independently to version-controlled defaults. The browser Settings provider loads one snapshot, applies updates immediately, and serializes PATCH requests so rapid changes retain write order. Local storage is not a durable settings store; session storage remains limited to one-time navigation and execution handoffs.
+
 Command Templates are a shared, runtime-neutral domain module rather than React behavior. The initial grammar recognizes exact `{{name}}` tokens whose case-sensitive names match `[A-Za-z_][A-Za-z0-9_]*`. Parsing returns ordered unique placeholders, every occurrence span, and structured syntax errors. Validation rejects malformed templates, missing or whitespace-only values, and expanded commands that still contain placeholder syntax. Expansion performs only position-based plain string substitution: it does not evaluate expressions, shell syntax, nesting, defaults, environment variables, or template logic.
 
 Deck definitions continue to persist the exact template text. Placeholder values and expanded commands are transient UI state and are never written back to the definition. Commands without placeholders execute immediately. Commands with placeholders open a client dialog that deduplicates names by first appearance, shows a live read-only preview, and sends the validated expanded command through the same `terminal.execute` path. This keeps template parsing reusable by future approved consumers without coupling it to Deck presentation or implementing AI.
@@ -279,7 +281,7 @@ Initial domain model:
 | `workflows`                | Workflow identity, description, and version                           |
 | `workflow_steps`           | Ordered commands and stop-on-failure rules                            |
 | `workflow_runs`            | Execution history and outcome                                         |
-| `settings`                 | Application-level preferences                                         |
+| `settings`                 | Typed application preferences and durable UI context by stable key    |
 
 An FTS5 index covers command text, searchable output, and notes. Workspace, date, status, tags, pins, and bookmarks remain structured filters rather than encoded search text.
 

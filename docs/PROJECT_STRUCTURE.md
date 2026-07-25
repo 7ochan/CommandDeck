@@ -35,6 +35,7 @@ command-deck/
 │   │   └── ui/                     # Generic accessible UI primitives
 │   ├── features/
 │   │   ├── command-palette/        # Global registry, ranked search, modal, and navigation actions
+│   │   ├── settings/               # Provider, HTTP adapter, theme logic, and Settings dialog
 │   │   ├── command-history/
 │   │   │   ├── components/
 │   │   │   ├── hooks/
@@ -74,6 +75,8 @@ command-deck/
 │   │   │   └── history-service.ts
 │   │   ├── workspaces/
 │   │   │   └── workspace-service.ts
+│   │   ├── settings/
+│   │   │   └── settings-service.ts # Typed defaults, codecs, and partial updates
 │   │   ├── db/
 │   │   │   ├── client.ts
 │   │   │   ├── schema.ts

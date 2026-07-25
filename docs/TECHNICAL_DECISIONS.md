@@ -248,7 +248,7 @@ This file records the decisions that constrain the initial CommandDeck implement
 
 **Reason:** The terminal should dominate the workspace without making History or Deck slower to reach or creating duplicate feature state. A stable tab composition provides one long-term UI extension point, while mounted panels preserve local interaction, keyboard, dialog, and scroll state across instant tab switches.
 
-**Consequences:** Developer Hub state is transient presentation state and introduces no protocol, database, API, or durable model changes. History and Deck lifecycle, search, selection, template execution, and mutations remain owned by their current features. Future approved modules can add a tab and panel at this boundary, but Workflows, AI, and Analytics are not implemented or registered in this phase; TD-013 continues to govern AI. Responsive collapse changes only visibility and sizing, never terminal or feature ownership.
+**Consequences:** Developer Hub state remains presentation state by default and may restore its last selected tab only when the centralized setting is enabled. History and Deck lifecycle, search, selection, template execution, and mutations remain owned by their current features. Future approved modules can add a tab and panel at this boundary, but Workflows, AI, and Analytics are not implemented or registered in this phase; TD-013 continues to govern AI. Responsive collapse changes only visibility and sizing, never terminal or feature ownership.
 
 ## TD-025 — Global Command Palette uses feature-owned action registration
 
@@ -259,6 +259,16 @@ This file records the decisions that constrain the initial CommandDeck implement
 **Reason:** A feature-agnostic registry makes the palette an instant keyboard entry point without turning it into a second domain store or coupling future modules to a central search switch statement. Precomputed normalized fields and bounded DOM output keep thousands of History entries responsive.
 
 **Consequences:** Palette registrations and queries are transient and introduce no API, protocol, database, or durable model changes. The History hook retains an unfiltered catalog of entries already loaded for the active Workspace so its own visible filters do not narrow palette discovery. Deck templates continue through the existing variable dialog and all terminal execution remains visible. Future approved modules may register descriptors through the same API, but Workflows, AI, and Analytics actions are not implemented; TD-013 continues to govern AI.
+
+## TD-026 — Central Settings use typed leaf persistence
+
+**Status:** Accepted
+
+**Decision:** Store application preferences and their controlled durable UI context in one SQLite `settings` table keyed by stable leaf names. Encode each value as JSON, validate it through shared schemas at the HTTP boundary, and resolve it through a typed Settings service with per-field defaults. Expose one GET/PATCH resource and one root client provider. Apply presentation settings optimistically and serialize writes in request order. Keep local storage out of durable preference ownership; retain session storage only for one-time UI handoffs.
+
+**Reason:** Settings span otherwise independent features, but neither React components nor terminal infrastructure should become a second persistence layer. Leaf records allow future preferences to be added without schema migrations, while typed defaults and independent corruption fallback keep upgrades safe.
+
+**Consequences:** A new setting extends the shared type, default, validation, service codec, and relevant UI or consumer without changing the table or transport architecture. Multi-field writes are transactional. Theme and xterm presentation changes apply to mounted clients immediately; they do not recreate WebSockets, PTYs, buffers, state stores, or workflows. Active Workspace and optional Developer Hub restoration now persist through SQLite.
 
 ## Open implementation parameters
 

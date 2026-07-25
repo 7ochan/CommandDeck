@@ -19,6 +19,7 @@ import {
   commandDeckItemSchema,
   commandDeckResponseSchema,
   commandHistoryResponseSchema,
+  settingsSnapshotSchema,
   workspaceSummarySchema,
   workspacesResponseSchema,
 } from '../src/shared/schemas/index.js';
@@ -58,6 +59,9 @@ try {
   assert.equal(initialWorkspaces[0]?.name, 'Default Workspace');
   const defaultWorkspaceId = initialWorkspaces[0]?.workspaceId;
   assert.ok(defaultWorkspaceId);
+  const initialSettings = await loadSettings();
+  assert.equal(initialSettings.settings.appearance.theme, 'dark');
+  assert.equal(initialSettings.settings.terminal.fontSize, 14);
   const defaultWorkingDirectory = join(dataDirectory, 'default-project');
   const servicesWorkingDirectory = join(dataDirectory, 'services-project');
   mkdirSync(defaultWorkingDirectory);
@@ -383,7 +387,7 @@ try {
     sessionId,
     'Switching Workspace should replace the terminal session',
   );
-  assert.equal(initialServicesTerminal.payload.cwd, homedir());
+  assert.equal(initialServicesTerminal.cwd, homedir());
   sessionId = initialServicesTerminal.sessionId;
   sendExecute(
     socket,
@@ -470,8 +474,13 @@ try {
     defaultWorkspaceId,
   );
   assert.notEqual(restoredDefaultTerminal.sessionId, sessionId);
-  assert.equal(restoredDefaultTerminal.payload.cwd, defaultWorkingDirectory);
   sessionId = restoredDefaultTerminal.sessionId;
+  await verifyCurrentWorkingDirectory(
+    socket,
+    sessionId,
+    messages,
+    defaultWorkingDirectory,
+  );
 
   const restoredServicesTerminal = await selectWorkspace(
     socket,
@@ -480,8 +489,13 @@ try {
     servicesWorkspace.workspaceId,
   );
   assert.notEqual(restoredServicesTerminal.sessionId, sessionId);
-  assert.equal(restoredServicesTerminal.payload.cwd, servicesWorkingDirectory);
   sessionId = restoredServicesTerminal.sessionId;
+  await verifyCurrentWorkingDirectory(
+    socket,
+    sessionId,
+    messages,
+    servicesWorkingDirectory,
+  );
 
   const defaultHistoryDuringServices =
     await loadCommandHistory(defaultWorkspaceId);
@@ -545,6 +559,23 @@ try {
   ];
   const historyBeforeRestart = await loadCommandHistory(defaultWorkspaceId);
   assertHistoryPersisted(historyBeforeRestart, expectedCommandIds);
+  const updatedSettings = await updateSettings({
+    settings: {
+      appearance: { theme: 'light' },
+      terminal: {
+        fontSize: 18,
+        cursorStyle: 'underline',
+        cursorBlink: false,
+        scrollbackSize: 20_000,
+      },
+      developerHub: { rememberLastSelectedTab: true },
+    },
+    state: {
+      lastWorkspaceId: servicesWorkspace.workspaceId,
+      lastDeveloperHubTab: 'history',
+    },
+  });
+  assert.equal(updatedSettings.settings.terminal.fontSize, 18);
 
   await stopServer(server);
   server = startServer(dataDirectory);
@@ -552,6 +583,8 @@ try {
 
   const historyAfterRestart = await loadCommandHistory(defaultWorkspaceId);
   assertHistoryPersisted(historyAfterRestart, expectedCommandIds);
+  const settingsAfterRestart = await loadSettings();
+  assert.deepEqual(settingsAfterRestart, updatedSettings);
   const deckAfterRestart = await loadCommandDeck(defaultWorkspaceId);
   assert.deepEqual(
     deckAfterRestart,
@@ -568,7 +601,7 @@ try {
     ({ workspaceId }) => workspaceId === servicesWorkspace.workspaceId,
   );
   assert.ok(servicesAfterRestart);
-  assert.equal(servicesAfterRestart.historyCount, 3);
+  assert.equal(servicesAfterRestart.historyCount, 4);
   assert.equal(servicesAfterRestart.deckCount, 1);
   assertHistoryPersisted(
     await loadCommandHistory(servicesWorkspace.workspaceId),
@@ -607,9 +640,17 @@ try {
   );
 
   rmSync(defaultWorkingDirectory, { recursive: true, force: true });
+  await stopServer(server);
+  server = startServer(dataDirectory);
+  await waitForServer(server);
+  const invalidDirectoryResponse = await fetch(origin);
+  const invalidDirectoryCookie = invalidDirectoryResponse.headers
+    .get('set-cookie')
+    ?.split(';')[0];
+  assert.ok(invalidDirectoryCookie);
   const invalidDirectoryFallback = await openTerminal(
     defaultWorkspaceId,
-    restartedCookie,
+    invalidDirectoryCookie,
   );
   assert.equal(
     invalidDirectoryFallback.started.payload.cwd,
@@ -624,7 +665,7 @@ try {
   await deleteWorkspace(defaultWorkspaceId, 409);
 
   console.log(
-    'Terminal verification passed: minimal prompt and command spacing, per-Workspace cwd restoration and invalid-directory fallback, Workspace CRUD/switching/isolation/restart behavior, lifecycle ownership, History persistence/search, Deck templates, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
+    'Terminal verification passed: minimal prompt and command spacing, per-Workspace cwd restoration and invalid-directory fallback, Workspace CRUD/switching/isolation/restart behavior, Settings persistence, lifecycle ownership, History persistence/search, Deck templates, reruns, failures, multiline input, ANSI color, resize, and Ctrl+C.',
   );
 } finally {
   await stopServer(server);
@@ -780,6 +821,22 @@ async function loadWorkspaces(): Promise<WorkspaceSummary[]> {
   return workspacesResponseSchema.parse(await response.json()).workspaces;
 }
 
+async function loadSettings() {
+  const response = await fetch(`${origin}/api/settings`, { cache: 'no-store' });
+  assert.equal(response.status, 200, 'Settings API should respond');
+  return settingsSnapshotSchema.parse(await response.json());
+}
+
+async function updateSettings(update: unknown) {
+  const response = await fetch(`${origin}/api/settings`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(update),
+  });
+  assert.equal(response.status, 200, 'Updating Settings should succeed');
+  return settingsSnapshotSchema.parse(await response.json());
+}
+
 async function createWorkspace(name: string): Promise<WorkspaceSummary> {
   const response = await fetch(`${origin}/api/workspaces`, {
     method: 'POST',
@@ -906,7 +963,7 @@ async function selectWorkspace(
   sessionId: string,
   messages: TerminalServerMessage[],
   workspaceId: string,
-): Promise<Extract<TerminalServerMessage, { type: 'terminal.started' }>> {
+): Promise<{ sessionId: string; cwd?: string }> {
   const messageOffset = messages.length;
   socket.send(
     serializeTerminalMessage({
@@ -916,21 +973,55 @@ async function selectWorkspace(
       payload: { workspaceId },
     }),
   );
-  let started: TerminalServerMessage | undefined;
+  let selected: TerminalServerMessage | undefined;
 
   await waitFor(() => {
-    started = messages
+    selected = messages
       .slice(messageOffset)
       .find(
         (message) =>
-          message.type === 'terminal.started' &&
+          (message.type === 'terminal.started' ||
+            message.type === 'terminal.workspace.selected') &&
           message.payload.workspaceId === workspaceId,
       );
-    return Boolean(started);
-  }, `terminal.started(${workspaceId})`);
+    return Boolean(selected);
+  }, `terminal workspace selection (${workspaceId})`);
 
-  assert.ok(started?.type === 'terminal.started');
-  return started;
+  assert.ok(
+    selected?.type === 'terminal.started' ||
+      selected?.type === 'terminal.workspace.selected',
+  );
+  return {
+    sessionId:
+      selected.type === 'terminal.started'
+        ? selected.sessionId
+        : selected.payload.sessionId,
+    cwd:
+      selected.type === 'terminal.started' ? selected.payload.cwd : undefined,
+  };
+}
+
+async function verifyCurrentWorkingDirectory(
+  socket: WebSocket,
+  sessionId: string,
+  messages: TerminalServerMessage[],
+  expectedCwd: string,
+): Promise<void> {
+  sendExecute(socket, sessionId, 'pwd');
+  const started = await waitForCommandMessage(
+    messages,
+    'command.started',
+    (message) =>
+      message.payload.command === 'pwd' && message.payload.cwd === expectedCwd,
+    `pwd start in ${expectedCwd}`,
+  );
+  assert.equal(started.payload.cwd, expectedCwd);
+  await waitForCommandMessage(
+    messages,
+    'command.completed',
+    (message) => message.payload.commandId === started.payload.commandId,
+    `pwd completion in ${expectedCwd}`,
+  );
 }
 
 async function waitForMessage(

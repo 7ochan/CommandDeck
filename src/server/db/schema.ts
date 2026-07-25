@@ -7,6 +7,12 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
+export const settings = sqliteTable('settings', {
+  key: text('key').primaryKey().notNull(),
+  value: text('value').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+});
+
 export const workspaces = sqliteTable(
   'workspaces',
   {

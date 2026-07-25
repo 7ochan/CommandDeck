@@ -265,6 +265,7 @@ function getPaletteIcon(action: RegisteredCommandPaletteAction): IconName {
   if (action.group === 'History') return 'history';
   if (action.group === 'Deck') return 'deck';
   if (action.group === 'Templates') return 'command';
+  if (action.label.toLowerCase().includes('settings')) return 'settings';
   if (action.label.toLowerCase().includes('timeline')) return 'timeline';
   if (action.label.toLowerCase().includes('deck')) return 'deck';
   if (action.label.toLowerCase().includes('history')) return 'history';

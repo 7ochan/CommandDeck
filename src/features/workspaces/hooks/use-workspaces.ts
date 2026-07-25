@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { WorkspaceSummary } from '@/shared/types';
+import { useSettings } from '@/features/settings/settings-provider';
 
 import {
   createWorkspace as createWorkspaceRequest,
@@ -10,11 +11,6 @@ import {
   loadWorkspaces,
   renameWorkspace as renameWorkspaceRequest,
 } from '../api';
-import {
-  loadActiveWorkspaceId,
-  saveActiveWorkspaceId,
-} from '../active-workspace-storage';
-
 type WorkspacesState = {
   workspaces: WorkspaceSummary[];
   activeWorkspace: WorkspaceSummary | null;
@@ -31,6 +27,12 @@ type WorkspacesState = {
 };
 
 export function useWorkspaces(): WorkspacesState {
+  const {
+    settings,
+    state: settingsState,
+    isLoading: isSettingsLoading,
+    updateState: updateSettingsState,
+  } = useSettings();
   const [workspaces, setWorkspaces] = useState<WorkspaceSummary[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(
     null,
@@ -40,30 +42,51 @@ export function useWorkspaces(): WorkspacesState {
   const activeWorkspaceIdRef = useRef(activeWorkspaceId);
   const workspacesRef = useRef(workspaces);
   const mutationRevisionRef = useRef(0);
+  const restorePreviousWorkspaceRef = useRef(
+    settings.general.restorePreviousWorkspace,
+  );
+  const lastWorkspaceIdRef = useRef(settingsState.lastWorkspaceId);
 
   useEffect(() => {
     activeWorkspaceIdRef.current = activeWorkspaceId;
     workspacesRef.current = workspaces;
   }, [activeWorkspaceId, workspaces]);
 
-  const applyWorkspaces = useCallback((loaded: WorkspaceSummary[]) => {
-    const currentId = activeWorkspaceIdRef.current;
-    const storedId = loadActiveWorkspaceId();
-    const nextActiveId = loaded.some(
-      ({ workspaceId }) => workspaceId === currentId,
-    )
-      ? currentId
-      : loaded.some(({ workspaceId }) => workspaceId === storedId)
-        ? storedId
-        : loaded[0]?.workspaceId;
+  useEffect(() => {
+    restorePreviousWorkspaceRef.current =
+      settings.general.restorePreviousWorkspace;
+    lastWorkspaceIdRef.current = settingsState.lastWorkspaceId;
+  }, [
+    settings.general.restorePreviousWorkspace,
+    settingsState.lastWorkspaceId,
+  ]);
 
-    setWorkspaces(loaded);
-    setActiveWorkspaceId(nextActiveId ?? null);
+  const applyWorkspaces = useCallback(
+    (loaded: WorkspaceSummary[]) => {
+      const currentId = activeWorkspaceIdRef.current;
+      const storedId = restorePreviousWorkspaceRef.current
+        ? lastWorkspaceIdRef.current
+        : null;
+      const nextActiveId = loaded.some(
+        ({ workspaceId }) => workspaceId === currentId,
+      )
+        ? currentId
+        : loaded.some(({ workspaceId }) => workspaceId === storedId)
+          ? storedId
+          : loaded[0]?.workspaceId;
 
-    if (nextActiveId) {
-      saveActiveWorkspaceId(nextActiveId);
-    }
-  }, []);
+      setWorkspaces(loaded);
+      setActiveWorkspaceId(nextActiveId ?? null);
+
+      if (nextActiveId) {
+        if (lastWorkspaceIdRef.current !== nextActiveId) {
+          lastWorkspaceIdRef.current = nextActiveId;
+          updateSettingsState({ lastWorkspaceId: nextActiveId });
+        }
+      }
+    },
+    [updateSettingsState],
+  );
 
   const refreshWorkspaces = useCallback(async () => {
     const revision = mutationRevisionRef.current;
@@ -85,6 +108,10 @@ export function useWorkspaces(): WorkspacesState {
   }, [applyWorkspaces]);
 
   useEffect(() => {
+    if (isSettingsLoading) {
+      return;
+    }
+
     const controller = new AbortController();
 
     void loadWorkspaces(controller.signal)
@@ -108,35 +135,45 @@ export function useWorkspaces(): WorkspacesState {
       });
 
     return () => controller.abort();
-  }, [applyWorkspaces]);
+  }, [applyWorkspaces, isSettingsLoading]);
 
-  const selectWorkspace = useCallback((workspaceId: string) => {
-    if (
-      !workspacesRef.current.some(
-        (workspace) => workspace.workspaceId === workspaceId,
-      )
-    ) {
-      return;
-    }
+  const selectWorkspace = useCallback(
+    (workspaceId: string) => {
+      if (
+        !workspacesRef.current.some(
+          (workspace) => workspace.workspaceId === workspaceId,
+        )
+      ) {
+        return;
+      }
 
-    activeWorkspaceIdRef.current = workspaceId;
-    setActiveWorkspaceId(workspaceId);
-    saveActiveWorkspaceId(workspaceId);
-  }, []);
+      activeWorkspaceIdRef.current = workspaceId;
+      setActiveWorkspaceId(workspaceId);
+      if (lastWorkspaceIdRef.current !== workspaceId) {
+        lastWorkspaceIdRef.current = workspaceId;
+        updateSettingsState({ lastWorkspaceId: workspaceId });
+      }
+    },
+    [updateSettingsState],
+  );
 
-  const createWorkspace = useCallback(async (name: string) => {
-    mutationRevisionRef.current += 1;
-    const workspace = await createWorkspaceRequest(name);
-    setWorkspaces((current) => {
-      const next = [...current, workspace];
-      workspacesRef.current = next;
-      return next;
-    });
-    activeWorkspaceIdRef.current = workspace.workspaceId;
-    setActiveWorkspaceId(workspace.workspaceId);
-    saveActiveWorkspaceId(workspace.workspaceId);
-    return workspace;
-  }, []);
+  const createWorkspace = useCallback(
+    async (name: string) => {
+      mutationRevisionRef.current += 1;
+      const workspace = await createWorkspaceRequest(name);
+      setWorkspaces((current) => {
+        const next = [...current, workspace];
+        workspacesRef.current = next;
+        return next;
+      });
+      activeWorkspaceIdRef.current = workspace.workspaceId;
+      setActiveWorkspaceId(workspace.workspaceId);
+      lastWorkspaceIdRef.current = workspace.workspaceId;
+      updateSettingsState({ lastWorkspaceId: workspace.workspaceId });
+      return workspace;
+    },
+    [updateSettingsState],
+  );
 
   const renameWorkspace = useCallback(
     async (workspaceId: string, name: string) => {
@@ -154,26 +191,33 @@ export function useWorkspaces(): WorkspacesState {
     [],
   );
 
-  const deleteWorkspace = useCallback(async (workspaceId: string) => {
-    mutationRevisionRef.current += 1;
-    await deleteWorkspaceRequest(workspaceId);
-    const remaining = workspacesRef.current.filter(
-      (workspace) => workspace.workspaceId !== workspaceId,
-    );
-    const nextActiveId =
-      activeWorkspaceIdRef.current === workspaceId
-        ? (remaining[0]?.workspaceId ?? null)
-        : activeWorkspaceIdRef.current;
+  const deleteWorkspace = useCallback(
+    async (workspaceId: string) => {
+      mutationRevisionRef.current += 1;
+      await deleteWorkspaceRequest(workspaceId);
+      const remaining = workspacesRef.current.filter(
+        (workspace) => workspace.workspaceId !== workspaceId,
+      );
+      const nextActiveId =
+        activeWorkspaceIdRef.current === workspaceId
+          ? (remaining[0]?.workspaceId ?? null)
+          : activeWorkspaceIdRef.current;
 
-    setWorkspaces(remaining);
-    workspacesRef.current = remaining;
-    setActiveWorkspaceId(nextActiveId);
-    activeWorkspaceIdRef.current = nextActiveId;
+      setWorkspaces(remaining);
+      workspacesRef.current = remaining;
+      setActiveWorkspaceId(nextActiveId);
+      activeWorkspaceIdRef.current = nextActiveId;
 
-    if (nextActiveId) {
-      saveActiveWorkspaceId(nextActiveId);
-    }
-  }, []);
+      if (nextActiveId) {
+        lastWorkspaceIdRef.current = nextActiveId;
+        updateSettingsState({ lastWorkspaceId: nextActiveId });
+      } else {
+        lastWorkspaceIdRef.current = null;
+        updateSettingsState({ lastWorkspaceId: null });
+      }
+    },
+    [updateSettingsState],
+  );
 
   const activeWorkspace = useMemo(
     () =>

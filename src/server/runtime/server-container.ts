@@ -6,6 +6,8 @@ import { SqliteCommandDeckRepository } from '../db/repositories/command-deck-rep
 import { SqliteCommandHistoryRepository } from '../db/repositories/command-history-repository.js';
 import { SqliteWorkspaceRepository } from '../db/repositories/workspace-repository.js';
 import { SqliteWorkspaceTerminalStateRepository } from '../db/repositories/workspace-terminal-state-repository.js';
+import { SqliteSettingsRepository } from '../db/repositories/settings-repository.js';
+import { SettingsService } from '../settings/settings-service.js';
 import { TerminalSessionManager } from '../terminal/terminal-session-manager.js';
 import { TerminalGateway } from '../websocket/terminal-gateway.js';
 import { WorkspaceService } from '../workspaces/workspace-service.js';
@@ -30,6 +32,9 @@ export function initializeServerContainer(): ServerContainer {
   const deckRepository = new SqliteCommandDeckRepository(database.orm);
   const workspaceRepository = new SqliteWorkspaceRepository(database.orm);
   const workspaceService = new WorkspaceService(workspaceRepository);
+  const settingsService = new SettingsService(
+    new SqliteSettingsRepository(database.orm),
+  );
   const workspaceTerminalStateService = new WorkspaceTerminalStateService(
     new SqliteWorkspaceTerminalStateRepository(database.orm),
   );
@@ -55,6 +60,7 @@ export function initializeServerContainer(): ServerContainer {
     commandHistoryService,
     commandDeckService,
     workspaceService,
+    settingsService,
     terminalGateway,
     databasePath: database.path,
     close: () => {
