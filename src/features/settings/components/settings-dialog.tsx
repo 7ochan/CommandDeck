@@ -3,12 +3,14 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
 import { Icon, type IconName } from '@/components/ui/icon';
+import { mergeAppSettings } from '@/features/settings/settings-state';
 import type {
   AppSettings,
   AppSettingsUpdate,
   ApplicationTheme,
   TerminalCursorStyle,
 } from '@/shared/types';
+import { DEFAULT_APP_SETTINGS } from '@/shared/types';
 
 const SECTIONS = [
   {
@@ -49,7 +51,7 @@ type SettingsDialogProps = {
   settings: AppSettings;
   isLoading: boolean;
   persistenceError: string | null;
-  onUpdate: (update: AppSettingsUpdate) => void;
+  onSave: (settings: AppSettings) => void;
   onClose: () => void;
 };
 
@@ -58,14 +60,17 @@ export function SettingsDialog({
   settings,
   isLoading,
   persistenceError,
-  onUpdate,
+  onSave,
   onClose,
 }: SettingsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const [draftSettings, setDraftSettings] = useState(settings);
   const [activeSection, setActiveSection] =
     useState<SettingsSection>('general');
   const activeSectionDetails = SECTIONS.find(({ id }) => id === activeSection);
+  const hasChanges = !areSettingsEqual(draftSettings, settings);
+  const isDefaultDraft = areSettingsEqual(draftSettings, DEFAULT_APP_SETTINGS);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -75,11 +80,25 @@ export function SettingsDialog({
     }
 
     if (isOpen && !dialog.open) {
+      setDraftSettings(settings);
       dialog.showModal();
     } else if (!isOpen && dialog.open) {
       dialog.close();
     }
-  }, [isOpen]);
+  }, [isOpen, settings]);
+
+  const updateDraft = (update: AppSettingsUpdate) => {
+    setDraftSettings((current) => mergeAppSettings(current, update));
+  };
+
+  const save = () => {
+    if (!hasChanges || isLoading) {
+      return;
+    }
+
+    onSave(draftSettings);
+    onClose();
+  };
 
   return (
     <dialog
@@ -111,12 +130,12 @@ export function SettingsDialog({
           </div>
 
           <div className="flex shrink-0 items-center gap-2.5">
-            {!persistenceError && (
+            {hasChanges && !persistenceError && (
               <span
-                className="hidden text-[9px] text-[var(--text-muted)] sm:block"
+                className="hidden text-[9px] text-[var(--warning)] sm:block"
                 role="status"
               >
-                {isLoading ? 'Loading…' : 'Saved automatically'}
+                Unsaved changes
               </span>
             )}
             <button
@@ -191,17 +210,19 @@ export function SettingsDialog({
                     <ToggleSetting
                       label="Restore previous workspace on startup"
                       description="Open the workspace that was active when CommandDeck last closed."
-                      checked={settings.general.restorePreviousWorkspace}
+                      checked={draftSettings.general.restorePreviousWorkspace}
                       onChange={(restorePreviousWorkspace) =>
-                        onUpdate({ general: { restorePreviousWorkspace } })
+                        updateDraft({ general: { restorePreviousWorkspace } })
                       }
                     />
                     <ToggleSetting
                       label="Confirm before deleting workspace"
                       description="Ask before permanently removing its History and Deck items."
-                      checked={settings.general.confirmBeforeDeletingWorkspace}
+                      checked={
+                        draftSettings.general.confirmBeforeDeletingWorkspace
+                      }
                       onChange={(confirmBeforeDeletingWorkspace) =>
-                        onUpdate({
+                        updateDraft({
                           general: { confirmBeforeDeletingWorkspace },
                         })
                       }
@@ -209,9 +230,11 @@ export function SettingsDialog({
                     <ToggleSetting
                       label="Auto-focus terminal after switching"
                       description="Move keyboard focus to the terminal when changing workspaces."
-                      checked={settings.general.autoFocusTerminalAfterSwitching}
+                      checked={
+                        draftSettings.general.autoFocusTerminalAfterSwitching
+                      }
                       onChange={(autoFocusTerminalAfterSwitching) =>
-                        onUpdate({
+                        updateDraft({
                           general: { autoFocusTerminalAfterSwitching },
                         })
                       }
@@ -227,9 +250,9 @@ export function SettingsDialog({
                     <SelectSetting
                       label="Font size"
                       description="Terminal text size in pixels."
-                      value={String(settings.terminal.fontSize)}
+                      value={String(draftSettings.terminal.fontSize)}
                       onChange={(value) =>
-                        onUpdate({ terminal: { fontSize: Number(value) } })
+                        updateDraft({ terminal: { fontSize: Number(value) } })
                       }
                     >
                       {[10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24].map(
@@ -243,9 +266,9 @@ export function SettingsDialog({
                     <SelectSetting
                       label="Cursor style"
                       description="Choose the terminal insertion marker."
-                      value={settings.terminal.cursorStyle}
+                      value={draftSettings.terminal.cursorStyle}
                       onChange={(cursorStyle) =>
-                        onUpdate({
+                        updateDraft({
                           terminal: {
                             cursorStyle: cursorStyle as TerminalCursorStyle,
                           },
@@ -259,17 +282,17 @@ export function SettingsDialog({
                     <ToggleSetting
                       label="Cursor blinking"
                       description="Animate the cursor while the terminal is focused."
-                      checked={settings.terminal.cursorBlink}
+                      checked={draftSettings.terminal.cursorBlink}
                       onChange={(cursorBlink) =>
-                        onUpdate({ terminal: { cursorBlink } })
+                        updateDraft({ terminal: { cursorBlink } })
                       }
                     />
                     <SelectSetting
                       label="Scrollback size"
                       description="Maximum lines retained in each terminal buffer."
-                      value={String(settings.terminal.scrollbackSize)}
+                      value={String(draftSettings.terminal.scrollbackSize)}
                       onChange={(value) =>
-                        onUpdate({
+                        updateDraft({
                           terminal: { scrollbackSize: Number(value) },
                         })
                       }
@@ -295,8 +318,10 @@ export function SettingsDialog({
                         <ThemeOption
                           key={theme}
                           theme={theme}
-                          selected={settings.appearance.theme === theme}
-                          onSelect={() => onUpdate({ appearance: { theme } })}
+                          selected={draftSettings.appearance.theme === theme}
+                          onSelect={() =>
+                            updateDraft({ appearance: { theme } })
+                          }
                         />
                       ))}
                     </div>
@@ -311,15 +336,45 @@ export function SettingsDialog({
                     <ToggleSetting
                       label="Remember last selected tab"
                       description="Restore Deck or History the next time CommandDeck opens."
-                      checked={settings.developerHub.rememberLastSelectedTab}
+                      checked={
+                        draftSettings.developerHub.rememberLastSelectedTab
+                      }
                       onChange={(rememberLastSelectedTab) =>
-                        onUpdate({ developerHub: { rememberLastSelectedTab } })
+                        updateDraft({
+                          developerHub: { rememberLastSelectedTab },
+                        })
                       }
                     />
                   </SettingsGroup>
                 )}
               </fieldset>
             </div>
+
+            <footer className="flex shrink-0 flex-col items-stretch justify-between gap-2 border-t border-[var(--border-soft)] px-5 py-2.5 sm:min-h-13 sm:flex-row sm:items-center sm:gap-3 sm:px-6">
+              <button
+                type="button"
+                className="cd-button cd-button--quiet px-1.5 text-[var(--text-muted)]"
+                disabled={isLoading || isDefaultDraft}
+                onClick={() => setDraftSettings(DEFAULT_APP_SETTINGS)}
+              >
+                <Icon name="history" size={13} />
+                Restore Defaults
+              </button>
+
+              <div className="flex items-center justify-end gap-2">
+                <button type="button" className="cd-button" onClick={onClose}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="cd-button cd-button--primary"
+                  disabled={isLoading || !hasChanges}
+                  onClick={save}
+                >
+                  Save
+                </button>
+              </div>
+            </footer>
           </div>
         </div>
       </div>
@@ -452,5 +507,23 @@ function ThemeOption({
       </span>
       {label}
     </button>
+  );
+}
+
+function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
+  return (
+    left.general.restorePreviousWorkspace ===
+      right.general.restorePreviousWorkspace &&
+    left.general.confirmBeforeDeletingWorkspace ===
+      right.general.confirmBeforeDeletingWorkspace &&
+    left.general.autoFocusTerminalAfterSwitching ===
+      right.general.autoFocusTerminalAfterSwitching &&
+    left.terminal.fontSize === right.terminal.fontSize &&
+    left.terminal.cursorStyle === right.terminal.cursorStyle &&
+    left.terminal.cursorBlink === right.terminal.cursorBlink &&
+    left.terminal.scrollbackSize === right.terminal.scrollbackSize &&
+    left.appearance.theme === right.appearance.theme &&
+    left.developerHub.rememberLastSelectedTab ===
+      right.developerHub.rememberLastSelectedTab
   );
 }

@@ -158,7 +158,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         settings={settings}
         isLoading={isLoading}
         persistenceError={persistenceError}
-        onUpdate={updateSettings}
+        onSave={updateSettings}
         onClose={() => setIsDialogOpen(false)}
       />
     </SettingsContext.Provider>
