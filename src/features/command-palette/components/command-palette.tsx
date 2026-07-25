@@ -156,7 +156,7 @@ export function CommandPalette({
       }}
     >
       <div className="border-b border-[var(--border-soft)] p-3.5">
-        <div className="flex items-center gap-3 rounded-[10px] border border-[var(--border)] bg-[var(--canvas-raised)] px-3.5 focus-within:border-[var(--accent-border)] focus-within:shadow-[0_0_0_3px_var(--accent-soft)]">
+        <div className="cd-inset-tray cd-palette-search flex items-center gap-3 rounded-[11px] px-3.5">
           <span className="text-[var(--accent)]" aria-hidden="true">
             <Icon name="search" size={17} />
           </span>

@@ -128,8 +128,8 @@ function ActiveWorkspaceTimeline({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2.5">
       <div className="flex shrink-0 flex-col items-stretch gap-2.5 md:flex-row">
-        <section className="cd-surface flex min-w-0 flex-1 items-center gap-3 rounded-[10px] px-4 py-2.5 shadow-none">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--info-soft)] text-[var(--info)]">
+        <section className="cd-surface cd-surface--toolbar flex min-w-0 flex-1 items-center gap-3 rounded-[12px] px-4 py-2.5">
+          <span className="cd-clay-tile cd-clay-tile--info flex size-8 shrink-0 items-center justify-center rounded-lg">
             <Icon name="timeline" size={16} />
           </span>
           <div className="min-w-0">

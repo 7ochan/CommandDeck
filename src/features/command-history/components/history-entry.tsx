@@ -70,9 +70,9 @@ export const CommandHistoryEntry = memo(function CommandHistoryEntry({
 
   return (
     <article
-      className={`group/history relative isolate overflow-hidden rounded-[10px] border transition-[border-color,background-color,box-shadow] duration-150 motion-reduce:transition-none ${
+      className={`cd-history-row group/history relative isolate overflow-hidden rounded-[10px] border transition-[border-color,background-color,box-shadow] duration-150 motion-reduce:transition-none ${
         isSelected
-          ? 'border-[var(--accent-border)] bg-[var(--accent-soft)] shadow-[0_8px_20px_rgba(0,0,0,0.18)]'
+          ? 'cd-history-row--selected border-[var(--accent-border)] bg-[var(--accent-soft)]'
           : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
       }`}
     >

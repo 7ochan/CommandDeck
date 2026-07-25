@@ -80,7 +80,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
     <header className="flex h-13 shrink-0 items-center justify-between gap-3 px-0.5 sm:px-1.5">
       <div className="flex min-w-0 items-center gap-2.5">
         <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-strong)]"
+          className="cd-clay-tile cd-clay-tile--accent flex size-8 shrink-0 items-center justify-center rounded-[9px]"
           aria-label="CommandDeck"
         >
           <Icon name="terminal" size={17} strokeWidth={1.9} />
@@ -96,7 +96,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
       </div>
 
       <nav
-        className="flex items-center rounded-[9px] border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-1"
+        className="cd-inset-tray flex items-center rounded-[10px] p-1"
         aria-label="Primary views"
       >
         <ViewLink href="/" icon="terminal" isActive={activeView === 'terminal'}>
@@ -141,10 +141,10 @@ function ViewLink({
     <Link
       href={href}
       aria-current={isActive ? 'page' : undefined}
-      className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium transition-colors ${
+      className={`flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-medium transition-[background-color,color,border-color,box-shadow] ${
         isActive
-          ? 'bg-[var(--surface-3)] text-[var(--text-primary)] shadow-[inset_0_0_0_1px_var(--border)]'
-          : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
+          ? 'cd-segment-active'
+          : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
       }`}
     >
       <Icon name={icon} size={14} />

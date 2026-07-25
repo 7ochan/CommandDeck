@@ -35,9 +35,9 @@ export const TimelineEvent = memo(function TimelineEvent({
       <button
         type="button"
         aria-pressed={isSelected}
-        className={`w-full rounded-[9px] border p-3 text-left transition-colors ${
+        className={`cd-event-row w-full rounded-[9px] border p-3 text-left transition-[background-color,border-color,box-shadow] ${
           isSelected
-            ? 'border-[var(--accent-border)] bg-[var(--accent-soft)]'
+            ? 'cd-event-row--selected border-[var(--accent-border)] bg-[var(--accent-soft)]'
             : 'border-[var(--border-soft)] bg-[var(--surface-1)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
         }`}
         onClick={() => onSelect(entry.commandId)}

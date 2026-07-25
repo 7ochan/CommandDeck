@@ -95,9 +95,9 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 
   return (
     <article
-      className={`relative isolate overflow-hidden rounded-[10px] border transition-[border-color,background-color] ${
+      className={`cd-deck-card relative isolate overflow-hidden rounded-[12px] border transition-[border-color,background-color,box-shadow] ${
         isSelected
-          ? 'border-[var(--accent-border)] bg-[var(--accent-soft)]'
+          ? 'cd-deck-card--selected border-[var(--accent-border)] bg-[var(--accent-soft)]'
           : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
       }`}
     >
@@ -130,7 +130,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 
         <button
           type="button"
-          className="m-2 ml-0 flex w-8 shrink-0 items-center justify-center rounded-md border border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent)] transition-colors hover:bg-[rgb(115_217_173_/_16%)] hover:text-[var(--accent-strong)]"
+          className="cd-clay-tile cd-clay-tile--accent m-2 ml-0 flex w-8 shrink-0 items-center justify-center rounded-md hover:text-[var(--accent-strong)]"
           aria-label={`Run ${item.displayName}`}
           title="Run command"
           onClick={run}
@@ -223,10 +223,10 @@ function DeckActionButton({
   return (
     <button
       type="button"
-      className={`flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-1 py-1.5 text-center text-[10px] leading-4 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-1 py-1.5 text-center text-[10px] leading-4 font-medium transition-[background-color,border-color,color,box-shadow] disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === 'danger'
           ? 'border-transparent text-[var(--danger)] hover:border-[rgb(239_141_152_/_18%)] hover:bg-[var(--danger-soft)]'
-          : 'border-[var(--border-soft)] bg-[var(--surface-2)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]'
+          : 'cd-deck-card border-[var(--border-soft)] bg-[var(--surface-2)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]'
       }`}
       disabled={disabled}
       onClick={onClick}

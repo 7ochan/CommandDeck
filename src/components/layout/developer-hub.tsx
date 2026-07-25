@@ -142,7 +142,7 @@ export function DeveloperHub({
       }`}
       aria-label="Developer Hub"
     >
-      <div className="flex h-12 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--canvas-raised)]">
+      <div className="flex h-12 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
         <div className="flex h-full shrink-0 items-center border-r border-[var(--border-soft)] px-3.5">
           <span className="cd-eyebrow">Tools</span>
         </div>
@@ -173,7 +173,7 @@ export function DeveloperHub({
                 tabIndex={isActive ? 0 : -1}
                 className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border px-2 text-[11px] font-medium transition-colors ${
                   isActive
-                    ? 'border-[var(--border)] bg-[var(--surface-3)] text-[var(--text-primary)]'
+                    ? 'cd-segment-active'
                     : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
                 }`}
                 onClick={() => selectTab(tab.id)}

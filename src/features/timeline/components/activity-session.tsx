@@ -38,7 +38,7 @@ export const ActivitySession = memo(function ActivitySession({
   const visibleEvents = session.events.slice(-visibleEventCount);
 
   return (
-    <section className="overflow-hidden rounded-[11px] border border-[var(--border)] bg-[var(--canvas-raised)]">
+    <section className="cd-session-card overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--canvas-raised)]">
       <button
         type="button"
         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[var(--surface-2)] focus-visible:outline-offset-[-2px]"

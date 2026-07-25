@@ -115,12 +115,12 @@ export function WorkspaceSwitcher({
   return (
     <>
       <section
-        className="cd-surface flex h-12 shrink-0 items-center justify-between gap-3 rounded-[10px] px-2.5 shadow-none sm:px-3"
+        className="cd-surface cd-surface--toolbar flex h-12 shrink-0 items-center justify-between gap-3 rounded-[12px] px-2.5 sm:px-3"
         aria-label="Active Workspace"
       >
         <label className="flex min-w-0 items-center gap-2">
           <span
-            className="hidden size-7 shrink-0 items-center justify-center rounded-md bg-[var(--surface-3)] text-[var(--text-muted)] sm:flex"
+            className="cd-clay-tile hidden size-7 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] sm:flex"
             aria-hidden="true"
           >
             <Icon name="workspace" size={14} />
@@ -251,7 +251,7 @@ export function WorkspaceSwitcher({
               return (
                 <div
                   key={workspace.workspaceId}
-                  className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-3"
+                  className="cd-history-row rounded-[11px] border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-3"
                 >
                   <div className="flex items-center gap-2">
                     <input

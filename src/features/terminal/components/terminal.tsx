@@ -453,7 +453,7 @@ function TerminalView(
 
   return (
     <section
-      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[13px] border border-[var(--border-soft)] bg-[var(--terminal)] shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
+      className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)]"
       aria-label="Terminal"
     >
       <div className="min-h-0 flex-1 p-2.5 sm:p-3.5">

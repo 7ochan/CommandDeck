@@ -2,16 +2,16 @@
 
 :root {
   color-scheme: dark;
-  --canvas: #090b0e;
-  --canvas-raised: #0c0f13;
-  --surface-1: #101419;
-  --surface-2: #14191f;
-  --surface-3: #192028;
-  --surface-hover: #1c232b;
+  --canvas: #0c1015;
+  --canvas-raised: #10151b;
+  --surface-1: #141a21;
+  --surface-2: #182029;
+  --surface-3: #1d2731;
+  --surface-hover: #202b36;
   --terminal: #090c10;
-  --border: #252c34;
-  --border-soft: #1d232a;
-  --border-strong: #343d47;
+  --border: #2a3540;
+  --border-soft: #202a33;
+  --border-strong: #3b4855;
   --text-primary: #eef1f4;
   --text-secondary: #aeb6c0;
   --text-muted: #78828e;
@@ -30,8 +30,23 @@
   --radius-md: 9px;
   --radius-lg: 12px;
   --radius-xl: 15px;
-  --shadow-panel: 0 16px 40px rgb(0 0 0 / 20%);
-  --shadow-dialog: 0 28px 80px rgb(0 0 0 / 58%);
+  --shadow-surface:
+    inset 0 1px 0 rgb(255 255 255 / 4%), inset 0 -1px 0 rgb(0 0 0 / 18%),
+    -3px -3px 10px rgb(255 255 255 / 1.2%), 7px 9px 22px rgb(0 0 0 / 24%);
+  --shadow-toolbar:
+    inset 0 1px 0 rgb(255 255 255 / 3.5%), 0 4px 12px rgb(0 0 0 / 18%);
+  --shadow-raised:
+    inset 0 1px 0 rgb(255 255 255 / 5%), inset 0 -1px 0 rgb(0 0 0 / 20%),
+    -2px -2px 6px rgb(255 255 255 / 1.4%), 4px 5px 12px rgb(0 0 0 / 24%);
+  --shadow-pressed:
+    inset 2px 2px 5px rgb(0 0 0 / 28%),
+    inset -1px -1px 3px rgb(255 255 255 / 2.5%);
+  --shadow-recessed:
+    inset 3px 3px 8px rgb(0 0 0 / 30%),
+    inset -1px -1px 4px rgb(255 255 255 / 2.5%);
+  --shadow-dialog:
+    inset 0 1px 0 rgb(255 255 255 / 5%), inset 0 -1px 0 rgb(0 0 0 / 20%),
+    -8px -8px 24px rgb(255 255 255 / 1.2%), 20px 28px 70px rgb(0 0 0 / 55%);
   --font-sans:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
@@ -93,7 +108,53 @@ select:disabled {
 .cd-surface {
   border: 1px solid var(--border-soft);
   background: var(--surface-1);
-  box-shadow: var(--shadow-panel);
+  box-shadow: var(--shadow-surface);
+}
+
+.cd-surface--toolbar {
+  box-shadow: var(--shadow-toolbar);
+}
+
+.cd-inset-tray {
+  border: 1px solid var(--border-soft);
+  background: var(--canvas-raised);
+  box-shadow: var(--shadow-recessed);
+}
+
+.cd-clay-tile {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-raised);
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease,
+    transform 100ms ease;
+}
+
+.cd-clay-tile--accent {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.cd-clay-tile--info {
+  border-color: rgb(119 189 251 / 20%);
+  background: var(--info-soft);
+  color: var(--info);
+}
+
+button.cd-clay-tile:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-pressed);
+}
+
+.cd-palette-search:focus-within {
+  border-color: var(--accent-border);
+  box-shadow:
+    var(--shadow-recessed),
+    0 0 0 3px var(--accent-soft);
 }
 
 .cd-input {
@@ -102,6 +163,7 @@ select:disabled {
   border-radius: var(--radius-md);
   background: var(--canvas-raised);
   color: var(--text-primary);
+  box-shadow: var(--shadow-recessed);
   transition:
     border-color 140ms ease,
     box-shadow 140ms ease,
@@ -118,8 +180,10 @@ select:disabled {
 
 .cd-input:focus {
   border-color: var(--accent-border);
-  background: #0e1216;
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: #11171e;
+  box-shadow:
+    var(--shadow-recessed),
+    0 0 0 3px var(--accent-soft);
   outline: none;
 }
 
@@ -134,7 +198,9 @@ select:disabled {
   transition:
     border-color 140ms ease,
     background-color 140ms ease,
-    color 140ms ease;
+    color 140ms ease,
+    box-shadow 140ms ease,
+    transform 100ms ease;
 }
 
 .cd-button {
@@ -144,13 +210,15 @@ select:disabled {
   background: var(--surface-2);
   font-size: 12px;
   font-weight: 550;
+  box-shadow: var(--shadow-raised);
 }
 
 .cd-icon-button {
   width: 34px;
   height: 34px;
   padding: 0;
-  background: transparent;
+  background: var(--surface-2);
+  box-shadow: var(--shadow-raised);
 }
 
 .cd-button:hover:not(:disabled),
@@ -163,12 +231,22 @@ select:disabled {
 .cd-button:disabled,
 .cd-icon-button:disabled {
   opacity: 0.42;
+  box-shadow: none;
+}
+
+.cd-button:active:not(:disabled),
+.cd-icon-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-pressed);
 }
 
 .cd-button--primary {
   border-color: var(--accent-border);
   background: var(--accent-soft);
   color: var(--accent-strong);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 5%),
+    0 4px 12px rgb(43 101 77 / 22%);
 }
 
 .cd-button--primary:hover:not(:disabled) {
@@ -192,6 +270,7 @@ select:disabled {
 .cd-button--quiet {
   border-color: transparent;
   background: transparent;
+  box-shadow: none;
 }
 
 .cd-kbd {
@@ -206,15 +285,15 @@ select:disabled {
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 1;
-  box-shadow: inset 0 -1px rgb(255 255 255 / 3%);
+  box-shadow: var(--shadow-pressed);
 }
 
 .cd-dialog {
   margin: auto;
   overflow: hidden;
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xl);
-  background: var(--surface-1);
+  border-radius: 18px;
+  background: #151c24;
   color: var(--text-primary);
   box-shadow: var(--shadow-dialog);
 }
@@ -254,6 +333,60 @@ select:disabled {
   border-radius: var(--radius-lg);
   background: var(--surface-2);
   color: var(--text-muted);
+  box-shadow: var(--shadow-raised);
+}
+
+.cd-segment-active {
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-raised);
+}
+
+.cd-terminal-shell {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 2.5%),
+    inset 0 0 0 1px rgb(0 0 0 / 20%),
+    0 8px 24px rgb(0 0 0 / 25%);
+}
+
+.cd-deck-card {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3.5%),
+    0 3px 9px rgb(0 0 0 / 18%);
+}
+
+.cd-deck-card--selected {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 4%),
+    0 5px 14px rgb(0 0 0 / 22%),
+    0 0 0 1px rgb(115 217 173 / 5%);
+}
+
+.cd-history-row {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 2%);
+}
+
+.cd-history-row--selected {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3.5%),
+    0 4px 12px rgb(0 0 0 / 18%);
+}
+
+.cd-session-card {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3%),
+    0 4px 12px rgb(0 0 0 / 17%);
+}
+
+.cd-event-row {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 1.8%);
+}
+
+.cd-event-row--selected {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3%),
+    0 3px 9px rgb(0 0 0 / 16%);
 }
 
 .cd-scrollbar,
