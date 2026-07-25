@@ -2,8 +2,42 @@
 
 :root {
   color-scheme: dark;
-  --background: #05080d;
-  --foreground: #e2e8f0;
+  --canvas: #090b0e;
+  --canvas-raised: #0c0f13;
+  --surface-1: #101419;
+  --surface-2: #14191f;
+  --surface-3: #192028;
+  --surface-hover: #1c232b;
+  --terminal: #090c10;
+  --border: #252c34;
+  --border-soft: #1d232a;
+  --border-strong: #343d47;
+  --text-primary: #eef1f4;
+  --text-secondary: #aeb6c0;
+  --text-muted: #78828e;
+  --text-subtle: #56616d;
+  --accent: #73d9ad;
+  --accent-strong: #9aebc7;
+  --accent-soft: rgb(115 217 173 / 10%);
+  --accent-border: rgb(115 217 173 / 28%);
+  --info: #77bdfb;
+  --info-soft: rgb(119 189 251 / 10%);
+  --warning: #e8b96a;
+  --warning-soft: rgb(232 185 106 / 10%);
+  --danger: #ef8d98;
+  --danger-soft: rgb(239 141 152 / 10%);
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-xl: 15px;
+  --shadow-panel: 0 16px 40px rgb(0 0 0 / 20%);
+  --shadow-dialog: 0 28px 80px rgb(0 0 0 / 58%);
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-mono:
+    'SFMono-Regular', 'SF Mono', 'Cascadia Code', 'Liberation Mono', Menlo,
+    monospace;
 }
 
 * {
@@ -11,22 +45,18 @@
 }
 
 html {
-  background: var(--background);
+  background: var(--canvas);
 }
 
 body {
   min-height: 100vh;
   margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -36,13 +66,211 @@ select {
   font: inherit;
 }
 
+button,
+select {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled {
+  cursor: default;
+}
+
+::selection {
+  background: rgb(115 217 173 / 24%);
+  color: var(--text-primary);
+}
+
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid rgb(115 217 173 / 72%);
+  outline-offset: 2px;
+}
+
+.cd-app {
+  background: var(--canvas);
+}
+
+.cd-surface {
+  border: 1px solid var(--border-soft);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-panel);
+}
+
+.cd-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--canvas-raised);
+  color: var(--text-primary);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+.cd-input::placeholder {
+  color: var(--text-subtle);
+}
+
+.cd-input:hover {
+  border-color: var(--border-strong);
+}
+
+.cd-input:focus {
+  border-color: var(--accent-border);
+  background: #0e1216;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+.cd-button,
+.cd-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.cd-button {
+  min-height: 34px;
+  gap: 7px;
+  padding: 0 12px;
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.cd-icon-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: transparent;
+}
+
+.cd-button:hover:not(:disabled),
+.cd-icon-button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.cd-button:disabled,
+.cd-icon-button:disabled {
+  opacity: 0.42;
+}
+
+.cd-button--primary {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.cd-button--primary:hover:not(:disabled) {
+  border-color: rgb(115 217 173 / 42%);
+  background: rgb(115 217 173 / 15%);
+  color: #c1f5dc;
+}
+
+.cd-button--danger {
+  border-color: rgb(239 141 152 / 20%);
+  background: transparent;
+  color: var(--danger);
+}
+
+.cd-button--danger:hover:not(:disabled) {
+  border-color: rgb(239 141 152 / 34%);
+  background: var(--danger-soft);
+  color: #ffb1b9;
+}
+
+.cd-button--quiet {
+  border-color: transparent;
+  background: transparent;
+}
+
+.cd-kbd {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--canvas-raised);
+  padding: 0 6px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1;
+  box-shadow: inset 0 -1px rgb(255 255 255 / 3%);
+}
+
+.cd-dialog {
+  margin: auto;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-dialog);
+}
+
+.cd-dialog::backdrop {
+  background: rgb(2 4 6 / 76%);
+}
+
+.cd-dialog[open] {
+  animation: cd-dialog-in 150ms ease-out;
+}
+
+.cd-eyebrow {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cd-muted {
+  color: var(--text-muted);
+}
+
+.cd-subtle {
+  color: var(--text-subtle);
+}
+
+.cd-empty-mark {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.cd-scrollbar,
+.command-history-scrollbar,
+.command-deck-scrollbar,
+.command-palette-scrollbar {
+  scrollbar-color: #3a444f transparent;
+  scrollbar-width: thin;
+}
+
 .commanddeck-terminal {
-  background: #080c12;
-  transition: box-shadow 160ms ease;
+  background: var(--terminal);
+  transition: box-shadow 150ms ease;
 }
 
 .commanddeck-terminal:focus-within {
-  box-shadow: 0 0 0 1px rgb(103 232 249 / 12%);
+  box-shadow: 0 0 0 1px rgb(115 217 173 / 14%);
 }
 
 .commanddeck-terminal .xterm {
@@ -52,7 +280,7 @@ select {
 
 .commanddeck-terminal .xterm-viewport {
   overscroll-behavior: contain;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: #3a444f transparent;
   scrollbar-width: thin;
 }
 
@@ -66,13 +294,25 @@ select {
   pointer-events: none;
   background: linear-gradient(
       90deg,
-      rgb(103 232 249 / 28%),
-      rgb(100 116 139 / 12%) 64%,
+      rgb(115 217 173 / 24%),
+      rgb(120 130 142 / 10%) 64%,
       transparent 92%
     )
     bottom / 100% 1px no-repeat;
   opacity: 0;
   animation: commanddeck-finalize-section 180ms ease-out forwards;
+}
+
+@keyframes cd-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.99);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes commanddeck-finalize-section {
@@ -82,16 +322,18 @@ select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .commanddeck-terminal
     .xterm-decoration.commanddeck-command-section-separator {
     opacity: 1;
     animation: none;
   }
-}
-
-.command-history-scrollbar,
-.command-deck-scrollbar,
-.command-palette-scrollbar {
-  scrollbar-color: #273449 transparent;
-  scrollbar-width: thin;
 }

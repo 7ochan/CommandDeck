@@ -15,6 +15,7 @@ import {
   parseCommandTemplate,
   previewCommandTemplate,
 } from '@/shared/command-template';
+import { Icon } from '@/components/ui/icon';
 
 type ExecuteCommandTemplateDialogProps = {
   displayName: string;
@@ -113,7 +114,7 @@ export function ExecuteCommandTemplateDialog({
   return (
     <dialog
       ref={dialogRef}
-      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-cyan-300/15 bg-[#0b1018] p-0 text-slate-200 shadow-2xl shadow-black/60 backdrop:bg-black/70"
+      className="cd-dialog w-[min(32rem,calc(100vw-1.5rem))] p-0"
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
@@ -125,23 +126,33 @@ export function ExecuteCommandTemplateDialog({
         }
       }}
     >
-      <form className="p-5" onSubmit={submit}>
-        <h3 id={titleId} className="text-sm font-semibold text-slate-100">
-          Run {displayName}
-        </h3>
-        <p className="mt-1.5 text-xs leading-5 text-slate-400">
-          Fill each variable. Values are used only for this execution.
-        </p>
+      <form className="p-5 sm:p-6" onSubmit={submit}>
+        <div className="flex items-start gap-3">
+          <span className="cd-empty-mark size-9 shrink-0 text-[var(--accent)]">
+            <Icon name="play" size={17} />
+          </span>
+          <div>
+            <h3
+              id={titleId}
+              className="text-[15px] font-semibold text-[var(--text-primary)]"
+            >
+              Run {displayName}
+            </h3>
+            <p className="mt-1 text-[12px] leading-5 text-[var(--text-muted)]">
+              Values are used only for this execution.
+            </p>
+          </div>
+        </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-5 space-y-4">
           {parsed.placeholders.map((placeholder, index) => (
             <label
               key={placeholder.name}
-              className="block text-[11px] text-slate-400"
+              className="block text-[12px] font-medium text-[var(--text-secondary)]"
             >
               <span className="flex items-center justify-between gap-3">
                 <span>{placeholder.label}</span>
-                <span className="font-mono text-[9px] text-slate-600">
+                <span className="font-mono text-[10px] font-normal text-[var(--text-muted)]">
                   {placeholder.token}
                 </span>
               </span>
@@ -157,7 +168,7 @@ export function ExecuteCommandTemplateDialog({
                 autoComplete="off"
                 value={values[placeholder.name] ?? ''}
                 placeholder={placeholder.token}
-                className="mt-1.5 h-9 w-full rounded-lg border border-white/10 bg-black/20 px-3 font-mono text-xs text-slate-200 outline-none placeholder:text-slate-700 focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/10"
+                className="cd-input mt-1.5 h-10 px-3 font-mono text-[12px] font-normal"
                 onChange={(event) => {
                   const value = event.currentTarget.value;
                   setValues((currentValues) => ({
@@ -172,34 +183,31 @@ export function ExecuteCommandTemplateDialog({
           ))}
         </div>
 
-        <div className="mt-4 rounded-lg border border-white/8 bg-black/20 p-3">
-          <span className="text-[10px] font-medium text-slate-500">
+        <div className="mt-5 rounded-[10px] border border-[var(--border)] bg-[var(--canvas-raised)] p-3.5">
+          <span className="text-[11px] font-semibold text-[var(--text-secondary)]">
             Command preview
           </span>
-          <pre className="mt-2 max-h-36 overflow-auto font-mono text-[11px] leading-5 break-words whitespace-pre-wrap text-slate-300">
+          <pre className="cd-scrollbar mt-2 max-h-36 overflow-auto font-mono text-[11px] leading-5 break-words whitespace-pre-wrap text-[var(--text-secondary)]">
             {preview}
           </pre>
         </div>
 
         {error && (
-          <p className="mt-3 text-xs text-rose-300" role="alert">
+          <p className="mt-3 text-[12px] text-[var(--danger)]" role="alert">
             {error}
           </p>
         )}
 
         <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:outline-none"
-            onClick={onCancel}
-          >
+          <button type="button" className="cd-button" onClick={onCancel}>
             Cancel
           </button>
           <button
             type="submit"
-            className="rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100 hover:bg-cyan-300/15 focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+            className="cd-button cd-button--primary"
             disabled={!allValuesPresent}
           >
+            <Icon name="play" size={14} />
             Run command
           </button>
         </div>

@@ -3,6 +3,7 @@
 import { memo, useId, useMemo, useState, type KeyboardEvent } from 'react';
 
 import { parseCommandTemplate } from '@/shared/command-template';
+import { Icon, type IconName } from '@/components/ui/icon';
 
 import type { CommandDeckItem as CommandDeckItemModel } from '../types';
 import { CommandTemplateHighlight } from './command-template-highlight';
@@ -94,16 +95,16 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 
   return (
     <article
-      className={`relative isolate overflow-hidden rounded-lg border transition-[border-color,background-color] ${
+      className={`relative isolate overflow-hidden rounded-[10px] border transition-[border-color,background-color] ${
         isSelected
-          ? 'border-cyan-300/30 bg-cyan-300/[0.065]'
-          : 'border-transparent bg-white/[0.025] hover:border-white/8 hover:bg-white/[0.045]'
+          ? 'border-[var(--accent-border)] bg-[var(--accent-soft)]'
+          : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
       }`}
     >
       <div className="flex items-stretch">
         <button
           type="button"
-          className="min-w-0 flex-1 cursor-pointer px-2.5 py-2 text-left focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:outline-none focus-visible:ring-inset"
+          className="min-w-0 flex-1 cursor-pointer px-3 py-2.5 text-left focus-visible:outline-offset-[-2px]"
           aria-expanded={isSelected}
           aria-controls={actionPanelId}
           aria-pressed={isSelected}
@@ -114,14 +115,14 @@ export const CommandDeckItem = memo(function CommandDeckItem({
           onDoubleClick={run}
           onKeyDown={handleKeyDown}
         >
-          <h3 className="truncate text-[11px] font-medium text-slate-200">
+          <h3 className="truncate text-[12px] font-semibold text-[var(--text-primary)]">
             {item.displayName}
           </h3>
-          <pre className="mt-1 max-h-8 overflow-hidden font-mono text-[10px] leading-4 break-words whitespace-pre-wrap text-slate-500">
+          <pre className="mt-1 max-h-9 overflow-hidden font-mono text-[11px] leading-[1.1rem] break-words whitespace-pre-wrap text-[var(--text-secondary)]">
             <CommandTemplateHighlight parsed={parsedTemplate} />
           </pre>
           {item.description && (
-            <p className="mt-1 truncate text-[9px] leading-4 text-slate-600">
+            <p className="mt-1 truncate text-[10px] leading-4 text-[var(--text-muted)]">
               {item.description}
             </p>
           )}
@@ -129,12 +130,12 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 
         <button
           type="button"
-          className="m-1.5 ml-0 flex w-8 shrink-0 items-center justify-center rounded-md bg-cyan-300/[0.065] text-[10px] text-cyan-200/70 transition-colors hover:bg-cyan-300/12 hover:text-cyan-100 focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:outline-none"
+          className="m-2 ml-0 flex w-8 shrink-0 items-center justify-center rounded-md border border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent)] transition-colors hover:bg-[rgb(115_217_173_/_16%)] hover:text-[var(--accent-strong)]"
           aria-label={`Run ${item.displayName}`}
           title="Run command"
           onClick={run}
         >
-          <span aria-hidden="true">▶</span>
+          <Icon name="play" size={13} />
         </button>
       </div>
 
@@ -150,19 +151,19 @@ export const CommandDeckItem = memo(function CommandDeckItem({
         <div className="min-h-0 overflow-hidden">
           <div
             id={actionPanelId}
-            className="border-t border-white/6 px-2 py-2"
+            className="border-t border-[var(--border-soft)] px-2.5 py-2.5"
             aria-label="Command Deck item actions"
           >
-            <div className="grid grid-cols-3 gap-1">
-              <DeckActionButton icon="▶" label="Run" onClick={run} />
+            <div className="grid grid-cols-3 gap-1.5">
+              <DeckActionButton icon="play" label="Run" onClick={run} />
               <DeckActionButton
-                icon="✎"
+                icon="edit"
                 label="Edit"
                 disabled={isRemoving}
                 onClick={() => setEditOpen(true)}
               />
               <DeckActionButton
-                icon="−"
+                icon="trash"
                 label={isRemoving ? 'Removing…' : 'Remove'}
                 tone="danger"
                 disabled={isRemoving}
@@ -170,7 +171,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
               />
             </div>
             <p
-              className="min-h-3 pt-1 text-center text-[8px] text-slate-500"
+              className="min-h-4 pt-1.5 text-center text-[10px] text-[var(--text-muted)]"
               aria-live="polite"
             >
               {statusMessage}
@@ -205,7 +206,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 });
 
 type DeckActionButtonProps = {
-  icon: string;
+  icon: IconName;
   label: string;
   tone?: 'default' | 'danger';
   disabled?: boolean;
@@ -222,15 +223,15 @@ function DeckActionButton({
   return (
     <button
       type="button"
-      className={`flex min-w-0 items-center justify-center gap-1 rounded-md px-1 py-1.5 text-center text-[9px] leading-3 transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`flex min-w-0 items-center justify-center gap-1.5 rounded-md border px-1 py-1.5 text-center text-[10px] leading-4 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === 'danger'
-          ? 'text-rose-300/70 hover:bg-rose-300/8 focus-visible:ring-rose-300/70'
-          : 'bg-white/[0.025] text-slate-400 hover:bg-white/6 hover:text-slate-200 focus-visible:ring-cyan-300/70'
+          ? 'border-transparent text-[var(--danger)] hover:border-[rgb(239_141_152_/_18%)] hover:bg-[var(--danger-soft)]'
+          : 'border-[var(--border-soft)] bg-[var(--surface-2)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]'
       }`}
       disabled={disabled}
       onClick={onClick}
     >
-      <span aria-hidden="true">{icon}</span>
+      <Icon name={icon} size={13} />
       <span>{label}</span>
     </button>
   );

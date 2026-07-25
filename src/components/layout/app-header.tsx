@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
+import { Icon, type IconName } from '@/components/ui/icon';
 import {
   useCommandPalette,
   useRegisterCommandPaletteActions,
@@ -18,7 +19,7 @@ type AppHeaderProps = {
 export function AppHeader({ activeView }: AppHeaderProps) {
   const router = useRouter();
   const { openPalette } = useCommandPalette();
-  const shortcutLabel = '⌘K / Ctrl K';
+  const shortcutLabel = '⌘K';
   const navigationActions = useMemo<CommandPaletteAction[]>(
     () => [
       {
@@ -76,48 +77,50 @@ export function AppHeader({ activeView }: AppHeaderProps) {
   useRegisterCommandPaletteActions('app-navigation', navigationActions);
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-4 px-1 sm:px-2">
-      <div className="flex items-center gap-3">
+    <header className="flex h-13 shrink-0 items-center justify-between gap-3 px-0.5 sm:px-1.5">
+      <div className="flex min-w-0 items-center gap-2.5">
         <span
-          className="flex size-8 items-center justify-center rounded-lg border border-emerald-300/20 bg-emerald-300/10 font-mono text-xs font-semibold text-emerald-300"
+          className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-strong)]"
           aria-label="CommandDeck"
         >
-          &gt;_
+          <Icon name="terminal" size={17} strokeWidth={1.9} />
         </span>
         <div className="hidden sm:block">
-          <h1 className="font-mono text-sm tracking-[0.18em] text-slate-200 uppercase">
+          <h1 className="text-[13px] leading-4 font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
             CommandDeck
           </h1>
-          <p className="text-[11px] text-slate-500">Visual command workspace</p>
+          <p className="text-[10px] leading-3.5 text-[var(--text-muted)]">
+            Local command workspace
+          </p>
         </div>
       </div>
 
       <nav
-        className="flex items-center rounded-lg border border-white/8 bg-white/3 p-0.5"
+        className="flex items-center rounded-[9px] border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-1"
         aria-label="Primary views"
       >
-        <ViewLink href="/" isActive={activeView === 'terminal'}>
+        <ViewLink href="/" icon="terminal" isActive={activeView === 'terminal'}>
           Terminal
         </ViewLink>
-        <ViewLink href="/timeline" isActive={activeView === 'timeline'}>
+        <ViewLink
+          href="/timeline"
+          icon="timeline"
+          isActive={activeView === 'timeline'}
+        >
           Timeline
         </ViewLink>
       </nav>
 
       <button
         type="button"
-        className="flex h-8 shrink-0 items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-2 text-slate-500 transition-colors hover:border-cyan-300/20 hover:bg-cyan-300/5 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-cyan-300/60 focus-visible:outline-none sm:px-2.5"
-        aria-label={`Open Command Palette, ${shortcutLabel}`}
+        className="cd-button h-9 shrink-0 px-2.5 sm:px-3"
+        aria-label="Open Command Palette, Command K or Control K"
         title="Open Command Palette"
         onClick={openPalette}
       >
-        <span className="font-mono text-xs text-cyan-200/60" aria-hidden="true">
-          ⌕
-        </span>
-        <span className="hidden text-[10px] sm:inline">Command</span>
-        <kbd className="hidden rounded border border-white/8 bg-black/15 px-1.5 py-0.5 font-mono text-[8px] text-slate-600 md:inline">
-          {shortcutLabel}
-        </kbd>
+        <Icon name="search" size={15} />
+        <span className="hidden sm:inline">Commands</span>
+        <kbd className="cd-kbd hidden md:inline-flex">{shortcutLabel}</kbd>
       </button>
     </header>
   );
@@ -125,10 +128,12 @@ export function AppHeader({ activeView }: AppHeaderProps) {
 
 function ViewLink({
   href,
+  icon,
   isActive,
   children,
 }: {
   href: string;
+  icon: IconName;
   isActive: boolean;
   children: string;
 }) {
@@ -136,12 +141,13 @@ function ViewLink({
     <Link
       href={href}
       aria-current={isActive ? 'page' : undefined}
-      className={`rounded-md px-3 py-1.5 font-mono text-[10px] transition-colors focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:outline-none ${
+      className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-medium transition-colors ${
         isActive
-          ? 'bg-white/8 text-slate-200'
-          : 'text-slate-500 hover:text-slate-300'
+          ? 'bg-[var(--surface-3)] text-[var(--text-primary)] shadow-[inset_0_0_0_1px_var(--border)]'
+          : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
       }`}
     >
+      <Icon name={icon} size={14} />
       {children}
     </Link>
   );

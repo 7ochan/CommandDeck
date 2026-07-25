@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { Icon, type IconName } from '@/components/ui/icon';
 import { copyCommandText } from '../clipboard';
 import type { CommandHistoryEntry } from '../types';
 
@@ -68,19 +69,19 @@ export function HistoryEntryActions({
   return (
     <div
       id={panelId}
-      className="border-t border-white/6 px-2.5 py-2.5"
+      className="border-t border-[var(--border-soft)] px-2.5 py-2.5"
       aria-label="Command History actions"
     >
       <div className="grid grid-cols-3 gap-1.5">
-        <ActionButton icon="▶" label="Run Again" onClick={runAgain} />
+        <ActionButton icon="play" label="Run Again" onClick={runAgain} />
         <ActionButton
-          icon="⎘"
+          icon="copy"
           label={pendingAction === 'copy' ? 'Copying…' : 'Copy'}
           disabled={pendingAction !== null}
           onClick={() => void copyCommand()}
         />
         <ActionButton
-          icon={isInDeck ? '✓' : '+'}
+          icon={isInDeck ? 'check' : 'plus'}
           label={
             isInDeck
               ? 'In Deck'
@@ -94,7 +95,7 @@ export function HistoryEntryActions({
       </div>
 
       <p
-        className="min-h-4 pt-1.5 text-center text-[9px] text-slate-500"
+        className="min-h-4 pt-1.5 text-center text-[10px] text-[var(--text-muted)]"
         aria-live="polite"
       >
         {statusMessage}
@@ -104,7 +105,7 @@ export function HistoryEntryActions({
 }
 
 type ActionButtonProps = {
-  icon: string;
+  icon: IconName;
   label: string;
   disabled?: boolean;
   onClick: () => void;
@@ -119,11 +120,11 @@ function ActionButton({
   return (
     <button
       type="button"
-      className="flex min-w-0 flex-col items-center gap-1 rounded-lg border border-white/7 px-1 py-1.5 text-center text-[9px] leading-3.5 text-slate-400 transition-colors hover:border-white/12 hover:bg-white/5 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex min-w-0 items-center justify-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-1 py-2 text-center text-[10px] leading-4 font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
       disabled={disabled}
       onClick={onClick}
     >
-      <span aria-hidden="true">{icon}</span>
+      <Icon name={icon} size={13} />
       <span>{label}</span>
     </button>
   );

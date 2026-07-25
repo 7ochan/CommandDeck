@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
+import { Icon } from '@/components/ui/icon';
 import { CommandDeckPaletteSource } from '@/features/command-deck/components/command-deck-palette-source';
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
 import { useRegisterHistoryPaletteActions } from '@/features/command-history/command-palette';
@@ -125,23 +126,24 @@ function ActiveWorkspaceTimeline({
   });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex shrink-0 items-stretch gap-3">
-        <section className="flex min-w-0 flex-1 items-center justify-between rounded-xl border border-white/9 bg-[#090d14] px-5 py-3">
-          <div>
-            <p className="font-mono text-[9px] tracking-[0.14em] text-cyan-300/50 uppercase">
-              Active Workspace
-            </p>
-            <h2 className="mt-1 text-sm font-medium text-slate-200">
-              {activeWorkspace.name}
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+      <div className="flex shrink-0 flex-col items-stretch gap-2.5 md:flex-row">
+        <section className="cd-surface flex min-w-0 flex-1 items-center gap-3 rounded-[10px] px-4 py-2.5 shadow-none">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--info-soft)] text-[var(--info)]">
+            <Icon name="timeline" size={16} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-[13px] font-semibold text-[var(--text-primary)]">
+              Workspace Timeline
             </h2>
-          </div>
-          <div className="flex gap-5 text-right font-mono text-[9px] text-slate-600">
-            <span>{activeWorkspace.historyCount} History</span>
-            <span>{activeWorkspace.deckCount} Deck</span>
+            <p className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">
+              {activeWorkspace.name}
+              <span className="mx-1.5 text-[var(--text-subtle)]">·</span>
+              {activeWorkspace.historyCount} captured commands
+            </p>
           </div>
         </section>
-        <div className="w-[clamp(19rem,31vw,25rem)] shrink-0">
+        <div className="w-full shrink-0 md:w-[clamp(20rem,32vw,25rem)]">
           <WorkspaceSwitcher
             workspaces={workspaces}
             activeWorkspace={activeWorkspace}
@@ -180,8 +182,10 @@ function TimelinePageState({
   isError?: boolean;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-white/8 bg-[#070b11]">
-      <p className={`text-xs ${isError ? 'text-rose-300' : 'text-slate-500'}`}>
+    <div className="cd-surface flex min-h-0 flex-1 items-center justify-center rounded-[13px]">
+      <p
+        className={`text-[12px] ${isError ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'}`}
+      >
         {message}
       </p>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 
+import { Icon } from '@/components/ui/icon';
 import type { WorkspaceSummary } from '@/shared/types';
 
 type WorkspaceSwitcherProps = {
@@ -114,24 +115,24 @@ export function WorkspaceSwitcher({
   return (
     <>
       <section
-        className="flex h-11 shrink-0 items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-[#080d14] px-2.5 shadow-[0_10px_35px_rgba(0,0,0,0.12)]"
+        className="cd-surface flex h-12 shrink-0 items-center justify-between gap-3 rounded-[10px] px-2.5 shadow-none sm:px-3"
         aria-label="Active Workspace"
       >
         <label className="flex min-w-0 items-center gap-2">
           <span
-            className="hidden size-7 shrink-0 items-center justify-center rounded-md bg-cyan-300/8 font-mono text-[10px] text-cyan-200/70 sm:flex"
+            className="hidden size-7 shrink-0 items-center justify-center rounded-md bg-[var(--surface-3)] text-[var(--text-muted)] sm:flex"
             aria-hidden="true"
           >
-            {'//'}
+            <Icon name="workspace" size={14} />
           </span>
           <span className="min-w-0">
-            <span className="block font-mono text-[8px] tracking-[0.14em] text-slate-600 uppercase">
+            <span className="block font-mono text-[9px] leading-3 tracking-[0.1em] text-[var(--text-muted)] uppercase">
               Workspace
             </span>
             <select
               value={activeWorkspace.workspaceId}
               title={activeWorkspace.name}
-              className="block h-5 max-w-[42vw] cursor-pointer truncate border-0 bg-transparent p-0 pr-5 text-[11px] font-medium text-slate-200 outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/50 sm:max-w-72"
+              className="block h-5 max-w-[40vw] cursor-pointer truncate border-0 bg-transparent p-0 pr-5 text-[12px] font-semibold text-[var(--text-primary)] outline-none sm:max-w-72"
               onChange={(event) => onSelect(event.currentTarget.value)}
             >
               {workspaces.map((workspace) => (
@@ -147,9 +148,14 @@ export function WorkspaceSwitcher({
         </label>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <span className="hidden font-mono text-[10px] text-[var(--text-muted)] md:inline">
+            {activeWorkspace.historyCount} history
+            <span className="mx-1.5 text-[var(--text-subtle)]">·</span>
+            {activeWorkspace.deckCount} deck
+          </span>
           {connectionStatus && (
             <span
-              className="flex items-center gap-1.5 rounded-full bg-white/[0.025] px-2 py-1 font-mono text-[9px] text-slate-500"
+              className="ml-1 flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] px-2 py-1 font-mono text-[10px] text-[var(--text-muted)]"
               role="status"
               aria-label={`Terminal ${connectionStatus.label}`}
               aria-live="polite"
@@ -165,19 +171,19 @@ export function WorkspaceSwitcher({
           )}
           <button
             type="button"
-            className="flex size-8 items-center justify-center rounded-md text-sm tracking-widest text-slate-500 hover:bg-white/5 hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-cyan-300/60 focus-visible:outline-none"
+            className="cd-icon-button border-transparent text-[var(--text-muted)]"
             aria-label="Manage Workspaces"
             title="Manage Workspaces"
             onClick={() => setIsManaging(true)}
           >
-            <span aria-hidden="true">•••</span>
+            <Icon name="more" size={17} />
           </button>
         </div>
       </section>
 
       <dialog
         ref={dialogRef}
-        className="m-auto w-[min(42rem,calc(100vw-2rem))] rounded-xl border border-white/12 bg-[#0b1018] p-0 text-slate-200 shadow-2xl shadow-black/60 backdrop:bg-black/70"
+        className="cd-dialog w-[min(42rem,calc(100vw-1.5rem))] p-0"
         aria-labelledby={titleId}
         onCancel={() => setIsManaging(false)}
         onClose={() => {
@@ -186,22 +192,29 @@ export function WorkspaceSwitcher({
           }
         }}
       >
-        <div className="p-5">
+        <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 id={titleId} className="text-sm font-semibold text-slate-100">
+              <span className="cd-empty-mark mb-3 size-9">
+                <Icon name="workspace" size={17} />
+              </span>
+              <h2
+                id={titleId}
+                className="text-[15px] font-semibold text-[var(--text-primary)]"
+              >
                 Manage Workspaces
               </h2>
-              <p className="mt-1.5 text-xs leading-5 text-slate-400">
+              <p className="mt-1.5 text-[12px] leading-5 text-[var(--text-muted)]">
                 Each Workspace owns an isolated Command History and Deck.
               </p>
             </div>
             <button
               type="button"
-              className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-slate-400 hover:bg-white/5"
+              className="cd-icon-button"
+              aria-label="Close Workspace manager"
               onClick={() => setIsManaging(false)}
             >
-              Close
+              <Icon name="x" size={15} />
             </button>
           </div>
 
@@ -215,14 +228,15 @@ export function WorkspaceSwitcher({
               value={newName}
               placeholder="New Workspace name"
               aria-label="New Workspace name"
-              className="h-9 min-w-0 flex-1 rounded-lg border border-white/10 bg-black/20 px-3 text-xs text-slate-200 outline-none placeholder:text-slate-700 focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/10"
+              className="cd-input h-10 min-w-0 flex-1 px-3 text-[12px]"
               onChange={(event) => setNewName(event.currentTarget.value)}
             />
             <button
               type="submit"
               disabled={!newName.trim() || busyWorkspaceId !== null}
-              className="rounded-lg border border-emerald-300/25 bg-emerald-300/10 px-3 text-xs text-emerald-200 hover:bg-emerald-300/15 disabled:opacity-40"
+              className="cd-button cd-button--primary h-10"
             >
+              <Icon name="plus" size={14} />
               {busyWorkspaceId === 'new' ? 'Creating…' : 'Create'}
             </button>
           </form>
@@ -237,7 +251,7 @@ export function WorkspaceSwitcher({
               return (
                 <div
                   key={workspace.workspaceId}
-                  className="rounded-lg border border-white/8 bg-black/15 p-3"
+                  className="rounded-[10px] border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-3"
                 >
                   <div className="flex items-center gap-2">
                     <input
@@ -246,7 +260,7 @@ export function WorkspaceSwitcher({
                         draftNames[workspace.workspaceId] ?? workspace.name
                       }
                       aria-label={`Rename ${workspace.name}`}
-                      className="h-8 min-w-0 flex-1 rounded-md border border-white/8 bg-black/20 px-2.5 text-xs text-slate-200 outline-none focus:border-cyan-300/40"
+                      className="cd-input h-9 min-w-0 flex-1 px-2.5 text-[12px]"
                       onChange={(event) =>
                         setDraftNames((current) => ({
                           ...current,
@@ -257,9 +271,10 @@ export function WorkspaceSwitcher({
                     <button
                       type="button"
                       disabled={!canRename || busyWorkspaceId !== null}
-                      className="rounded-md border border-white/10 px-2.5 py-1.5 text-[10px] text-slate-300 hover:bg-white/5 disabled:opacity-35"
+                      className="cd-button h-9 min-h-0 px-2.5 text-[11px]"
                       onClick={() => void rename(workspace)}
                     >
+                      <Icon name="edit" size={13} />
                       {isBusy ? 'Saving…' : 'Rename'}
                     </button>
                     <button
@@ -272,15 +287,16 @@ export function WorkspaceSwitcher({
                           ? 'The final Workspace cannot be deleted'
                           : `Delete ${workspace.name}`
                       }
-                      className="rounded-md border border-rose-300/15 px-2.5 py-1.5 text-[10px] text-rose-300/75 hover:bg-rose-300/8 disabled:opacity-30"
+                      className="cd-button cd-button--danger h-9 min-h-0 px-2.5 text-[11px]"
                       onClick={() => void remove(workspace)}
                     >
-                      Delete
+                      <Icon name="trash" size={13} />
+                      <span className="hidden sm:inline">Delete</span>
                     </button>
                   </div>
-                  <div className="mt-2 flex items-center gap-3 font-mono text-[9px] text-slate-600">
+                  <div className="mt-2 flex items-center gap-3 font-mono text-[10px] text-[var(--text-muted)]">
                     {workspace.workspaceId === activeWorkspace.workspaceId && (
-                      <span className="text-cyan-300/70">Active</span>
+                      <span className="text-[var(--accent)]">Active</span>
                     )}
                     <span>{workspace.historyCount} History</span>
                     <span>{workspace.deckCount} Deck</span>
@@ -291,7 +307,7 @@ export function WorkspaceSwitcher({
           </div>
 
           {error && (
-            <p className="mt-3 text-xs text-rose-300" role="alert">
+            <p className="mt-3 text-[12px] text-[var(--danger)]" role="alert">
               {error}
             </p>
           )}
@@ -309,16 +325,16 @@ function connectionStatusDotClass(
   tone: NonNullable<WorkspaceSwitcherProps['connectionStatus']>['tone'],
 ): string {
   if (tone === 'connected') {
-    return 'bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.45)]';
+    return 'bg-[var(--accent)] shadow-[0_0_7px_rgba(115,217,173,0.35)]';
   }
 
   if (tone === 'pending') {
-    return 'animate-pulse bg-amber-300 motion-reduce:animate-none';
+    return 'animate-pulse bg-[var(--warning)] motion-reduce:animate-none';
   }
 
   if (tone === 'error') {
-    return 'bg-rose-300';
+    return 'bg-[var(--danger)]';
   }
 
-  return 'bg-slate-500';
+  return 'bg-[var(--text-subtle)]';
 }

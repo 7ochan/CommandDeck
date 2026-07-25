@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { Icon } from '@/components/ui/icon';
 import type { CommandDeckItem, CommandDeckItemUpdate } from '../types';
 import { CommandDeckItem as CommandDeckItemView } from './command-deck-item';
 
@@ -42,33 +43,34 @@ export function CommandDeckSection({
       </h2>
 
       {items.length === 0 ? (
-        <div className="flex min-h-28 flex-1 flex-col items-center justify-center px-6 text-center">
-          <span
-            className="font-mono text-lg text-cyan-300/50"
-            aria-hidden="true"
-          >
-            {isLoading ? '…' : '✦'}
+        <div className="flex min-h-32 flex-1 flex-col items-center justify-center px-6 text-center">
+          <span className="cd-empty-mark" aria-hidden="true">
+            {isLoading ? (
+              <span className="size-4 animate-spin rounded-full border border-[var(--text-subtle)] border-t-[var(--accent)] motion-reduce:animate-none" />
+            ) : (
+              <Icon name="deck" size={18} />
+            )}
           </span>
-          <h3 className="mt-2 text-xs font-medium text-slate-300">
+          <h3 className="mt-3 text-[13px] font-semibold text-[var(--text-secondary)]">
             {isLoading
               ? 'Loading Command Deck'
               : loadError
                 ? 'Command Deck unavailable'
                 : 'Curate your first command'}
           </h3>
-          <p className="mt-1 max-w-52 text-[10px] leading-4 text-slate-500">
+          <p className="mt-1.5 max-w-56 text-[11px] leading-4.5 text-[var(--text-muted)]">
             {loadError ??
               'Choose Add to Deck from any History entry for quick reuse.'}
           </p>
         </div>
       ) : (
-        <div className="command-deck-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="command-deck-scrollbar min-h-0 flex-1 overflow-y-auto p-2.5">
           {loadError && (
-            <p className="mb-2 rounded-lg border border-amber-300/15 bg-amber-300/5 px-3 py-2 text-[10px] text-amber-200/70">
+            <p className="mb-2 rounded-lg border border-[rgb(232_185_106_/_20%)] bg-[var(--warning-soft)] px-3 py-2 text-[11px] text-[var(--warning)]">
               {loadError}
             </p>
           )}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {items.map((item, index) => (
               <CommandDeckItemView
                 key={item.deckItemId}

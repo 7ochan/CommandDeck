@@ -301,7 +301,7 @@ function ActiveWorkspaceLayout({
   ]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5">
       <WorkspaceSwitcher
         workspaces={workspaces}
         activeWorkspace={activeWorkspace}
@@ -314,7 +314,7 @@ function ActiveWorkspaceLayout({
         onDelete={handleDeleteWorkspace}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 lg:flex-row">
         {/*
          * Terminal stack: one <Terminal> per activated workspace.
          *
@@ -403,8 +403,10 @@ function WorkspaceLoadingState({
   isError?: boolean;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-white/8 bg-[#070b11]">
-      <p className={`text-xs ${isError ? 'text-rose-300' : 'text-slate-500'}`}>
+    <div className="cd-surface flex min-h-0 flex-1 items-center justify-center rounded-[13px]">
+      <p
+        className={`text-[12px] ${isError ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'}`}
+      >
         {message}
       </p>
     </div>

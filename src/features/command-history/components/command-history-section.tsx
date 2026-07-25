@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { hasActiveCommandHistoryQuery } from '@/shared/history-status';
+import { Icon } from '@/components/ui/icon';
 import type { CommandHistoryQuery, CommandHistoryStatus } from '@/shared/types';
 
 import {
@@ -188,7 +189,7 @@ export function CommandHistorySection({
           }}
         >
           {loadError && (
-            <p className="mb-2 rounded-lg border border-amber-300/15 bg-amber-300/5 px-3 py-2 text-[10px] leading-4 text-amber-200/70">
+            <p className="mb-2 rounded-lg border border-[rgb(232_185_106_/_20%)] bg-[var(--warning-soft)] px-3 py-2 text-[11px] leading-4 text-[var(--warning)]">
               {loadError}
             </p>
           )}
@@ -249,21 +250,24 @@ function HistoryEmptyState({
       : 'Completed commands are recorded here automatically.');
 
   return (
-    <div className="flex min-h-36 flex-1 flex-col items-center justify-center px-6 text-center">
-      <span
-        className="font-mono text-lg text-emerald-300/60"
-        aria-hidden="true"
-      >
-        {isLoading || isSearching ? '…' : '>_'}
+    <div className="flex min-h-40 flex-1 flex-col items-center justify-center px-6 text-center">
+      <span className="cd-empty-mark" aria-hidden="true">
+        {isLoading || isSearching ? (
+          <span className="size-4 animate-spin rounded-full border border-[var(--text-subtle)] border-t-[var(--accent)] motion-reduce:animate-none" />
+        ) : (
+          <Icon name="history" size={18} />
+        )}
       </span>
-      <h3 className="mt-3 text-xs font-medium text-slate-300">{title}</h3>
-      <p className="mt-1.5 max-w-52 text-[10px] leading-4 text-slate-500">
+      <h3 className="mt-3 text-[13px] font-semibold text-[var(--text-secondary)]">
+        {title}
+      </h3>
+      <p className="mt-1.5 max-w-56 text-[11px] leading-4.5 text-[var(--text-muted)]">
         {description}
       </p>
       {!isLoading && !isSearching && !loadError && hasActiveQuery && (
         <button
           type="button"
-          className="mt-3 rounded-md border border-emerald-300/20 bg-emerald-300/8 px-2.5 py-1 text-[10px] text-emerald-200 focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:outline-none"
+          className="cd-button cd-button--primary mt-3 min-h-8 text-[11px]"
           onClick={onClearQuery}
         >
           Clear search and filters

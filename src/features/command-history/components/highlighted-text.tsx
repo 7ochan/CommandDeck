@@ -15,7 +15,7 @@ export const HighlightedText = memo(function HighlightedText({
     segment.isMatch ? (
       <mark
         key={index}
-        className="rounded-[2px] bg-amber-300/25 px-px text-amber-100"
+        className="rounded-[2px] bg-[rgb(232_185_106_/_22%)] px-px text-[#f4d59d]"
       >
         {segment.text}
       </mark>

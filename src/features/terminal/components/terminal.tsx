@@ -453,10 +453,10 @@ function TerminalView(
 
   return (
     <section
-      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-white/[0.07] bg-[#080c12] shadow-[0_24px_80px_rgba(0,0,0,0.24)]"
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[13px] border border-[var(--border-soft)] bg-[var(--terminal)] shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
       aria-label="Terminal"
     >
-      <div className="min-h-0 flex-1 p-2 sm:p-3">
+      <div className="min-h-0 flex-1 p-2.5 sm:p-3.5">
         <div
           ref={containerRef}
           className="commanddeck-terminal h-full min-h-0 w-full min-w-0"

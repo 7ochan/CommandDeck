@@ -24,7 +24,7 @@ export function CommandTemplateHighlight({
     content.push(
       <mark
         key={`${occurrence.start}:${occurrence.end}`}
-        className="rounded bg-cyan-300/18 px-0.5 text-cyan-100 ring-1 ring-cyan-300/20"
+        className="rounded bg-[var(--info-soft)] px-0.5 text-[var(--info)] ring-1 ring-[rgb(119_189_251_/_22%)]"
       >
         {occurrence.token}
       </mark>,

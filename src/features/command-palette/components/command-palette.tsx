@@ -10,6 +10,7 @@ import {
   type MouseEvent,
 } from 'react';
 
+import { Icon, type IconName } from '@/components/ui/icon';
 import { buildCommandPaletteIndex, searchCommandPalette } from '../search';
 import { getNavigatedCommandPaletteIndex } from '../keyboard';
 import type { RegisteredCommandPaletteAction } from '../types';
@@ -140,7 +141,7 @@ export function CommandPalette({
   return (
     <dialog
       ref={dialogRef}
-      className="m-auto w-[min(42rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-cyan-300/15 bg-[#090e16] p-0 text-slate-200 shadow-[0_30px_100px_rgba(0,0,0,0.72)] backdrop:bg-[#020409]/75 backdrop:backdrop-blur-[2px]"
+      className="cd-dialog w-[min(42rem,calc(100vw-1.5rem))] p-0"
       data-command-palette="true"
       aria-label="Command Palette"
       onClick={closeFromBackdrop}
@@ -154,13 +155,10 @@ export function CommandPalette({
         }
       }}
     >
-      <div className="border-b border-white/8 p-3">
-        <div className="flex items-center gap-3 rounded-xl bg-black/20 px-3">
-          <span
-            className="font-mono text-sm text-cyan-300/65"
-            aria-hidden="true"
-          >
-            &gt;
+      <div className="border-b border-[var(--border-soft)] p-3.5">
+        <div className="flex items-center gap-3 rounded-[10px] border border-[var(--border)] bg-[var(--canvas-raised)] px-3.5 focus-within:border-[var(--accent-border)] focus-within:shadow-[0_0_0_3px_var(--accent-soft)]">
+          <span className="text-[var(--accent)]" aria-hidden="true">
+            <Icon name="search" size={17} />
           </span>
           <input
             ref={inputRef}
@@ -177,26 +175,24 @@ export function CommandPalette({
                 : undefined
             }
             placeholder="Search commands, history, workspaces…"
-            className="h-11 min-w-0 flex-1 bg-transparent font-mono text-[13px] text-slate-100 outline-none placeholder:text-slate-600"
+            className="h-12 min-w-0 flex-1 bg-transparent font-mono text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-subtle)]"
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
           />
-          <kbd className="rounded-md border border-white/8 bg-white/3 px-1.5 py-1 font-mono text-[9px] text-slate-600">
-            ESC
-          </kbd>
+          <kbd className="cd-kbd">ESC</kbd>
         </div>
       </div>
 
       <div
         ref={resultListRef}
         id="command-palette-results"
-        className="command-palette-scrollbar max-h-[min(28rem,60vh)] min-h-28 overflow-y-auto p-2"
+        className="command-palette-scrollbar max-h-[min(30rem,62vh)] min-h-32 overflow-y-auto p-2.5"
         role="listbox"
         aria-label="Command Palette results"
       >
         {results.length === 0 ? (
           <div className="flex min-h-28 items-center justify-center px-6 text-center">
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[12px] text-[var(--text-muted)]">
               No commands match “{query.trim()}”.
             </p>
           </div>
@@ -213,31 +209,31 @@ export function CommandPalette({
                 aria-selected={isSelected}
                 aria-disabled={action.disabled || undefined}
                 data-palette-index={resultIndex}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300/60 focus-visible:outline-none ${
+                className={`flex w-full items-center gap-3 rounded-[9px] border px-3 py-2.5 text-left transition-colors ${
                   isSelected
-                    ? 'bg-cyan-300/[0.085] text-slate-100'
-                    : 'text-slate-300 hover:bg-white/[0.035]'
+                    ? 'border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--text-primary)]'
+                    : 'border-transparent text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'
                 } ${action.disabled ? 'cursor-not-allowed opacity-45' : ''}`}
                 onMouseMove={() => setSelectedIndex(resultIndex)}
                 onClick={() => execute(action)}
               >
                 <span
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-md font-mono text-[10px] ${ACTION_TONE_CLASSES[action.tone ?? 'neutral']}`}
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-md ${ACTION_TONE_CLASSES[action.tone ?? 'neutral']}`}
                   aria-hidden="true"
                 >
-                  {action.icon ?? '⌘'}
+                  <Icon name={getPaletteIcon(action)} size={15} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-[11px]">
+                  <span className="block truncate text-[12px] font-medium">
                     {action.label}
                   </span>
                   {action.description && (
-                    <span className="mt-0.5 block truncate text-[9px] text-slate-600">
+                    <span className="mt-0.5 block truncate text-[10px] text-[var(--text-muted)]">
                       {action.description}
                     </span>
                   )}
                 </span>
-                <span className="shrink-0 font-mono text-[8px] tracking-wide text-slate-600 uppercase">
+                <span className="shrink-0 font-mono text-[9px] tracking-wide text-[var(--text-muted)] uppercase">
                   {action.group}
                 </span>
               </button>
@@ -246,7 +242,7 @@ export function CommandPalette({
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-white/7 px-4 py-2 font-mono text-[8px] text-slate-600">
+      <div className="flex items-center justify-between border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-4 py-2.5 font-mono text-[10px] text-[var(--text-muted)]">
         <span>{results.length} results</span>
         <span>↑↓ Navigate · Enter Run</span>
       </div>
@@ -258,8 +254,19 @@ const ACTION_TONE_CLASSES: Record<
   NonNullable<RegisteredCommandPaletteAction['tone']>,
   string
 > = {
-  neutral: 'bg-white/5 text-slate-400',
-  cyan: 'bg-cyan-300/8 text-cyan-200/70',
-  green: 'bg-emerald-300/8 text-emerald-200/65',
-  violet: 'bg-violet-300/8 text-violet-200/65',
+  neutral: 'bg-[var(--surface-3)] text-[var(--text-muted)]',
+  cyan: 'bg-[var(--info-soft)] text-[var(--info)]',
+  green: 'bg-[var(--accent-soft)] text-[var(--accent)]',
+  violet: 'bg-[rgb(195_155_232_/_10%)] text-[#c39be8]',
 };
+
+function getPaletteIcon(action: RegisteredCommandPaletteAction): IconName {
+  if (action.group === 'Workspaces') return 'workspace';
+  if (action.group === 'History') return 'history';
+  if (action.group === 'Deck') return 'deck';
+  if (action.group === 'Templates') return 'command';
+  if (action.label.toLowerCase().includes('timeline')) return 'timeline';
+  if (action.label.toLowerCase().includes('deck')) return 'deck';
+  if (action.label.toLowerCase().includes('history')) return 'history';
+  return 'terminal';
+}

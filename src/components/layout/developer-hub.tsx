@@ -12,6 +12,7 @@ import {
 
 import { CommandDeckSection } from '@/features/command-deck/components/command-deck-section';
 import { CommandHistorySection } from '@/features/command-history/components/command-history-section';
+import { Icon } from '@/components/ui/icon';
 import type {
   CommandDeckItem,
   CommandDeckItemUpdate,
@@ -136,20 +137,18 @@ export function DeveloperHub({
 
   return (
     <aside
-      className={`flex shrink-0 flex-col overflow-hidden rounded-xl border border-white/8 bg-[#080d14] shadow-[0_18px_55px_rgba(0,0,0,0.18)] transition-[height] duration-200 motion-reduce:transition-none lg:h-auto lg:min-h-0 lg:w-[clamp(18rem,24vw,22rem)] ${
-        isMobileExpanded ? 'h-[min(38%,22rem)] min-h-40' : 'h-11'
+      className={`cd-surface flex shrink-0 flex-col overflow-hidden rounded-[13px] transition-[height] duration-150 motion-reduce:transition-none lg:h-auto lg:min-h-0 lg:w-[clamp(20rem,26vw,23rem)] ${
+        isMobileExpanded ? 'h-[min(42%,24rem)] min-h-44' : 'h-12'
       }`}
       aria-label="Developer Hub"
     >
-      <div className="flex h-11 shrink-0 items-center border-b border-white/7 bg-white/[0.018]">
-        <div className="flex h-full shrink-0 items-center border-r border-white/7 px-3">
-          <span className="font-mono text-[9px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
-            Dev Hub
-          </span>
+      <div className="flex h-12 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--canvas-raised)]">
+        <div className="flex h-full shrink-0 items-center border-r border-[var(--border-soft)] px-3.5">
+          <span className="cd-eyebrow">Tools</span>
         </div>
 
         <div
-          className="flex h-full min-w-0 flex-1 items-center gap-0.5 p-1"
+          className="flex h-full min-w-0 flex-1 items-center gap-1 p-1.5"
           role="tablist"
           aria-label="Developer Hub tools"
         >
@@ -172,20 +171,21 @@ export function DeveloperHub({
                 aria-selected={isActive}
                 aria-controls={`developer-hub-panel-${tab.id}`}
                 tabIndex={isActive ? 0 : -1}
-                className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 font-mono text-[10px] transition-colors focus-visible:ring-2 focus-visible:ring-cyan-300/60 focus-visible:outline-none ${
+                className={`flex h-8 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md border px-2 text-[11px] font-medium transition-colors ${
                   isActive
-                    ? 'bg-white/7 text-slate-200'
-                    : 'text-slate-500 hover:bg-white/4 hover:text-slate-300'
+                    ? 'border-[var(--border)] bg-[var(--surface-3)] text-[var(--text-primary)]'
+                    : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
                 }`}
                 onClick={() => selectTab(tab.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
               >
+                <Icon name={tab.id === 'deck' ? 'deck' : 'history'} size={14} />
                 <span>{tab.label}</span>
                 <span
-                  className={`rounded-full px-1.5 py-0.5 text-[8px] ${
+                  className={`rounded px-1.5 py-0.5 font-mono text-[9px] ${
                     isActive
-                      ? 'bg-cyan-300/10 text-cyan-100/65'
-                      : 'bg-white/4 text-slate-600'
+                      ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                      : 'bg-[var(--surface-2)] text-[var(--text-subtle)]'
                   }`}
                 >
                   {tabCounts[tab.id]}
@@ -197,14 +197,17 @@ export function DeveloperHub({
 
         <button
           type="button"
-          className="mr-1 flex size-8 shrink-0 items-center justify-center rounded-md text-[10px] text-slate-500 hover:bg-white/5 hover:text-slate-300 focus-visible:ring-2 focus-visible:ring-cyan-300/60 focus-visible:outline-none lg:hidden"
+          className="cd-icon-button mr-1.5 shrink-0 border-transparent text-[var(--text-muted)] lg:hidden"
           aria-expanded={isMobileExpanded}
           aria-label={
             isMobileExpanded ? 'Collapse Developer Hub' : 'Expand Developer Hub'
           }
           onClick={() => setIsMobileExpanded((current) => !current)}
         >
-          <span aria-hidden="true">{isMobileExpanded ? '⌄' : '⌃'}</span>
+          <Icon
+            name={isMobileExpanded ? 'chevron-down' : 'chevron-up'}
+            size={15}
+          />
         </button>
       </div>
 

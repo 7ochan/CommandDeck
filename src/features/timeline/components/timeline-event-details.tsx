@@ -1,4 +1,5 @@
 import { HistoryEntryActions } from '@/features/command-history/components/history-entry-actions';
+import { Icon } from '@/components/ui/icon';
 import { getCommandHistoryStatus } from '@/shared/history-status';
 import type { CommandHistoryEntry } from '@/shared/types';
 
@@ -22,13 +23,15 @@ export function TimelineEventDetails({
 }: TimelineEventDetailsProps) {
   if (!entry) {
     return (
-      <aside className="flex min-h-0 w-[clamp(18rem,27vw,23rem)] shrink-0 items-center justify-center rounded-xl border border-white/9 bg-[#090d14] p-6 text-center">
+      <aside className="cd-surface hidden min-h-0 w-[clamp(20rem,27vw,23rem)] shrink-0 items-center justify-center rounded-[13px] p-6 text-center xl:flex">
         <div>
-          <span className="font-mono text-lg text-cyan-300/35">◎</span>
-          <h2 className="mt-3 text-xs font-medium text-slate-300">
+          <span className="cd-empty-mark">
+            <Icon name="command" size={18} />
+          </span>
+          <h2 className="mt-3 text-[13px] font-semibold text-[var(--text-secondary)]">
             Event details
           </h2>
-          <p className="mt-1.5 text-[10px] leading-4 text-slate-600">
+          <p className="mt-1.5 text-[11px] leading-4.5 text-[var(--text-muted)]">
             Select a command in the Timeline to inspect its execution context.
           </p>
         </div>
@@ -39,32 +42,32 @@ export function TimelineEventDetails({
   const status = getCommandHistoryStatus(entry);
 
   return (
-    <aside className="command-history-scrollbar min-h-0 w-[clamp(18rem,27vw,23rem)] shrink-0 overflow-y-auto rounded-xl border border-white/9 bg-[#090d14]">
-      <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+    <aside className="cd-surface command-history-scrollbar max-h-[44%] min-h-0 w-full shrink-0 overflow-y-auto rounded-[13px] xl:max-h-none xl:w-[clamp(20rem,27vw,23rem)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-4 py-3.5">
         <div>
-          <h2 className="text-xs font-medium text-slate-200">Event details</h2>
-          <p className="mt-1 font-mono text-[9px] text-slate-600">
+          <h2 className="text-[13px] font-semibold text-[var(--text-primary)]">
+            Event details
+          </h2>
+          <p className="mt-1 font-mono text-[10px] text-[var(--text-muted)]">
             Immutable History record
           </p>
         </div>
         <button
           type="button"
-          className="rounded-md border border-white/8 px-2 py-1 text-[10px] text-slate-500 hover:bg-white/5 hover:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:outline-none"
+          className="cd-icon-button size-8"
           aria-label="Close event details"
           onClick={onClose}
         >
-          ×
+          <Icon name="x" size={14} />
         </button>
       </div>
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <span className="text-[9px] tracking-wide text-slate-600 uppercase">
-            Command
-          </span>
+          <span className="cd-eyebrow">Command</span>
           <StatusLabel status={status} exitCode={entry.exitCode} />
         </div>
-        <pre className="mt-2 max-h-44 overflow-auto rounded-lg border border-white/8 bg-black/20 p-3 font-mono text-[11px] leading-5 break-words whitespace-pre-wrap text-slate-200">
+        <pre className="cd-scrollbar mt-2 max-h-44 overflow-auto rounded-[9px] border border-[var(--border)] bg-[var(--canvas-raised)] p-3 font-mono text-[11px] leading-5 break-words whitespace-pre-wrap text-[var(--text-primary)]">
           {entry.command}
         </pre>
 
@@ -103,11 +106,11 @@ function Detail({
   children: React.ReactNode;
 }) {
   return (
-    <dl className="mt-4 border-t border-white/7 pt-3">
-      <dt className="text-[8px] tracking-wide text-slate-600 uppercase">
+    <dl className="mt-4 border-t border-[var(--border-soft)] pt-3">
+      <dt className="text-[9px] tracking-wide text-[var(--text-muted)] uppercase">
         {label}
       </dt>
-      <dd className="mt-1.5 font-mono text-[10px] leading-4 text-slate-400">
+      <dd className="mt-1.5 font-mono text-[11px] leading-4 text-[var(--text-secondary)]">
         {children}
       </dd>
     </dl>

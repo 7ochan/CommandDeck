@@ -1,6 +1,7 @@
 import { memo, useCallback, useId, type KeyboardEvent } from 'react';
 
 import { getCommandHistoryStatus } from '@/shared/history-status';
+import { Icon } from '@/components/ui/icon';
 
 import {
   getHistoryNavigationDirection,
@@ -69,16 +70,16 @@ export const CommandHistoryEntry = memo(function CommandHistoryEntry({
 
   return (
     <article
-      className={`group/history relative isolate overflow-hidden rounded-lg border transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out motion-reduce:transition-none ${
+      className={`group/history relative isolate overflow-hidden rounded-[10px] border transition-[border-color,background-color,box-shadow] duration-150 motion-reduce:transition-none ${
         isSelected
-          ? 'border-emerald-300/45 bg-emerald-300/8 shadow-[0_8px_24px_rgba(0,0,0,0.25)]'
-          : 'border-white/8 bg-white/3 hover:-translate-y-px hover:border-white/15 hover:bg-white/5'
+          ? 'border-[var(--accent-border)] bg-[var(--accent-soft)] shadow-[0_8px_20px_rgba(0,0,0,0.18)]'
+          : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
       }`}
     >
       <button
         ref={buttonRef}
         type="button"
-        className="group w-full cursor-pointer p-3 text-left focus-visible:ring-2 focus-visible:ring-emerald-300/80 focus-visible:outline-none focus-visible:ring-inset"
+        className="group w-full cursor-pointer p-3 text-left focus-visible:outline-offset-[-2px]"
         aria-expanded={isSelected}
         aria-controls={actionPanelId}
         aria-pressed={isSelected}
@@ -90,20 +91,20 @@ export const CommandHistoryEntry = memo(function CommandHistoryEntry({
         onKeyDown={handleKeyDown}
       >
         <div className="flex items-start justify-between gap-2">
-          <span className="block min-w-0 flex-1 overflow-hidden font-mono text-[12px] leading-4.5 break-words whitespace-pre-wrap text-slate-200">
+          <span className="block min-w-0 flex-1 overflow-hidden font-mono text-[12px] leading-[1.15rem] break-words whitespace-pre-wrap text-[var(--text-primary)]">
             <HighlightedText text={entry.command} searchTerm={searchTerm} />
           </span>
           <StatusBadge status={status} exitCode={entry.exitCode} />
         </div>
 
         <p
-          className="mt-2 truncate font-mono text-[10px] text-slate-500"
+          className="mt-2 truncate font-mono text-[10px] text-[var(--text-muted)]"
           title={entry.cwd}
         >
           <HighlightedText text={entry.cwd} searchTerm={searchTerm} />
         </p>
 
-        <div className="mt-2 flex items-center justify-between gap-2 border-t border-white/6 pt-2 font-mono text-[9px] text-slate-600">
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-[var(--border-soft)] pt-2 font-mono text-[10px] text-[var(--text-muted)]">
           <span>{formatDuration(entry.durationMs)}</span>
           <span>{TIME_FORMATTER.format(entry.endedAt)}</span>
         </div>
@@ -142,19 +143,30 @@ function StatusBadge({
   exitCode: number;
 }) {
   const label =
-    status === 'success' ? '✓' : status === 'failed' ? `× ${exitCode}` : '■';
+    status === 'success'
+      ? 'Success'
+      : status === 'failed'
+        ? `Failed ${exitCode}`
+        : 'Interrupted';
   const className =
     status === 'success'
-      ? 'border-emerald-300/25 bg-emerald-300/10 text-emerald-200'
+      ? 'border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
       : status === 'failed'
-        ? 'border-rose-300/25 bg-rose-300/10 text-rose-200'
-        : 'border-amber-300/25 bg-amber-300/10 text-amber-200';
+        ? 'border-[rgb(239_141_152_/_24%)] bg-[var(--danger-soft)] text-[var(--danger)]'
+        : 'border-[rgb(232_185_106_/_24%)] bg-[var(--warning-soft)] text-[var(--warning)]';
 
   return (
     <span
-      className={`inline-flex shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] ${className}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-medium ${className}`}
       aria-label={`${status}, exit code ${exitCode}`}
     >
+      <Icon
+        name={
+          status === 'success' ? 'check' : status === 'failed' ? 'x' : 'stop'
+        }
+        size={10}
+        strokeWidth={2}
+      />
       <span aria-hidden="true">{label}</span>
     </span>
   );

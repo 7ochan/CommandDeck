@@ -1,5 +1,6 @@
 import { memo } from 'react';
 
+import { Icon } from '@/components/ui/icon';
 import { COMMAND_HISTORY_STATUSES } from '@/shared/history-status';
 import type { CommandHistoryQuery, CommandHistoryStatus } from '@/shared/types';
 
@@ -18,11 +19,11 @@ const STATUS_LABELS: Record<CommandHistoryStatus, string> = {
 
 const STATUS_STYLES: Record<CommandHistoryStatus, string> = {
   success:
-    'aria-pressed:border-emerald-300/35 aria-pressed:bg-emerald-300/12 aria-pressed:text-emerald-200',
+    'aria-pressed:border-[var(--accent-border)] aria-pressed:bg-[var(--accent-soft)] aria-pressed:text-[var(--accent-strong)]',
   failed:
-    'aria-pressed:border-rose-300/35 aria-pressed:bg-rose-300/12 aria-pressed:text-rose-200',
+    'aria-pressed:border-[rgb(239_141_152_/_30%)] aria-pressed:bg-[var(--danger-soft)] aria-pressed:text-[var(--danger)]',
   interrupted:
-    'aria-pressed:border-amber-300/35 aria-pressed:bg-amber-300/12 aria-pressed:text-amber-200',
+    'aria-pressed:border-[rgb(232_185_106_/_30%)] aria-pressed:bg-[var(--warning-soft)] aria-pressed:text-[var(--warning)]',
 };
 
 export const HistorySearchControls = memo(function HistorySearchControls({
@@ -32,13 +33,13 @@ export const HistorySearchControls = memo(function HistorySearchControls({
   onToggleStatus,
 }: HistorySearchControlsProps) {
   return (
-    <div className="shrink-0 border-b border-white/8 p-2.5">
+    <div className="shrink-0 border-b border-[var(--border-soft)] p-3">
       <div className="relative">
         <span
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-slate-500"
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--text-muted)]"
           aria-hidden="true"
         >
-          ⌕
+          <Icon name="search" size={14} />
         </span>
         <input
           type="search"
@@ -46,12 +47,12 @@ export const HistorySearchControls = memo(function HistorySearchControls({
           maxLength={200}
           placeholder="Search command or directory…"
           aria-label="Search Command History"
-          className="h-8 w-full rounded-lg border border-white/10 bg-black/20 pr-8 pl-8 font-mono text-[11px] text-slate-200 outline-none placeholder:text-slate-600 focus:border-emerald-300/45 focus:ring-2 focus:ring-emerald-300/10"
+          className="cd-input h-9 pr-8 pl-8 font-mono text-[11px]"
           onChange={(event) => onSearchTermChange(event.currentTarget.value)}
         />
         {isSearching && (
           <span
-            className="absolute top-1/2 right-3 size-3 -translate-y-1/2 animate-spin rounded-full border border-slate-600 border-t-emerald-300 motion-reduce:animate-none"
+            className="absolute top-1/2 right-3 size-3 -translate-y-1/2 animate-spin rounded-full border border-[var(--text-subtle)] border-t-[var(--accent)] motion-reduce:animate-none"
             aria-label="Updating History results"
             role="status"
           />
@@ -59,7 +60,7 @@ export const HistorySearchControls = memo(function HistorySearchControls({
       </div>
 
       <div
-        className="mt-2 grid grid-cols-3 gap-1.5"
+        className="mt-2.5 grid grid-cols-3 gap-1.5"
         aria-label="Filter History by status"
       >
         {COMMAND_HISTORY_STATUSES.map((status) => (
@@ -67,9 +68,19 @@ export const HistorySearchControls = memo(function HistorySearchControls({
             key={status}
             type="button"
             aria-pressed={query.statuses.includes(status)}
-            className={`rounded-md border border-white/8 bg-white/3 px-1 py-1 text-[9px] text-slate-500 transition-colors hover:border-white/15 hover:text-slate-300 focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:outline-none ${STATUS_STYLES[status]}`}
+            className={`flex h-7 items-center justify-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] px-1 text-[10px] font-medium text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)] ${STATUS_STYLES[status]}`}
             onClick={() => onToggleStatus(status)}
           >
+            <span
+              className={`size-1.5 rounded-full ${
+                status === 'success'
+                  ? 'bg-[var(--accent)]'
+                  : status === 'failed'
+                    ? 'bg-[var(--danger)]'
+                    : 'bg-[var(--warning)]'
+              }`}
+              aria-hidden="true"
+            />
             {STATUS_LABELS[status]}
           </button>
         ))}
