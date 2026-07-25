@@ -11,14 +11,35 @@ import type {
 } from '@/shared/types';
 
 const SECTIONS = [
-  { id: 'general', label: 'General', icon: 'workspace' },
-  { id: 'terminal', label: 'Terminal', icon: 'terminal' },
-  { id: 'appearance', label: 'Appearance', icon: 'appearance' },
-  { id: 'developerHub', label: 'Developer Hub', icon: 'deck' },
+  {
+    id: 'general',
+    label: 'General',
+    icon: 'workspace',
+    description: 'Workspace startup, focus, and safety.',
+  },
+  {
+    id: 'terminal',
+    label: 'Terminal',
+    icon: 'terminal',
+    description: 'Text, cursor, and scrollback presentation.',
+  },
+  {
+    id: 'appearance',
+    label: 'Appearance',
+    icon: 'appearance',
+    description: 'Choose how CommandDeck looks on this device.',
+  },
+  {
+    id: 'developerHub',
+    label: 'Developer Hub',
+    icon: 'deck',
+    description: 'Control how the tool panel restores its context.',
+  },
 ] as const satisfies ReadonlyArray<{
   id: keyof AppSettings;
   label: string;
   icon: IconName;
+  description: string;
 }>;
 
 type SettingsSection = (typeof SECTIONS)[number]['id'];
@@ -44,6 +65,7 @@ export function SettingsDialog({
   const titleId = useId();
   const [activeSection, setActiveSection] =
     useState<SettingsSection>('general');
+  const activeSectionDetails = SECTIONS.find(({ id }) => id === activeSection);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -62,231 +84,243 @@ export function SettingsDialog({
   return (
     <dialog
       ref={dialogRef}
-      className="cd-dialog w-[min(48rem,calc(100vw-1.5rem))] p-0"
+      className="cd-dialog max-h-[calc(100dvh-1.5rem)] w-[min(48rem,calc(100vw-1.5rem))] rounded-[16px] p-0"
       aria-labelledby={titleId}
       onCancel={onClose}
       onClose={() => {
         if (isOpen) onClose();
       }}
     >
-      <div className="flex min-h-[31rem] flex-col sm:flex-row">
-        <aside className="shrink-0 border-b border-[var(--border-soft)] bg-[var(--canvas-raised)] p-3 sm:w-48 sm:border-r sm:border-b-0">
-          <div className="flex items-center justify-between gap-3 px-1 py-1 sm:block">
+      <div className="flex h-[min(29rem,calc(100dvh-1.5rem))] flex-col">
+        <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] px-4 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="cd-clay-tile cd-clay-tile--accent flex size-8 shrink-0 items-center justify-center rounded-lg">
+              <Icon name="settings" size={15} />
+            </span>
             <div>
-              <span className="cd-eyebrow">CommandDeck</span>
               <h2
                 id={titleId}
-                className="mt-1 text-[15px] font-semibold text-[var(--text-primary)]"
+                className="text-[15px] leading-5 font-semibold tracking-[-0.01em] text-[var(--text-primary)]"
               >
                 Settings
               </h2>
+              <p className="text-[10px] leading-4 text-[var(--text-muted)]">
+                CommandDeck preferences
+              </p>
             </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2.5">
+            {!persistenceError && (
+              <span
+                className="hidden text-[9px] text-[var(--text-muted)] sm:block"
+                role="status"
+              >
+                {isLoading ? 'Loading…' : 'Saved automatically'}
+              </span>
+            )}
             <button
               type="button"
-              className="cd-icon-button sm:hidden"
+              className="cd-icon-button cd-button--quiet size-8 shrink-0 text-[var(--text-muted)]"
               aria-label="Close Settings"
+              title="Close Settings"
               onClick={onClose}
             >
               <Icon name="x" size={15} />
             </button>
           </div>
+        </header>
 
-          <nav
-            className="mt-3 grid grid-cols-2 gap-1 sm:grid-cols-1"
-            aria-label="Settings sections"
-          >
-            {SECTIONS.map((section) => {
-              const isActive = activeSection === section.id;
+        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+          <aside className="shrink-0 border-b border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3 py-2.5 sm:w-[13rem] sm:border-r sm:border-b-0 sm:p-3">
+            <p className="cd-eyebrow hidden px-2.5 pt-1 pb-2 sm:block">
+              Categories
+            </p>
 
-              return (
-                <button
-                  key={section.id}
-                  type="button"
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`flex h-9 items-center gap-2 rounded-lg border px-2.5 text-left text-[11px] font-medium transition-colors ${
-                    isActive
-                      ? 'cd-segment-active'
-                      : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
-                  }`}
-                  onClick={() => setActiveSection(section.id)}
-                >
-                  <Icon name={section.icon} size={14} />
-                  <span className="truncate">{section.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
+            <nav
+              className="grid grid-cols-2 gap-1 sm:grid-cols-1"
+              aria-label="Settings categories"
+            >
+              {SECTIONS.map((section) => {
+                const isActive = activeSection === section.id;
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="hidden h-14 shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-5 sm:flex">
-            <div>
-              <h3 className="text-[13px] font-semibold text-[var(--text-primary)]">
-                {SECTIONS.find(({ id }) => id === activeSection)?.label}
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    aria-current={isActive ? 'page' : undefined}
+                    className="cd-settings-nav-item flex h-9.5 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-[11px] font-medium"
+                    onClick={() => setActiveSection(section.id)}
+                  >
+                    <Icon name={section.icon} size={14} />
+                    <span className="truncate">{section.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <header className="shrink-0 border-b border-[var(--border-soft)] px-5 py-3.5 sm:px-6 sm:py-4">
+              <h3 className="text-[15px] leading-5 font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
+                {activeSectionDetails?.label}
               </h3>
-              <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                Changes apply automatically
+              <p
+                className={`mt-0.5 text-[10px] leading-4 ${persistenceError ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'}`}
+                role={
+                  persistenceError ? 'alert' : isLoading ? 'status' : undefined
+                }
+              >
+                {persistenceError ??
+                  (isLoading
+                    ? 'Loading saved settings…'
+                    : activeSectionDetails?.description)}
               </p>
-            </div>
-            <button
-              type="button"
-              className="cd-icon-button"
-              aria-label="Close Settings"
-              onClick={onClose}
-            >
-              <Icon name="x" size={15} />
-            </button>
-          </header>
+            </header>
 
-          <div className="cd-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
-            <fieldset
-              disabled={isLoading}
-              className="m-0 min-w-0 border-0 p-0 disabled:opacity-60"
-            >
-              {activeSection === 'general' && (
-                <SettingsGroup
-                  title="Workspace behavior"
-                  description="Control how CommandDeck restores and protects your working context."
-                >
-                  <ToggleSetting
-                    label="Restore previous workspace on startup"
-                    description="Open the workspace that was active when CommandDeck last closed."
-                    checked={settings.general.restorePreviousWorkspace}
-                    onChange={(restorePreviousWorkspace) =>
-                      onUpdate({ general: { restorePreviousWorkspace } })
-                    }
-                  />
-                  <ToggleSetting
-                    label="Confirm before deleting workspace"
-                    description="Ask before permanently removing its History and Deck items."
-                    checked={settings.general.confirmBeforeDeletingWorkspace}
-                    onChange={(confirmBeforeDeletingWorkspace) =>
-                      onUpdate({ general: { confirmBeforeDeletingWorkspace } })
-                    }
-                  />
-                  <ToggleSetting
-                    label="Auto-focus terminal after switching"
-                    description="Move keyboard focus to the terminal when changing workspaces."
-                    checked={settings.general.autoFocusTerminalAfterSwitching}
-                    onChange={(autoFocusTerminalAfterSwitching) =>
-                      onUpdate({ general: { autoFocusTerminalAfterSwitching } })
-                    }
-                  />
-                </SettingsGroup>
-              )}
+            <div className="cd-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+              <fieldset
+                disabled={isLoading}
+                className="m-0 min-w-0 border-0 p-0 disabled:opacity-60"
+              >
+                {activeSection === 'general' && (
+                  <SettingsGroup
+                    title="Workspace behavior"
+                    description="Control how CommandDeck restores and protects your working context."
+                  >
+                    <ToggleSetting
+                      label="Restore previous workspace on startup"
+                      description="Open the workspace that was active when CommandDeck last closed."
+                      checked={settings.general.restorePreviousWorkspace}
+                      onChange={(restorePreviousWorkspace) =>
+                        onUpdate({ general: { restorePreviousWorkspace } })
+                      }
+                    />
+                    <ToggleSetting
+                      label="Confirm before deleting workspace"
+                      description="Ask before permanently removing its History and Deck items."
+                      checked={settings.general.confirmBeforeDeletingWorkspace}
+                      onChange={(confirmBeforeDeletingWorkspace) =>
+                        onUpdate({
+                          general: { confirmBeforeDeletingWorkspace },
+                        })
+                      }
+                    />
+                    <ToggleSetting
+                      label="Auto-focus terminal after switching"
+                      description="Move keyboard focus to the terminal when changing workspaces."
+                      checked={settings.general.autoFocusTerminalAfterSwitching}
+                      onChange={(autoFocusTerminalAfterSwitching) =>
+                        onUpdate({
+                          general: { autoFocusTerminalAfterSwitching },
+                        })
+                      }
+                    />
+                  </SettingsGroup>
+                )}
 
-              {activeSection === 'terminal' && (
-                <SettingsGroup
-                  title="Terminal presentation"
-                  description="These options update every open terminal immediately."
-                >
-                  <SelectSetting
-                    label="Font size"
-                    description="Terminal text size in pixels."
-                    value={String(settings.terminal.fontSize)}
-                    onChange={(value) =>
-                      onUpdate({ terminal: { fontSize: Number(value) } })
-                    }
+                {activeSection === 'terminal' && (
+                  <SettingsGroup
+                    title="Terminal presentation"
+                    description="These options update every open terminal immediately."
                   >
-                    {[10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24].map(
-                      (size) => (
-                        <option key={size} value={size}>
-                          {size} px
-                        </option>
-                      ),
-                    )}
-                  </SelectSetting>
-                  <SelectSetting
-                    label="Cursor style"
-                    description="Choose the terminal insertion marker."
-                    value={settings.terminal.cursorStyle}
-                    onChange={(cursorStyle) =>
-                      onUpdate({
-                        terminal: {
-                          cursorStyle: cursorStyle as TerminalCursorStyle,
-                        },
-                      })
-                    }
-                  >
-                    <option value="block">Block</option>
-                    <option value="underline">Underline</option>
-                    <option value="bar">Bar</option>
-                  </SelectSetting>
-                  <ToggleSetting
-                    label="Cursor blinking"
-                    description="Animate the cursor while the terminal is focused."
-                    checked={settings.terminal.cursorBlink}
-                    onChange={(cursorBlink) =>
-                      onUpdate({ terminal: { cursorBlink } })
-                    }
-                  />
-                  <SelectSetting
-                    label="Scrollback size"
-                    description="Maximum lines retained in each terminal buffer."
-                    value={String(settings.terminal.scrollbackSize)}
-                    onChange={(value) =>
-                      onUpdate({ terminal: { scrollbackSize: Number(value) } })
-                    }
-                  >
-                    {[1_000, 2_500, 5_000, 10_000, 20_000, 50_000, 100_000].map(
-                      (size) => (
+                    <SelectSetting
+                      label="Font size"
+                      description="Terminal text size in pixels."
+                      value={String(settings.terminal.fontSize)}
+                      onChange={(value) =>
+                        onUpdate({ terminal: { fontSize: Number(value) } })
+                      }
+                    >
+                      {[10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24].map(
+                        (size) => (
+                          <option key={size} value={size}>
+                            {size} px
+                          </option>
+                        ),
+                      )}
+                    </SelectSetting>
+                    <SelectSetting
+                      label="Cursor style"
+                      description="Choose the terminal insertion marker."
+                      value={settings.terminal.cursorStyle}
+                      onChange={(cursorStyle) =>
+                        onUpdate({
+                          terminal: {
+                            cursorStyle: cursorStyle as TerminalCursorStyle,
+                          },
+                        })
+                      }
+                    >
+                      <option value="block">Block</option>
+                      <option value="underline">Underline</option>
+                      <option value="bar">Bar</option>
+                    </SelectSetting>
+                    <ToggleSetting
+                      label="Cursor blinking"
+                      description="Animate the cursor while the terminal is focused."
+                      checked={settings.terminal.cursorBlink}
+                      onChange={(cursorBlink) =>
+                        onUpdate({ terminal: { cursorBlink } })
+                      }
+                    />
+                    <SelectSetting
+                      label="Scrollback size"
+                      description="Maximum lines retained in each terminal buffer."
+                      value={String(settings.terminal.scrollbackSize)}
+                      onChange={(value) =>
+                        onUpdate({
+                          terminal: { scrollbackSize: Number(value) },
+                        })
+                      }
+                    >
+                      {[
+                        1_000, 2_500, 5_000, 10_000, 20_000, 50_000, 100_000,
+                      ].map((size) => (
                         <option key={size} value={size}>
                           {size.toLocaleString()} lines
                         </option>
-                      ),
-                    )}
-                  </SelectSetting>
-                </SettingsGroup>
-              )}
+                      ))}
+                    </SelectSetting>
+                  </SettingsGroup>
+                )}
 
-              {activeSection === 'appearance' && (
-                <SettingsGroup
-                  title="Interface theme"
-                  description="System follows your operating system appearance automatically."
-                >
-                  <div className="grid grid-cols-3 gap-2 p-3">
-                    {(['dark', 'light', 'system'] as const).map((theme) => (
-                      <ThemeOption
-                        key={theme}
-                        theme={theme}
-                        selected={settings.appearance.theme === theme}
-                        onSelect={() => onUpdate({ appearance: { theme } })}
-                      />
-                    ))}
-                  </div>
-                </SettingsGroup>
-              )}
+                {activeSection === 'appearance' && (
+                  <SettingsGroup
+                    title="Interface theme"
+                    description="System follows your operating system appearance automatically."
+                  >
+                    <div className="grid grid-cols-3 gap-2 py-3">
+                      {(['dark', 'light', 'system'] as const).map((theme) => (
+                        <ThemeOption
+                          key={theme}
+                          theme={theme}
+                          selected={settings.appearance.theme === theme}
+                          onSelect={() => onUpdate({ appearance: { theme } })}
+                        />
+                      ))}
+                    </div>
+                  </SettingsGroup>
+                )}
 
-              {activeSection === 'developerHub' && (
-                <SettingsGroup
-                  title="Developer Hub"
-                  description="Keep the side panel predictable between working sessions."
-                >
-                  <ToggleSetting
-                    label="Remember last selected tab"
-                    description="Restore Deck or History the next time CommandDeck opens."
-                    checked={settings.developerHub.rememberLastSelectedTab}
-                    onChange={(rememberLastSelectedTab) =>
-                      onUpdate({ developerHub: { rememberLastSelectedTab } })
-                    }
-                  />
-                </SettingsGroup>
-              )}
-            </fieldset>
+                {activeSection === 'developerHub' && (
+                  <SettingsGroup
+                    title="Developer Hub"
+                    description="Keep the side panel predictable between working sessions."
+                  >
+                    <ToggleSetting
+                      label="Remember last selected tab"
+                      description="Restore Deck or History the next time CommandDeck opens."
+                      checked={settings.developerHub.rememberLastSelectedTab}
+                      onChange={(rememberLastSelectedTab) =>
+                        onUpdate({ developerHub: { rememberLastSelectedTab } })
+                      }
+                    />
+                  </SettingsGroup>
+                )}
+              </fieldset>
+            </div>
           </div>
-
-          <footer className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-t border-[var(--border-soft)] px-5 py-2.5">
-            <p
-              className={`text-[10px] ${persistenceError ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'}`}
-              role={persistenceError ? 'alert' : 'status'}
-            >
-              {persistenceError ??
-                (isLoading ? 'Loading saved settings…' : 'Saved automatically')}
-            </p>
-            <button type="button" className="cd-button" onClick={onClose}>
-              Done
-            </button>
-          </footer>
         </div>
       </div>
     </dialog>
@@ -303,14 +337,14 @@ function SettingsGroup({
   children: ReactNode;
 }) {
   return (
-    <section>
-      <h4 className="text-[13px] font-semibold text-[var(--text-primary)]">
+    <section className="max-w-[36rem]">
+      <h4 className="text-[12px] leading-5 font-semibold text-[var(--text-primary)]">
         {title}
       </h4>
-      <p className="mt-1 text-[11px] leading-4.5 text-[var(--text-muted)]">
+      <p className="mt-0.5 max-w-[32rem] text-[10px] leading-4 text-[var(--text-muted)]">
         {description}
       </p>
-      <div className="mt-4 divide-y divide-[var(--border-soft)] overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--canvas-raised)]">
+      <div className="mt-3 divide-y divide-[var(--border-soft)] border-y border-[var(--border-soft)]">
         {children}
       </div>
     </section>
@@ -329,12 +363,12 @@ function ToggleSetting({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-4 p-3.5 hover:bg-[var(--surface-1)]">
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12px] font-medium text-[var(--text-primary)]">
+    <label className="cd-settings-row grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-1 py-3.5 sm:gap-8">
+      <span className="max-w-[28rem] min-w-0">
+        <span className="block text-[12px] leading-4 font-medium text-[var(--text-primary)]">
           {label}
         </span>
-        <span className="mt-1 block text-[10px] leading-4 text-[var(--text-muted)]">
+        <span className="mt-0.5 block text-[10px] leading-4 text-[var(--text-muted)]">
           {description}
         </span>
       </span>
@@ -363,18 +397,18 @@ function SelectSetting({
   children: ReactNode;
 }) {
   return (
-    <label className="flex items-center gap-4 p-3.5">
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12px] font-medium text-[var(--text-primary)]">
+    <label className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-1 py-3.5 sm:gap-8">
+      <span className="max-w-[28rem] min-w-0">
+        <span className="block text-[12px] leading-4 font-medium text-[var(--text-primary)]">
           {label}
         </span>
-        <span className="mt-1 block text-[10px] leading-4 text-[var(--text-muted)]">
+        <span className="mt-0.5 block text-[10px] leading-4 text-[var(--text-muted)]">
           {description}
         </span>
       </span>
       <select
         value={value}
-        className="cd-input h-9 w-36 shrink-0 px-2.5 text-[11px]"
+        className="cd-input h-8 w-36 shrink-0 px-2.5 text-[11px]"
         onChange={(event) => onChange(event.currentTarget.value)}
       >
         {children}
@@ -398,10 +432,10 @@ function ThemeOption({
     <button
       type="button"
       aria-pressed={selected}
-      className={`flex min-h-24 flex-col items-center justify-center gap-2 rounded-[10px] border text-[11px] font-medium transition-[border-color,background-color,box-shadow] ${
+      className={`flex min-h-22 flex-col items-center justify-center gap-2 rounded-[9px] border text-[10px] font-medium transition-[border-color,background-color,color,box-shadow] ${
         selected
-          ? 'cd-segment-active border-[var(--accent-border)]'
-          : 'border-[var(--border-soft)] bg-[var(--surface-1)] text-[var(--text-muted)] hover:border-[var(--border-strong)]'
+          ? 'border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--text-primary)] shadow-[inset_0_1px_0_rgb(255_255_255_/_4%)]'
+          : 'border-transparent bg-[var(--surface-1)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
       }`}
       onClick={onSelect}
     >
