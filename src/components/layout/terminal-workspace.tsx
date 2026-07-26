@@ -143,6 +143,7 @@ function ActiveWorkspaceLayout({
     isLoading: isDeckLoading,
     loadError: deckLoadError,
     addFromHistory,
+    createCustomItem,
     updateItem,
     removeItem,
   } = useCommandDeck(activeWorkspace.workspaceId);
@@ -542,6 +543,7 @@ function ActiveWorkspaceLayout({
               onSelectHistoryEntry={selectEntry}
               onClearHistorySelection={clearSelection}
               onAddHistoryToDeck={handleAddToDeck}
+              onCreateDeckItem={createCustomItem}
               onUpdateDeckItem={updateItem}
               onRemoveDeckItem={handleRemoveFromDeck}
               onRunCommand={runCommandAgain}

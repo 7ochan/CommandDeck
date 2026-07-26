@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { AddDeckItemDialog } from '@/features/command-deck/components/add-deck-item-dialog';
 import { CommandDeckSection } from '@/features/command-deck/components/command-deck-section';
 import { CommandHistorySection } from '@/features/command-history/components/command-history-section';
 import { Icon } from '@/components/ui/icon';
@@ -48,6 +49,11 @@ type DeveloperHubProps = {
   onSelectHistoryEntry: (commandId: string) => void;
   onClearHistorySelection: () => void;
   onAddHistoryToDeck: (historyId: string) => Promise<void>;
+  onCreateDeckItem?: (
+    displayName: string,
+    command: string,
+    description?: string | null,
+  ) => Promise<void>;
   onUpdateDeckItem: (
     deckItemId: string,
     update: CommandDeckItemUpdate,
@@ -72,6 +78,7 @@ export function DeveloperHub({
   onSelectHistoryEntry,
   onClearHistorySelection,
   onAddHistoryToDeck,
+  onCreateDeckItem,
   onUpdateDeckItem,
   onRemoveDeckItem,
   onRunCommand,
@@ -87,6 +94,7 @@ export function DeveloperHub({
       ? settingsState.lastDeveloperHubTab
       : 'deck',
   );
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const tabRefs = useRef(new Map<DeveloperHubTab, HTMLButtonElement>());
   const deckHistoryIds = useMemo(
     () =>
@@ -219,6 +227,18 @@ export function DeveloperHub({
             );
           })}
         </div>
+
+        {onCreateDeckItem && (
+          <button
+            type="button"
+            className="cd-icon-button mr-1.5 size-7 shrink-0 border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            aria-label="Add new Deck shortcut"
+            title="Add new Deck shortcut"
+            onClick={() => setIsAddDialogOpen(true)}
+          >
+            <Icon name="plus" size={15} />
+          </button>
+        )}
       </div>
 
       <div className="flex min-h-0 flex-1">
@@ -252,6 +272,14 @@ export function DeveloperHub({
           />
         </DeveloperHubPanel>
       </div>
+
+      {onCreateDeckItem && (
+        <AddDeckItemDialog
+          isOpen={isAddDialogOpen}
+          onCancel={() => setIsAddDialogOpen(false)}
+          onSave={onCreateDeckItem}
+        />
+      )}
     </aside>
   );
 }

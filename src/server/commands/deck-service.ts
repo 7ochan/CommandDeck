@@ -31,6 +31,37 @@ export class CommandDeckService {
     return this.repository.list(workspaceId);
   }
 
+  createCustomDeckItem(
+    workspaceId: string,
+    displayName: string,
+    command: string,
+    description?: string | null,
+  ): AddHistoryEntryToDeckResult {
+    const templateValidation = validateCommandTemplate(command);
+
+    if (!templateValidation.isValid) {
+      return {
+        outcome: 'invalid-template',
+        message:
+          templateValidation.errors[0]?.message ??
+          'This command contains malformed placeholder syntax.',
+      };
+    }
+
+    const item = this.repository.create({
+      deckItemId: this.createId(),
+      definitionId: this.createId(),
+      workspaceId,
+      sourceHistoryId: null,
+      displayName: displayName.trim() || deriveDisplayName(command),
+      command,
+      description: description?.trim() || null,
+      createdAt: this.clock(),
+    });
+
+    return { outcome: 'created', item };
+  }
+
   addHistoryEntry(
     workspaceId: string,
     historyId: string,

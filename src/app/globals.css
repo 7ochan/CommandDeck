@@ -548,9 +548,3 @@ button.cd-clay-tile:active:not(:disabled) {
   }
 }
 
-.commanddeck-terminal .xterm-cursor-layer,
-.commanddeck-terminal .xterm-cursor {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}

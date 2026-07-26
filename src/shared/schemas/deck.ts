@@ -23,8 +23,14 @@ export const commandDeckResponseSchema = z.object({
 
 export const addCommandDeckItemSchema = z.object({
   workspaceId: workspaceIdSchema,
-  historyId: z.string().min(1).max(200),
-});
+  historyId: z.string().min(1).max(200).optional(),
+  displayName: z.string().trim().min(1).max(120).optional(),
+  command: z.string().min(1).max(10_000).optional(),
+  description: z.string().trim().max(1_000).nullable().optional(),
+}).refine(
+  (data) => Boolean(data.historyId) || Boolean(data.command && data.command.trim().length > 0),
+  { message: 'Either historyId or command is required.' },
+);
 
 const nonBlankCommandSchema = z
   .string()

@@ -6,6 +6,7 @@ import type { CommandDeckItem, CommandDeckItemUpdate } from '@/shared/types';
 
 import {
   addHistoryEntryToDeck,
+  createCustomDeckItem,
   loadCommandDeck,
   removeCommandDeckItem,
   updateCommandDeckItem,
@@ -16,6 +17,11 @@ type CommandDeckState = {
   isLoading: boolean;
   loadError: string | null;
   addFromHistory: (historyId: string) => Promise<void>;
+  createCustomItem: (
+    displayName: string,
+    command: string,
+    description?: string | null,
+  ) => Promise<void>;
   updateItem: (
     deckItemId: string,
     update: CommandDeckItemUpdate,
@@ -78,6 +84,31 @@ export function useCommandDeck(workspaceId: string): CommandDeckState {
     );
   }, []);
 
+  const createCustomItem = useCallback(
+    async (
+      displayName: string,
+      command: string,
+      description?: string | null,
+    ) => {
+      const activeWorkspaceId = activeWorkspaceIdRef.current;
+      const item = await createCustomDeckItem(
+        activeWorkspaceId,
+        displayName,
+        command,
+        description,
+      );
+      setData((currentData) =>
+        currentData.workspaceId === activeWorkspaceId
+          ? {
+              ...currentData,
+              items: mergeDeckItem(currentData.items, item),
+            }
+          : currentData,
+      );
+    },
+    [],
+  );
+
   const updateItem = useCallback(
     async (deckItemId: string, update: CommandDeckItemUpdate) => {
       const activeWorkspaceId = activeWorkspaceIdRef.current;
@@ -120,6 +151,7 @@ export function useCommandDeck(workspaceId: string): CommandDeckState {
     isLoading: hasCurrentData ? data.isLoading : true,
     loadError: hasCurrentData ? data.loadError : null,
     addFromHistory,
+    createCustomItem,
     updateItem,
     removeItem,
   };

@@ -12,9 +12,10 @@ export type NewCommandDeckItem = {
   deckItemId: string;
   definitionId: string;
   workspaceId: string;
-  sourceHistoryId: string;
+  sourceHistoryId: string | null;
   displayName: string;
   command: string;
+  description?: string | null;
   createdAt: number;
 };
 
@@ -134,7 +135,7 @@ export class SqliteCommandDeckRepository implements CommandDeckRepository {
           workspaceId: item.workspaceId,
           definitionId: item.definitionId,
           displayName: item.displayName,
-          description: null,
+          description: item.description ?? null,
           position,
           addedAt: item.createdAt,
           updatedAt: item.createdAt,

@@ -57,7 +57,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const requestBody: AddCommandDeckItemRequest = parsedRequest.data;
+  const requestBody = parsedRequest.data;
   if (
     !getServerContainer().workspaceService.workspaceExists(
       requestBody.workspaceId,
@@ -65,10 +65,18 @@ export async function POST(request: Request): Promise<Response> {
   ) {
     return Response.json({ error: 'Workspace not found.' }, { status: 404 });
   }
-  const result = getServerContainer().commandDeckService.addHistoryEntry(
-    requestBody.workspaceId,
-    requestBody.historyId,
-  );
+
+  const result = requestBody.historyId
+    ? getServerContainer().commandDeckService.addHistoryEntry(
+        requestBody.workspaceId,
+        requestBody.historyId,
+      )
+    : getServerContainer().commandDeckService.createCustomDeckItem(
+        requestBody.workspaceId,
+        requestBody.displayName ?? '',
+        requestBody.command ?? '',
+        requestBody.description,
+      );
 
   if (result.outcome === 'history-not-found') {
     return Response.json(

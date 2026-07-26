@@ -45,6 +45,36 @@ export async function addHistoryEntryToDeck(
   return commandDeckItemSchema.parse(payload);
 }
 
+export async function createCustomDeckItem(
+  workspaceId: string,
+  displayName: string,
+  command: string,
+  description?: string | null,
+): Promise<CommandDeckItem> {
+  const response = await fetch('/api/deck', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workspaceId,
+      displayName,
+      command,
+      description,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      await readApiError(
+        response,
+        `Unable to create Deck item (${response.status}).`,
+      ),
+    );
+  }
+
+  const payload: unknown = await response.json();
+  return commandDeckItemSchema.parse(payload);
+}
+
 export async function updateCommandDeckItem(
   workspaceId: string,
   deckItemId: string,
