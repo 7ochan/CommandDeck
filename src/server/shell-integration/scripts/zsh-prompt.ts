@@ -2,7 +2,7 @@ export const ZSH_COMMAND_INDICATOR = '❯';
 
 export const ZSH_PROMPT_PRESENTATION_SCRIPT = String.raw`
 __commanddeck_render_command_separator() {
-  builtin printf '\n'
+  :
 }
 
 builtin setopt prompt_percent
