@@ -15,6 +15,9 @@ export function mergeAppSettings(
     terminal: { ...current.terminal, ...update.terminal },
     appearance: { ...current.appearance, ...update.appearance },
     developerHub: { ...current.developerHub, ...update.developerHub },
+    keybindings: update.keybindings
+      ? { ...current.keybindings, ...update.keybindings }
+      : current.keybindings,
   };
 }
 

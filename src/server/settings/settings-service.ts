@@ -27,6 +27,7 @@ const KEYS = {
   terminalScrollbackSize: 'terminal.scrollbackSize',
   theme: 'appearance.theme',
   rememberLastSelectedTab: 'developerHub.rememberLastSelectedTab',
+  keybindings: 'keybindings.customizations',
   lastWorkspaceId: 'state.lastWorkspaceId',
   lastDeveloperHubTab: 'state.lastDeveloperHubTab',
 } as const;
@@ -106,6 +107,12 @@ export class SettingsService {
             DEFAULT_APP_SETTINGS.developerHub.rememberLastSelectedTab,
           ),
         },
+        keybindings: read(
+          values,
+          KEYS.keybindings,
+          keybindingsSchema,
+          DEFAULT_APP_SETTINGS.keybindings,
+        ),
       },
       state: {
         lastWorkspaceId: read(
@@ -156,6 +163,8 @@ const terminalScrollbackSizeSchema = z
   .int()
   .min(TERMINAL_SCROLLBACK_RANGE.min)
   .max(TERMINAL_SCROLLBACK_RANGE.max);
+
+const keybindingsSchema = z.record(z.string(), z.string());
 
 type SafeParser<T> = Pick<z.ZodType<T>, 'safeParse'>;
 
@@ -208,6 +217,7 @@ function addDefinedSettings(
     KEYS.rememberLastSelectedTab,
     update?.developerHub?.rememberLastSelectedTab,
   );
+  add(KEYS.keybindings, update?.keybindings);
 }
 
 function addDefinedState(

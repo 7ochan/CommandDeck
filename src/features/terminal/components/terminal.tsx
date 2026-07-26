@@ -44,6 +44,8 @@ export type TerminalHandle = {
   runCommand: (command: string) => boolean;
   selectWorkspace: (workspaceId: string) => Promise<boolean>;
   closeWorkspaceSession: (workspaceId: string) => void;
+  focus: () => void;
+  clear: () => void;
 };
 
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
@@ -155,6 +157,13 @@ function TerminalView(
       if (socket && sessionId && socket.readyState === WebSocket.OPEN) {
         closeTerminalWorkspace(socket, sessionId, workspaceId);
       }
+    },
+    focus: () => {
+      triggerFitAndFocusRef.current?.(true);
+      terminalRef.current?.focus();
+    },
+    clear: () => {
+      terminalRef.current?.clear();
     },
   }));
 

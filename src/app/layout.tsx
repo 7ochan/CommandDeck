@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import { ElectronBridge } from '@/components/electron/electron-bridge';
 import { CommandPaletteProvider } from '@/features/command-palette/command-palette-provider';
 import { SettingsProvider } from '@/features/settings/settings-provider';
 
@@ -19,6 +20,8 @@ export default function RootLayout({
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body>
         <SettingsProvider>
+          {/* ElectronBridge wires native menu actions (Cmd+,, etc.) into React */}
+          <ElectronBridge />
           <CommandPaletteProvider>{children}</CommandPaletteProvider>
         </SettingsProvider>
       </body>

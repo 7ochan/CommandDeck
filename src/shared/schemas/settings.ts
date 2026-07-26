@@ -39,12 +39,14 @@ const appearanceSettingsSchema = z.object({ theme: applicationThemeSchema });
 const developerHubSettingsSchema = z.object({
   rememberLastSelectedTab: z.boolean(),
 });
+const keybindingsSchema = z.record(z.string(), z.string());
 
 export const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   general: generalSettingsSchema,
   terminal: terminalSettingsSchema,
   appearance: appearanceSettingsSchema,
   developerHub: developerHubSettingsSchema,
+  keybindings: keybindingsSchema,
 });
 
 export const appSettingsUpdateSchema = z
@@ -53,6 +55,7 @@ export const appSettingsUpdateSchema = z
     terminal: terminalSettingsSchema.partial().optional(),
     appearance: appearanceSettingsSchema.partial().optional(),
     developerHub: developerHubSettingsSchema.partial().optional(),
+    keybindings: keybindingsSchema.optional(),
   })
   .strict();
 

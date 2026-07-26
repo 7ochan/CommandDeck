@@ -20,6 +20,7 @@ import {
   type AppSettingsUpdate,
 } from '@/shared/types';
 
+import { KeybindingsProvider } from '@/features/keybindings/keybindings-provider';
 import { loadSettings, saveSettings } from './api';
 import { SettingsDialog } from './components/settings-dialog';
 import {
@@ -152,15 +153,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   return (
     <SettingsContext.Provider value={value}>
-      {children}
-      <SettingsDialog
-        isOpen={isDialogOpen}
-        settings={settings}
-        isLoading={isLoading}
-        persistenceError={persistenceError}
-        onSave={updateSettings}
-        onClose={() => setIsDialogOpen(false)}
-      />
+      <KeybindingsProvider>
+        {children}
+        <SettingsDialog
+          isOpen={isDialogOpen}
+          settings={settings}
+          isLoading={isLoading}
+          persistenceError={persistenceError}
+          onSave={updateSettings}
+          onClose={() => setIsDialogOpen(false)}
+        />
+      </KeybindingsProvider>
     </SettingsContext.Provider>
   );
 }

@@ -31,6 +31,7 @@ export type AppSettings = {
   developerHub: {
     rememberLastSelectedTab: boolean;
   };
+  keybindings: Record<string, string>;
 };
 
 export type AppSettingsUpdate = {
@@ -38,6 +39,7 @@ export type AppSettingsUpdate = {
   terminal?: Partial<AppSettings['terminal']>;
   appearance?: Partial<AppSettings['appearance']>;
   developerHub?: Partial<AppSettings['developerHub']>;
+  keybindings?: Record<string, string>;
 };
 
 /** Durable UI context controlled by settings, but not directly editable. */
@@ -71,6 +73,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   developerHub: {
     rememberLastSelectedTab: false,
   },
+  keybindings: {},
 };
 
 export const DEFAULT_APP_SETTINGS_STATE: AppSettingsState = {

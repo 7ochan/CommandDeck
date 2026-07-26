@@ -14,6 +14,7 @@ export type IconName =
   | 'edit'
   | 'filter'
   | 'history'
+  | 'keyboard'
   | 'minus'
   | 'more'
   | 'play'
@@ -122,6 +123,12 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
       <path d="M3 3v5h5M12 7v5l3 2" />
+    </>
+  ),
+  keyboard: (
+    <>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12" />
     </>
   ),
   minus: <path d="M5 12h14" />,

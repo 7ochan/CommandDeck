@@ -11,8 +11,8 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useKeybindings } from '@/features/keybindings/keybindings-provider';
 import { CommandPalette } from './components/command-palette';
-import { isCommandPaletteShortcut } from './keyboard';
 import type {
   CommandPaletteAction,
   RegisteredCommandPaletteAction,
@@ -29,6 +29,7 @@ const CommandPaletteRegistrationContext = createContext<RegisterActions | null>(
 const CommandPaletteOpenContext = createContext<(() => void) | null>(null);
 
 export function CommandPaletteProvider({ children }: { children: ReactNode }) {
+  const { setActionHandler } = useKeybindings();
   const registryRef = useRef(
     new Map<
       string,
@@ -104,19 +105,8 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const handleShortcut = (event: globalThis.KeyboardEvent) => {
-      if (!isCommandPaletteShortcut(event)) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      openPalette();
-    };
-
-    window.addEventListener('keydown', handleShortcut, true);
-    return () => window.removeEventListener('keydown', handleShortcut, true);
-  }, [openPalette]);
+    return setActionHandler('app.openCommandPalette', openPalette);
+  }, [openPalette, setActionHandler]);
 
   const registrationValue = useMemo(() => registerActions, [registerActions]);
   const openValue = useMemo(() => openPalette, [openPalette]);

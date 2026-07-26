@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
@@ -11,6 +11,7 @@ import {
   useRegisterCommandPaletteActions,
 } from '@/features/command-palette/command-palette-provider';
 import type { CommandPaletteAction } from '@/features/command-palette/types';
+import { useKeybindings } from '@/features/keybindings/keybindings-provider';
 import { useSettings } from '@/features/settings/settings-provider';
 
 type AppHeaderProps = {
@@ -21,7 +22,31 @@ export function AppHeader({ activeView }: AppHeaderProps) {
   const router = useRouter();
   const { openPalette } = useCommandPalette();
   const { openSettings } = useSettings();
-  const shortcutLabel = '⌘K';
+  const { setActionHandler, formatShortcut, actions } = useKeybindings();
+
+  const commandPaletteAction = actions.find(
+    (a) => a.id === 'app.openCommandPalette',
+  );
+  const shortcutLabel = commandPaletteAction
+    ? formatShortcut(commandPaletteAction.currentShortcut)
+    : '⌘K';
+
+  useEffect(() => {
+    const unbindSettings = setActionHandler('app.openSettings', openSettings);
+    const unbindHistory = setActionHandler('app.toggleHistory', () => {
+      requestDeveloperHubTab('history');
+      router.push('/');
+    });
+    const unbindDeck = setActionHandler('app.toggleDeck', () => {
+      requestDeveloperHubTab('deck');
+      router.push('/');
+    });
+    return () => {
+      unbindSettings();
+      unbindHistory();
+      unbindDeck();
+    };
+  }, [openSettings, router, setActionHandler]);
   const navigationActions = useMemo<CommandPaletteAction[]>(
     () => [
       {

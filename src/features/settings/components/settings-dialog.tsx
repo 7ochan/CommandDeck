@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 
 import { Icon, type IconName } from '@/components/ui/icon';
+import { KeyboardShortcutsSection } from '@/features/keybindings/components/keyboard-shortcuts-section';
 import { mergeAppSettings } from '@/features/settings/settings-state';
 import type {
   AppSettings,
@@ -36,6 +37,12 @@ const SECTIONS = [
     label: 'Developer Hub',
     icon: 'deck',
     description: 'Control how the tool panel restores its context.',
+  },
+  {
+    id: 'keybindings',
+    label: 'Keyboard Shortcuts',
+    icon: 'keyboard',
+    description: 'Customize application keybindings and action shortcuts.',
   },
 ] as const satisfies ReadonlyArray<{
   id: keyof AppSettings;
@@ -347,6 +354,10 @@ export function SettingsDialog({
                     />
                   </SettingsGroup>
                 )}
+
+                {activeSection === 'keybindings' && (
+                  <KeyboardShortcutsSection />
+                )}
               </fieldset>
             </div>
 
@@ -524,6 +535,8 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
     left.terminal.scrollbackSize === right.terminal.scrollbackSize &&
     left.appearance.theme === right.appearance.theme &&
     left.developerHub.rememberLastSelectedTab ===
-      right.developerHub.rememberLastSelectedTab
+      right.developerHub.rememberLastSelectedTab &&
+    JSON.stringify(left.keybindings ?? {}) ===
+      JSON.stringify(right.keybindings ?? {})
   );
 }

@@ -20,6 +20,7 @@ import {
 import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-switcher';
 import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/command-palette';
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
+import { useKeybindings } from '@/features/keybindings/keybindings-provider';
 import type { CommandCompletedPayload, WorkspaceSummary } from '@/shared/types';
 
 import { DeveloperHub } from './developer-hub';
@@ -246,6 +247,109 @@ function ActiveWorkspaceLayout({
       workspaces,
     ],
   );
+
+  const { setActionHandler } = useKeybindings();
+
+  const handleQuickCreate = useCallback(async () => {
+    const defaultName = `Session ${workspaces.length + 1}`;
+    const created = await onCreateWorkspace(defaultName);
+    onSelectWorkspace(created.workspaceId);
+  }, [onCreateWorkspace, onSelectWorkspace, workspaces.length]);
+
+  useEffect(() => {
+    const unbindNewWorkspace = setActionHandler('workspace.new', () => {
+      void handleQuickCreate();
+    });
+
+    const unbindCloseWorkspace = setActionHandler('workspace.close', () => {
+      void handleDeleteWorkspace(activeWorkspace.workspaceId);
+    });
+
+    const unbindRenameWorkspace = setActionHandler('workspace.rename', () => {
+      const name = window.prompt('Rename Workspace:', activeWorkspace.name);
+      if (name?.trim() && name.trim() !== activeWorkspace.name) {
+        void onRenameWorkspace(activeWorkspace.workspaceId, name.trim());
+      }
+    });
+
+    const unbindNextWorkspace = setActionHandler('workspace.next', () => {
+      const idx = workspaces.findIndex(
+        (w) => w.workspaceId === activeWorkspace.workspaceId,
+      );
+      if (idx !== -1 && workspaces.length > 1) {
+        const nextWs = workspaces[(idx + 1) % workspaces.length];
+        onSelectWorkspace(nextWs.workspaceId);
+      }
+    });
+
+    const unbindPreviousWorkspace = setActionHandler(
+      'workspace.previous',
+      () => {
+        const idx = workspaces.findIndex(
+          (w) => w.workspaceId === activeWorkspace.workspaceId,
+        );
+        if (idx !== -1 && workspaces.length > 1) {
+          const prevWs =
+            workspaces[(idx - 1 + workspaces.length) % workspaces.length];
+          onSelectWorkspace(prevWs.workspaceId);
+        }
+      },
+    );
+
+    const unbindFocusTerminal = setActionHandler('terminal.focus', () => {
+      activeTerminal()?.focus();
+    });
+
+    const unbindClearTerminal = setActionHandler('terminal.clear', () => {
+      activeTerminal()?.clear();
+    });
+
+    const unbindSearchCommands = setActionHandler(
+      'developerHub.searchCommands',
+      () => {
+        requestDeveloperHubTab('deck');
+      },
+    );
+
+    const unbindSearchTemplates = setActionHandler(
+      'developerHub.searchTemplates',
+      () => {
+        requestDeveloperHubTab('deck');
+      },
+    );
+
+    const unbindGoBack = setActionHandler('navigation.goBack', () => {
+      window.history.back();
+    });
+
+    const unbindGoForward = setActionHandler('navigation.goForward', () => {
+      window.history.forward();
+    });
+
+    return () => {
+      unbindNewWorkspace();
+      unbindCloseWorkspace();
+      unbindRenameWorkspace();
+      unbindNextWorkspace();
+      unbindPreviousWorkspace();
+      unbindFocusTerminal();
+      unbindClearTerminal();
+      unbindSearchCommands();
+      unbindSearchTemplates();
+      unbindGoBack();
+      unbindGoForward();
+    };
+  }, [
+    activeTerminal,
+    activeWorkspace.name,
+    activeWorkspace.workspaceId,
+    handleDeleteWorkspace,
+    handleQuickCreate,
+    onRenameWorkspace,
+    onSelectWorkspace,
+    setActionHandler,
+    workspaces,
+  ]);
 
   useRegisterHistoryPaletteActions({
     entries: paletteEntries,
