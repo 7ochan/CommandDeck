@@ -499,28 +499,38 @@ function ActiveWorkspaceLayout({
             })}
           </div>
 
-          {/* Bottom Status Bar matching user screenshot */}
-          <div className="shrink-0 border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3 py-2">
+          {/* Warp-style Bottom Status & Typing Bar Area */}
+          <div className="shrink-0 border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3.5 py-2.5">
             <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-primary)]">
+              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 font-semibold text-[var(--accent)]">
                 <span className="size-1.5 rounded-full bg-[var(--text-muted)]" />
-                v22.0.0
+                v26.5.0
               </span>
-              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-primary)]">
-                <Icon name="workspace" size={12} />
+              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[var(--text-primary)]">
+                <Icon
+                  name="workspace"
+                  size={12}
+                  className="text-[var(--text-muted)]"
+                />
                 ~/desktop/{activeWorkspace.name}
               </span>
-              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-muted)]">
-                <Icon name="branch" size={11} />
+              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[var(--text-secondary)]">
+                <Icon
+                  name="branch"
+                  size={11}
+                  className="text-[var(--text-muted)]"
+                />
                 main
               </span>
-              <span className="rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-subtle)]">
+              <span className="rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-1 text-[var(--text-subtle)]">
                 ± 0
               </span>
             </div>
-            <div className="mt-1.5 flex items-center justify-between font-mono text-[10px] text-[var(--text-subtle)]">
-              <span>Run commands</span>
-              <span>⌘ ↵ new /agent conversation</span>
+            <div className="mt-2.5 flex items-center justify-between font-mono text-[11px] text-[var(--text-muted)]">
+              <span className="text-[var(--text-subtle)]">Run commands</span>
+              <span className="text-[10px] text-[var(--text-subtle)]">
+                ⌘ ↵ new /agent conversation
+              </span>
             </div>
           </div>
         </div>

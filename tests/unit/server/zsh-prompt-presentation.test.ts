@@ -7,12 +7,12 @@ import {
 } from '../../../src/server/shell-integration/scripts/zsh-prompt.js';
 
 describe('zsh prompt presentation', () => {
-  it('renders only abbreviated cwd and the CommandDeck indicator', () => {
+  it('renders only the Warp-style CommandDeck indicator without inline cwd', () => {
     expect(ZSH_COMMAND_INDICATOR).toBe('❯');
-    expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain('%F{cyan}%~%f');
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain(
-      `%B%F{green}${ZSH_COMMAND_INDICATOR}%f%b `,
+      `%B%F{cyan}${ZSH_COMMAND_INDICATOR}%f%b `,
     );
+    expect(ZSH_PROMPT_PRESENTATION_SCRIPT).not.toContain('%F{cyan}%~%f');
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain("RPROMPT=''");
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain("PROMPT_EOL_MARK=''");
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).not.toMatch(/%[nmM]/);
