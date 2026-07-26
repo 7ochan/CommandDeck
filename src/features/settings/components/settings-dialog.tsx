@@ -110,14 +110,24 @@ export function SettingsDialog({
   return (
     <dialog
       ref={dialogRef}
-      className="cd-dialog max-h-[calc(100dvh-2rem)] w-[min(52rem,calc(100vw-2rem))] overflow-hidden rounded-[16px] p-0"
+      className="cd-dialog max-h-[calc(100dvh-2rem)] w-[min(52rem,calc(100vw-2rem))] overflow-clip rounded-[16px] p-0"
       aria-labelledby={titleId}
       onCancel={onClose}
       onClose={() => {
         if (isOpen) onClose();
       }}
+      onScroll={(event) => {
+        event.currentTarget.scrollTop = 0;
+        event.currentTarget.scrollLeft = 0;
+      }}
     >
-      <div className="flex h-[min(36rem,calc(100dvh-2.5rem))] flex-col overflow-hidden">
+      <div
+        className="flex h-[min(36rem,calc(100dvh-2.5rem))] flex-col overflow-clip"
+        onScroll={(event) => {
+          event.currentTarget.scrollTop = 0;
+          event.currentTarget.scrollLeft = 0;
+        }}
+      >
         <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] px-4 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <span className="cd-clay-tile cd-clay-tile--accent flex size-8 shrink-0 items-center justify-center rounded-lg">
@@ -157,7 +167,13 @@ export function SettingsDialog({
           </div>
         </header>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
+        <div
+          className="flex min-h-0 flex-1 flex-col overflow-clip sm:flex-row"
+          onScroll={(event) => {
+            event.currentTarget.scrollTop = 0;
+            event.currentTarget.scrollLeft = 0;
+          }}
+        >
           <aside className="shrink-0 overflow-y-auto border-b border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3 py-2.5 sm:w-[13rem] sm:border-r sm:border-b-0 sm:p-3">
             <p className="cd-eyebrow hidden px-2.5 pt-1 pb-2 sm:block">
               Categories
@@ -186,7 +202,13 @@ export function SettingsDialog({
             </nav>
           </aside>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-clip"
+            onScroll={(event) => {
+              event.currentTarget.scrollTop = 0;
+              event.currentTarget.scrollLeft = 0;
+            }}
+          >
             <header className="shrink-0 border-b border-[var(--border-soft)] px-5 py-3.5 sm:px-6 sm:py-4">
               <h3 className="text-[15px] leading-5 font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
                 {activeSectionDetails?.label}
