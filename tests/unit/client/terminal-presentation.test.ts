@@ -33,7 +33,7 @@ describe('terminal presentation options', () => {
       cursorBlink: false,
       scrollback: 20_000,
       screenReaderMode: true,
-      theme: { background: '#f7f8fa' },
+      theme: { background: '#ffffff' },
     });
   });
 });

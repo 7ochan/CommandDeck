@@ -61,34 +61,34 @@
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --canvas: #e9edf1;
-  --canvas-raised: #f3f5f7;
-  --surface-1: #f8f9fa;
-  --surface-2: #eef1f4;
-  --surface-3: #e4e9ed;
-  --surface-hover: #e0e6eb;
-  --terminal: #f7f8fa;
-  --border: #cbd3da;
-  --border-soft: #d9dfe4;
-  --border-strong: #aeb9c3;
-  --text-primary: #202b35;
-  --text-secondary: #4b5965;
-  --text-muted: #6d7984;
-  --text-subtle: #8c969f;
-  --accent: #187a59;
-  --accent-strong: #126646;
-  --accent-soft: rgb(24 122 89 / 10%);
-  --accent-border: rgb(24 122 89 / 28%);
-  --info: #256e9f;
-  --info-soft: rgb(37 110 159 / 9%);
-  --warning: #8a5d12;
-  --warning-soft: rgb(138 93 18 / 9%);
+  --canvas: #eef1f4;
+  --canvas-raised: #f8f9fa;
+  --surface-1: #ffffff;
+  --surface-2: #f3f5f7;
+  --surface-3: #e8ecef;
+  --surface-hover: #e0e5ea;
+  --terminal: #ffffff;
+  --border: #c4cbd2;
+  --border-soft: #dcdfe3;
+  --border-strong: #a0aab3;
+  --text-primary: #151b22;
+  --text-secondary: #3b4652;
+  --text-muted: #65717d;
+  --text-subtle: #8a96a3;
+  --accent: #151b22;
+  --accent-strong: #000000;
+  --accent-soft: rgb(0 0 0 / 6%);
+  --accent-border: #a0aab3;
+  --info: #3b4652;
+  --info-soft: rgb(0 0 0 / 5%);
+  --warning: #65717d;
+  --warning-soft: rgb(0 0 0 / 5%);
   --danger: #b43e4b;
   --danger-soft: rgb(180 62 75 / 9%);
-  --dialog-bg: #f8f9fa;
+  --dialog-bg: #ffffff;
   --input-focus: #ffffff;
   --backdrop: rgb(28 35 41 / 45%);
-  --highlight-text: #744b08;
+  --highlight-text: #000000;
   --shadow-surface:
     inset 0 1px 0 rgb(255 255 255 / 90%), inset 0 -1px 0 rgb(94 108 120 / 8%),
     -3px -3px 10px rgb(255 255 255 / 70%), 7px 9px 22px rgb(79 93 105 / 13%);
