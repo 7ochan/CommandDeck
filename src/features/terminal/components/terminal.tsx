@@ -7,12 +7,9 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
-  useState,
 } from 'react';
 
-import { Icon } from '@/components/ui/icon';
 import { parseTerminalServerMessage } from '@/shared/contracts';
 import type { CommandCompletedPayload } from '@/shared/types';
 import { useSettings } from '@/features/settings/settings-provider';
@@ -50,167 +47,6 @@ export type TerminalHandle = {
   clear: () => void;
 };
 
-export type CommandBlockData = {
-  id: string;
-  command: string;
-  output: string;
-  status: 'running' | 'completed' | 'failed';
-  exitCode?: number | null;
-  startedAt: number;
-};
-
-const ANSI_COLOR_MAP: Record<number, string> = {
-  30: 'var(--text-subtle, #484f58)',
-  31: '#f85149',
-  32: '#3fb950',
-  33: '#d29922',
-  34: '#58a6ff',
-  35: '#bc8cff',
-  36: '#39c5cf',
-  37: '#e6edf3',
-  90: '#8b949e',
-  91: '#ff7b72',
-  92: '#56d364',
-  93: '#e3b341',
-  94: '#79c0ff',
-  95: '#d2a8ff',
-  96: '#56d4dd',
-};
-
-function parseAnsiToReactNodes(text: string): React.ReactNode[] {
-  const regex = /\x1b\[([0-9;]*)m/g;
-  const nodes: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  let currentColor: string | undefined = undefined;
-  let isBold = false;
-  let isDim = false;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(text)) !== null) {
-    const rawText = text.slice(lastIndex, match.index);
-    if (rawText) {
-      nodes.push(
-        <span
-          key={nodes.length}
-          style={{
-            color: currentColor,
-            fontWeight: isBold ? 'bold' : undefined,
-            opacity: isDim ? 0.7 : undefined,
-          }}
-        >
-          {rawText}
-        </span>,
-      );
-    }
-
-    lastIndex = regex.lastIndex;
-    const codes = match[1] ? match[1].split(';').map(Number) : [0];
-
-    for (const code of codes) {
-      if (code === 0) {
-        currentColor = undefined;
-        isBold = false;
-        isDim = false;
-      } else if (code === 1) {
-        isBold = true;
-      } else if (code === 2) {
-        isDim = true;
-      } else if (ANSI_COLOR_MAP[code]) {
-        currentColor = ANSI_COLOR_MAP[code];
-      }
-    }
-  }
-
-  const remaining = text.slice(lastIndex);
-  if (remaining) {
-    nodes.push(
-      <span
-        key={nodes.length}
-        style={{
-          color: currentColor,
-          fontWeight: isBold ? 'bold' : undefined,
-          opacity: isDim ? 0.7 : undefined,
-        }}
-      >
-        {remaining}
-      </span>,
-    );
-  }
-
-  return nodes;
-}
-
-function CommandBlockSection({
-  block,
-  isLast,
-}: {
-  block: CommandBlockData;
-  isLast: boolean;
-}) {
-  const trimmedOutput = block.output.trimEnd();
-  const parsedNodes = useMemo(
-    () => parseAnsiToReactNodes(trimmedOutput),
-    [trimmedOutput],
-  );
-
-  return (
-    <section
-      className={`cd-command-section flex w-full flex-col ${
-        isLast ? '' : 'border-b border-[var(--border-soft)]'
-      }`}
-    >
-      <div className="flex flex-col px-4 py-3.5 sm:px-6">
-        {/* Command Line Header */}
-        <div className="flex items-center justify-between gap-3 py-0.5 font-mono text-[13px]">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="font-bold text-[var(--accent)] select-none">
-              ❯
-            </span>
-            <span className="truncate font-semibold text-[var(--text-primary)]">
-              {block.command}
-            </span>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2 font-mono text-[10px]">
-            {block.status === 'running' && (
-              <span className="flex animate-pulse items-center gap-1.5 font-medium text-[var(--accent)]">
-                <span className="size-1.5 rounded-full bg-[var(--accent)]" />
-                Running…
-              </span>
-            )}
-            {block.status === 'completed' &&
-              block.exitCode != null &&
-              block.exitCode !== 0 && (
-                <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
-                  <span className="size-1.5 rounded-full bg-[#f85149]" />
-                  Exit {block.exitCode}
-                </span>
-              )}
-            {block.status === 'failed' && (
-              <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
-                <span className="size-1.5 rounded-full bg-[#f85149]" />
-                Failed {block.exitCode != null ? `(${block.exitCode})` : ''}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* ANSI-formatted Output Stream */}
-        {trimmedOutput ? (
-          <pre className="mt-2 overflow-x-auto font-mono text-[12px] leading-relaxed break-words whitespace-pre-wrap text-[var(--text-secondary)]">
-            {parsedNodes}
-          </pre>
-        ) : block.status === 'running' ? (
-          <div className="mt-1 font-mono text-[11px] text-[var(--text-subtle)] italic">
-            Running process…
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
 
 function TerminalView(
@@ -224,7 +60,6 @@ function TerminalView(
 ) {
   const { settings, resolvedTheme } = useSettings();
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<XtermTerminal | null>(null);
   const terminalSettingsRef = useRef(settings.terminal);
   const resolvedThemeRef = useRef(resolvedTheme);
@@ -235,10 +70,6 @@ function TerminalView(
   const sessionIdRef = useRef<string | null>(null);
   const desiredWorkspaceIdRef = useRef(workspaceId);
   const assignedWorkspaceIdRef = useRef<string | null>(null);
-
-  const [commandBlocks, setCommandBlocks] = useState<CommandBlockData[]>([]);
-  const activeCommandIdRef = useRef<string | null>(null);
-  const isUserScrolledUpRef = useRef<boolean>(false);
 
   const pendingWorkspaceSelectionRef = useRef<{
     workspaceId: string;
@@ -255,21 +86,6 @@ function TerminalView(
       onConnectionStatusChangeRef.current?.(status),
     [],
   );
-
-  const handleScroll = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const distanceFromBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight;
-    isUserScrolledUpRef.current = distanceFromBottom > 35;
-  }, []);
-
-  useEffect(() => {
-    if (!isUserScrolledUpRef.current && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop =
-        scrollContainerRef.current.scrollHeight;
-    }
-  }, [commandBlocks]);
 
   const selectWorkspace = useCallback(
     (targetWorkspaceId: string): Promise<boolean> => {
@@ -346,7 +162,6 @@ function TerminalView(
       triggerFitAndFocusRef.current?.(true);
     },
     clear: () => {
-      setCommandBlocks([]);
       terminalRef.current?.clear();
     },
   }));
@@ -462,8 +277,11 @@ function TerminalView(
         });
       };
 
-      triggerFitAndFocusRef.current = () => {
+      triggerFitAndFocusRef.current = (shouldFocus?: boolean) => {
         fit();
+        if (shouldFocus) {
+          terminal?.focus();
+        }
       };
 
       resizeSubscription = terminal.onResize(({ cols, rows }) => {
@@ -495,13 +313,19 @@ function TerminalView(
           if (sessionId && sessionId !== message.sessionId) {
             sectionPresentation.reset();
             terminal.reset();
-            setCommandBlocks([]);
           }
 
           sessionId = message.sessionId;
           sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
           reportConnectionStatus('connected');
+
+          if (
+            message.payload.bufferedOutput &&
+            message.payload.bufferedOutput.length > 0
+          ) {
+            terminal.write(message.payload.bufferedOutput);
+          }
 
           fit();
           sendTerminalResize(
@@ -532,6 +356,13 @@ function TerminalView(
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
           reportConnectionStatus('connected');
 
+          if (
+            message.payload.bufferedOutput &&
+            message.payload.bufferedOutput.length > 0
+          ) {
+            terminal.write(message.payload.bufferedOutput);
+          }
+
           fit();
           sendTerminalResize(
             socket as WebSocket,
@@ -557,73 +388,17 @@ function TerminalView(
 
         if (message.type === 'command.started') {
           sectionPresentation.commandStarted(message.payload.commandId);
-          const commandText = message.payload.command || 'Command';
-          activeCommandIdRef.current = message.payload.commandId;
-
-          setCommandBlocks((prev) => [
-            ...prev,
-            {
-              id: message.payload.commandId,
-              command: commandText,
-              output: '',
-              status: 'running',
-              startedAt: Date.now(),
-            },
-          ]);
           return;
         }
 
         if (message.type === 'terminal.output') {
           terminal.write(message.payload.data);
-          const outputData = message.payload.data;
-          const activeId = activeCommandIdRef.current;
-
-          setCommandBlocks((prev) => {
-            if (prev.length === 0) {
-              return [
-                {
-                  id: 'init-' + Date.now(),
-                  command: 'Output',
-                  output: outputData,
-                  status: 'completed',
-                  startedAt: Date.now(),
-                },
-              ];
-            }
-
-            return prev.map((block) => {
-              if (
-                block.id === activeId ||
-                (!activeId && block === prev[prev.length - 1])
-              ) {
-                return { ...block, output: block.output + outputData };
-              }
-              return block;
-            });
-          });
           return;
         }
 
         if (message.type === 'command.completed') {
           sectionPresentation.commandCompleted(message.payload.commandId);
           onCommandCompletedRef.current?.(message.payload);
-
-          const { commandId, exitCode } = message.payload;
-          activeCommandIdRef.current = null;
-
-          setCommandBlocks((prev) =>
-            prev.map((block) => {
-              if (block.id === commandId) {
-                return {
-                  ...block,
-                  status:
-                    exitCode != null && exitCode !== 0 ? 'failed' : 'completed',
-                  exitCode,
-                };
-              }
-              return block;
-            }),
-          );
           return;
         }
 
@@ -709,32 +484,9 @@ function TerminalView(
     >
       <div
         ref={containerRef}
-        className="commanddeck-terminal hidden h-0 w-0 overflow-hidden"
-        aria-hidden="true"
+        className="commanddeck-terminal h-full min-h-0 w-full min-w-0 flex-1 p-2 sm:p-3"
+        aria-label="Interactive local terminal"
       />
-
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="cd-scrollbar flex min-h-0 flex-1 flex-col justify-end overflow-y-auto px-4 sm:px-6"
-      >
-        <div className="mt-auto flex flex-col">
-          {commandBlocks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center font-mono text-[12px] text-[var(--text-subtle)]">
-              <Icon name="terminal" size={24} className="mb-2.5 opacity-40" />
-              <p>Terminal session active. Enter a command below.</p>
-            </div>
-          ) : (
-            commandBlocks.map((block, index) => (
-              <CommandBlockSection
-                key={block.id}
-                block={block}
-                isLast={index === commandBlocks.length - 1}
-              />
-            ))
-          )}
-        </div>
-      </div>
     </div>
   );
 }
