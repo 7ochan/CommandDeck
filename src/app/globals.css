@@ -554,3 +554,10 @@ button.cd-clay-tile:active:not(:disabled) {
   visibility: hidden !important;
   opacity: 0 !important;
 }
+
+.commanddeck-terminal .xterm-viewport,
+.commanddeck-terminal .xterm-rows {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+}

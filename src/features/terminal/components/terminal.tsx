@@ -487,12 +487,12 @@ function TerminalView(
 
   return (
     <div
-      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col justify-end overflow-hidden"
       aria-label="Terminal"
     >
       <div
         ref={containerRef}
-        className="commanddeck-terminal h-full min-h-0 w-full min-w-0 flex-1"
+        className="commanddeck-terminal flex min-h-0 w-full min-w-0 flex-1 flex-col justify-end"
         aria-label="Interactive local terminal"
       />
     </div>
