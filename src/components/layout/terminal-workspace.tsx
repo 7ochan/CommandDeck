@@ -360,8 +360,8 @@ function ActiveWorkspaceLayout({
           {/* Bottom Status Bar matching user screenshot */}
           <div className="shrink-0 border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3 py-2">
             <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--accent-strong)]">
-                <span className="size-1.5 rounded-full bg-[var(--accent)]" />
+              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-primary)]">
+                <span className="size-1.5 rounded-full bg-[var(--text-muted)]" />
                 v22.0.0
               </span>
               <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-primary)]">

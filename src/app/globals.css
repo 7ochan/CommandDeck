@@ -16,20 +16,20 @@
   --text-secondary: #cccccc;
   --text-muted: #9e9e9e;
   --text-subtle: #6e6e6e;
-  --accent: #73d9ad;
-  --accent-strong: #9aebc7;
-  --accent-soft: rgb(115 217 173 / 10%);
-  --accent-border: rgb(115 217 173 / 28%);
-  --info: #77bdfb;
-  --info-soft: rgb(119 189 251 / 10%);
-  --warning: #e8b96a;
-  --warning-soft: rgb(232 185 106 / 10%);
+  --accent: #f5f5f5;
+  --accent-strong: #ffffff;
+  --accent-soft: rgb(255 255 255 / 8%);
+  --accent-border: #525252;
+  --info: #cccccc;
+  --info-soft: rgb(255 255 255 / 6%);
+  --warning: #e0e0e0;
+  --warning-soft: rgb(255 255 255 / 6%);
   --danger: #ef8d98;
   --danger-soft: rgb(239 141 152 / 10%);
   --dialog-bg: #212121;
   --input-focus: #181818;
   --backdrop: rgb(0 0 0 / 80%);
-  --highlight-text: #f4d59d;
+  --highlight-text: #ffffff;
   --radius-sm: 6px;
   --radius-md: 9px;
   --radius-lg: 12px;
@@ -149,7 +149,7 @@ select:disabled {
 }
 
 :where(button, a, input, textarea, select):focus-visible {
-  outline: 2px solid rgb(115 217 173 / 72%);
+  outline: 2px solid rgb(245 245 245 / 40%);
   outline-offset: 2px;
 }
 
