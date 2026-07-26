@@ -507,13 +507,10 @@ button.cd-clay-tile:active:not(:disabled) {
   width: 100% !important;
   height: 100% !important;
   pointer-events: none;
-  background: linear-gradient(
-      90deg,
-      rgb(115 217 173 / 24%),
-      rgb(120 130 142 / 10%) 64%,
-      transparent 92%
-    )
-    bottom / 100% 1px no-repeat;
+  background-image: linear-gradient(var(--border-soft), var(--border-soft));
+  background-position: bottom;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
   opacity: 0;
   animation: commanddeck-finalize-section 180ms ease-out forwards;
 }
