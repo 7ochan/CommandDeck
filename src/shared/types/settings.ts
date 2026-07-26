@@ -33,6 +33,7 @@ export type AppSettings = {
   };
   developerHub: {
     rememberLastSelectedTab: boolean;
+    showHistoryTab: boolean;
   };
   keybindings: Record<string, string>;
 };
@@ -78,6 +79,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   },
   developerHub: {
     rememberLastSelectedTab: false,
+    showHistoryTab: true,
   },
   keybindings: {},
 };

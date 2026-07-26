@@ -292,11 +292,11 @@ export function SettingsDialog({
                         }
                       />
                       <ToggleSetting
-                        label="Hover to reveal sidebars when hidden"
-                        description="Move cursor to far left or right edge of screen to temporarily slide out the hidden sidebar."
-                        checked={draftSettings.general.hoverToRevealSidebars}
-                        onChange={(hoverToRevealSidebars) =>
-                          updateDraft({ general: { hoverToRevealSidebars } })
+                        label="Enable Command History tab"
+                        description="Show the History tab inside the right sidebar alongside the Command Deck."
+                        checked={draftSettings.developerHub.showHistoryTab}
+                        onChange={(showHistoryTab) =>
+                          updateDraft({ developerHub: { showHistoryTab } })
                         }
                       />
                     </SettingsGroup>
@@ -594,6 +594,8 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
     left.appearance.theme === right.appearance.theme &&
     left.developerHub.rememberLastSelectedTab ===
       right.developerHub.rememberLastSelectedTab &&
+    left.developerHub.showHistoryTab ===
+      right.developerHub.showHistoryTab &&
     JSON.stringify(left.keybindings ?? {}) ===
       JSON.stringify(right.keybindings ?? {})
   );

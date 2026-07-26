@@ -41,6 +41,7 @@ const terminalSettingsSchema = z.object({
 const appearanceSettingsSchema = z.object({ theme: applicationThemeSchema });
 const developerHubSettingsSchema = z.object({
   rememberLastSelectedTab: z.boolean(),
+  showHistoryTab: z.boolean().default(true),
 });
 const keybindingsSchema = z.record(z.string(), z.string());
 

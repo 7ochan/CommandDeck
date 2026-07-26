@@ -105,7 +105,7 @@ function ActiveWorkspaceLayout({
    */
   const terminalRefs = useRef(new Map<string, TerminalHandle>());
 
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const { showLeftSidebar, showRightSidebar, hoverToRevealSidebars } =
     settings.general;
 
@@ -318,9 +318,18 @@ function ActiveWorkspaceLayout({
       activeTerminal()?.clear();
     });
 
+    const unbindToggleSidebar = setActionHandler('app.toggleSidebar', () => {
+      updateSettings({
+        general: { showRightSidebar: !settings.general.showRightSidebar },
+      });
+    });
+
     const unbindSearchCommands = setActionHandler(
       'developerHub.searchCommands',
       () => {
+        if (!settings.general.showRightSidebar) {
+          updateSettings({ general: { showRightSidebar: true } });
+        }
         requestDeveloperHubTab('deck');
       },
     );
@@ -328,6 +337,9 @@ function ActiveWorkspaceLayout({
     const unbindSearchTemplates = setActionHandler(
       'developerHub.searchTemplates',
       () => {
+        if (!settings.general.showRightSidebar) {
+          updateSettings({ general: { showRightSidebar: true } });
+        }
         requestDeveloperHubTab('deck');
       },
     );
@@ -348,6 +360,7 @@ function ActiveWorkspaceLayout({
       unbindPreviousWorkspace();
       unbindFocusTerminal();
       unbindClearTerminal();
+      unbindToggleSidebar();
       unbindSearchCommands();
       unbindSearchTemplates();
       unbindGoBack();
@@ -362,6 +375,8 @@ function ActiveWorkspaceLayout({
     onRenameWorkspace,
     onSelectWorkspace,
     setActionHandler,
+    settings.general.showRightSidebar,
+    updateSettings,
     workspaces,
   ]);
 

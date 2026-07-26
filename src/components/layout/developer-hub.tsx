@@ -87,7 +87,6 @@ export function DeveloperHub({
       ? settingsState.lastDeveloperHubTab
       : 'deck',
   );
-  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
   const tabRefs = useRef(new Map<DeveloperHubTab, HTMLButtonElement>());
   const deckHistoryIds = useMemo(
     () =>
@@ -106,7 +105,6 @@ export function DeveloperHub({
   const selectTab = useCallback(
     (tab: DeveloperHubTab) => {
       setActiveTab(tab);
-      setIsMobileExpanded(true);
 
       if (
         settings.developerHub.rememberLastSelectedTab &&
@@ -123,18 +121,10 @@ export function DeveloperHub({
   );
 
   useEffect(() => {
-    if (
-      settings.developerHub.rememberLastSelectedTab &&
-      settingsState.lastDeveloperHubTab !== activeTab
-    ) {
-      updateSettingsState({ lastDeveloperHubTab: activeTab });
+    if (!settings.developerHub.showHistoryTab && activeTab === 'history') {
+      setActiveTab('deck');
     }
-  }, [
-    activeTab,
-    settings.developerHub.rememberLastSelectedTab,
-    settingsState.lastDeveloperHubTab,
-    updateSettingsState,
-  ]);
+  }, [settings.developerHub.showHistoryTab, activeTab]);
 
   useEffect(() => {
     let subscribed = true;
@@ -176,9 +166,7 @@ export function DeveloperHub({
 
   return (
     <aside
-      className={`cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-[15px] transition-[height] duration-150 motion-reduce:transition-none lg:h-auto lg:min-h-0 lg:w-64 ${
-        isMobileExpanded ? 'h-[min(42%,24rem)] min-h-44' : 'h-12'
-      }`}
+      className="cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-[15px]"
       aria-label="Developer Hub"
     >
       <div className="flex h-12 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
@@ -187,7 +175,9 @@ export function DeveloperHub({
           role="tablist"
           aria-label="Developer Hub tools"
         >
-          {DEVELOPER_HUB_TABS.map((tab) => {
+          {DEVELOPER_HUB_TABS.filter(
+            (tab) => tab.id !== 'history' || settings.developerHub.showHistoryTab,
+          ).map((tab) => {
             const isActive = activeTab === tab.id;
 
             return (
@@ -229,26 +219,9 @@ export function DeveloperHub({
             );
           })}
         </div>
-
-        <button
-          type="button"
-          className="cd-icon-button mr-1.5 shrink-0 border-transparent text-[var(--text-muted)] lg:hidden"
-          aria-expanded={isMobileExpanded}
-          aria-label={
-            isMobileExpanded ? 'Collapse Developer Hub' : 'Expand Developer Hub'
-          }
-          onClick={() => setIsMobileExpanded((current) => !current)}
-        >
-          <Icon
-            name={isMobileExpanded ? 'chevron-down' : 'chevron-up'}
-            size={15}
-          />
-        </button>
       </div>
 
-      <div
-        className={`${isMobileExpanded ? 'flex' : 'hidden'} min-h-0 flex-1 lg:flex`}
-      >
+      <div className="flex min-h-0 flex-1">
         <DeveloperHubPanel tab="deck" activeTab={activeTab}>
           <CommandDeckSection
             items={deckItems}

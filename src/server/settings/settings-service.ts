@@ -30,6 +30,7 @@ const KEYS = {
   terminalScrollbackSize: 'terminal.scrollbackSize',
   theme: 'appearance.theme',
   rememberLastSelectedTab: 'developerHub.rememberLastSelectedTab',
+  showHistoryTab: 'developerHub.showHistoryTab',
   keybindings: 'keybindings.customizations',
   lastWorkspaceId: 'state.lastWorkspaceId',
   lastDeveloperHubTab: 'state.lastDeveloperHubTab',
@@ -126,6 +127,12 @@ export class SettingsService {
             KEYS.rememberLastSelectedTab,
             booleanSchema,
             DEFAULT_APP_SETTINGS.developerHub.rememberLastSelectedTab,
+          ),
+          showHistoryTab: read(
+            values,
+            KEYS.showHistoryTab,
+            booleanSchema,
+            DEFAULT_APP_SETTINGS.developerHub.showHistoryTab,
           ),
         },
         keybindings: read(
@@ -241,6 +248,7 @@ function addDefinedSettings(
     KEYS.rememberLastSelectedTab,
     update?.developerHub?.rememberLastSelectedTab,
   );
+  add(KEYS.showHistoryTab, update?.developerHub?.showHistoryTab);
   add(KEYS.keybindings, update?.keybindings);
 }
 

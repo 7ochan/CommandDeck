@@ -21,7 +21,7 @@ type AppHeaderProps = {
 export function AppHeader({ activeView }: AppHeaderProps) {
   const router = useRouter();
   const { openPalette } = useCommandPalette();
-  const { openSettings } = useSettings();
+  const { openSettings, settings, updateSettings } = useSettings();
   const { setActionHandler, formatShortcut, actions } = useKeybindings();
 
   const commandPaletteAction = actions.find(
