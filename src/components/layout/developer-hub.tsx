@@ -182,9 +182,6 @@ export function DeveloperHub({
       aria-label="Developer Hub"
     >
       <div className="flex h-12 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
-        <div className="flex h-full shrink-0 items-center border-r border-[var(--border-soft)] px-3.5">
-          <span className="cd-eyebrow">Tools</span>
-        </div>
 
         <div
           className="flex h-full min-w-0 flex-1 items-center gap-1 p-1.5"
