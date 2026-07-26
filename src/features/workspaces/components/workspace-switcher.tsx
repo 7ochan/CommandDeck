@@ -187,7 +187,7 @@ export function WorkspaceSwitcher({
                 onClick={() => onSelect(workspace.workspaceId)}
                 className={`group flex w-full items-center gap-2.5 rounded-[10px] border px-2.5 py-2 text-left transition-all ${
                   isActive
-                    ? 'border-[#3a4450] bg-[#242b33] text-[var(--text-primary)] shadow-sm'
+                    ? 'border-[var(--border-strong)] bg-[var(--surface-3)] text-[var(--text-primary)] shadow-sm'
                     : 'border-transparent text-[var(--text-secondary)] hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)]'
                 }`}
               >
