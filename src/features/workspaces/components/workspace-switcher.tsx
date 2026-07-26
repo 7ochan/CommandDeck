@@ -137,7 +137,7 @@ export function WorkspaceSwitcher({
   return (
     <>
       <aside
-        className="cd-surface flex w-60 shrink-0 flex-col overflow-hidden rounded-[15px]"
+        className="cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-[15px] lg:w-64"
         aria-label="Workspace tabs navigation"
       >
         {/* Sidebar Search + Filter Header */}

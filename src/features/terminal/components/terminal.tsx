@@ -492,8 +492,8 @@ function TerminalView(
   }, [reportConnectionStatus, selectWorkspace]);
 
   return (
-    <section
-      className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)] p-2.5 sm:p-3.5"
+    <div
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
       aria-label="Terminal"
     >
       <div
@@ -501,6 +501,6 @@ function TerminalView(
         className="commanddeck-terminal h-full min-h-0 w-full min-w-0 flex-1"
         aria-label="Interactive local terminal"
       />
-    </section>
+    </div>
   );
 }

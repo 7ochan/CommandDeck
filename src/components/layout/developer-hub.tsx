@@ -176,7 +176,7 @@ export function DeveloperHub({
 
   return (
     <aside
-      className={`cd-surface flex shrink-0 flex-col overflow-hidden rounded-[13px] transition-[height] duration-150 motion-reduce:transition-none lg:h-auto lg:min-h-0 lg:w-[clamp(20rem,26vw,23rem)] ${
+      className={`cd-surface flex shrink-0 flex-col overflow-hidden rounded-[15px] transition-[height] duration-150 motion-reduce:transition-none w-64 lg:h-auto lg:min-h-0 lg:w-64 ${
         isMobileExpanded ? 'h-[min(42%,24rem)] min-h-44' : 'h-12'
       }`}
       aria-label="Developer Hub"
