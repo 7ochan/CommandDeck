@@ -504,15 +504,7 @@ button.cd-clay-tile:active:not(:disabled) {
 }
 
 .commanddeck-terminal .xterm-decoration.commanddeck-command-section-separator {
-  width: 100% !important;
-  height: 100% !important;
-  pointer-events: none;
-  background-image: linear-gradient(var(--border-soft), var(--border-soft));
-  background-position: bottom;
-  background-size: 100% 1px;
-  background-repeat: no-repeat;
-  opacity: 0;
-  animation: commanddeck-finalize-section 180ms ease-out forwards;
+  display: none !important;
 }
 
 @keyframes cd-dialog-in {
