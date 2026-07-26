@@ -8,6 +8,9 @@ out/
 # Compiled custom server
 .server/
 
+# Compiled Electron main process
+.electron/
+
 # Tests and tooling
 coverage/
 *.tsbuildinfo

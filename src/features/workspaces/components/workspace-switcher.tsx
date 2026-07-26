@@ -151,7 +151,7 @@ export function WorkspaceSwitcher({
               value={searchQuery}
               placeholder="Search tabs…"
               aria-label="Search tabs"
-              className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] py-1 pr-2 pl-7 text-[11px] text-[var(--text-primary)] placeholder-[var(--text-subtle)] outline-none transition-colors focus:border-[var(--accent-border)]"
+              className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] py-1 pr-2 pl-7 text-[11px] text-[var(--text-primary)] placeholder-[var(--text-subtle)] transition-colors outline-none focus:border-[var(--accent-border)]"
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
@@ -201,7 +201,7 @@ export function WorkspaceSwitcher({
                   <Icon name="terminal" size={12} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+                  <span className="block truncate font-mono text-[12px] leading-4 font-semibold text-[var(--text-primary)]">
                     {workspace.name}
                   </span>
                   <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-muted)]">
@@ -222,7 +222,7 @@ export function WorkspaceSwitcher({
               <Icon name="terminal" size={12} />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block truncate font-mono text-[12px] font-medium leading-4 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
+              <span className="block truncate font-mono text-[12px] leading-4 font-medium text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
                 New session
               </span>
               <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-subtle)]">

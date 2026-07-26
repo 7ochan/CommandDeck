@@ -176,13 +176,12 @@ export function DeveloperHub({
 
   return (
     <aside
-      className={`cd-surface flex shrink-0 flex-col overflow-hidden rounded-[15px] transition-[height] duration-150 motion-reduce:transition-none w-64 lg:h-auto lg:min-h-0 lg:w-64 ${
+      className={`cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-[15px] transition-[height] duration-150 motion-reduce:transition-none lg:h-auto lg:min-h-0 lg:w-64 ${
         isMobileExpanded ? 'h-[min(42%,24rem)] min-h-44' : 'h-12'
       }`}
       aria-label="Developer Hub"
     >
       <div className="flex h-12 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
-
         <div
           className="flex h-full min-w-0 flex-1 items-center gap-1 p-1.5"
           role="tablist"

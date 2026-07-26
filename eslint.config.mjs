@@ -10,6 +10,7 @@ export default defineConfig([
   globalIgnores([
     '.next/**',
     '.server/**',
+    '.electron/**',
     'coverage/**',
     'node_modules/**',
     'next-env.d.ts',
