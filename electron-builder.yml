@@ -1,88 +1,115 @@
 # electron-builder configuration for CommandDeck
 # Documentation: https://www.electron.build/configuration/configuration
 #
-# Usage:
-#   npx electron-builder --mac --win --linux
-#   npx electron-builder --mac dmg
+# Local packaging (no code signing):
+#   npm run electron:package:mac     → macOS .dmg
+#   npm run electron:package:win     → Windows .exe (NSIS)
+#   npm run electron:package:linux   → Linux .AppImage
+#   npm run electron:package         → current OS
 #
-# Prerequisites before running:
-#   1. npm run electron:build   (builds Next.js + server + Electron TS)
-#   2. Code signing credentials (macOS: APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD,
-#      APPLE_TEAM_ID; Windows: CSC_LINK, CSC_KEY_PASSWORD)
+# To cross-compile or add code signing, see the docs for:
+#   CSC_LINK / CSC_KEY_PASSWORD (Windows)
+#   APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID (macOS)
 
 # ─── Application identity ──────────────────────────────────────────────────────
 appId: com.commanddeck.app
 productName: CommandDeck
 copyright: 'Copyright © 2024 CommandDeck. All rights reserved.'
 
-# ─── Version & executable ──────────────────────────────────────────────────────
-# Version is read automatically from package.json#version
-
+# ─── Executable name ───────────────────────────────────────────────────────────
 executableName: CommandDeck
 
+# ─── Output directory ──────────────────────────────────────────────────────────
+directories:
+  buildResources: electron/assets
+  output: dist
+
 # ─── Build inputs ──────────────────────────────────────────────────────────────
-# Only the files actually needed at runtime are bundled.
-# Source TypeScript, test files, and dev tools are excluded.
+#
+# What goes into the package:
+#
+#   .electron/       — compiled Electron main process & preload
+#   .next/           — compiled Next.js app (static + server components)
+#   .server/         — compiled custom Node server (server.js)
+#   public/          — static assets served by Next.js
+#   node_modules/    — ALL runtime dependencies (native modules included)
+#   package.json     — required by Node module resolution at runtime
+#
+# Why asar:false?
+#   The server runs as a child process via spawn(). spawn() requires real
+#   filesystem paths. node_modules with native .node binaries also cannot
+#   live inside an asar archive (they must be real files). Disabling asar
+#   keeps everything as real files and avoids path-translation edge cases.
+#
+asar: false
+
 files:
   - .electron/**/*
   - .next/**/*
   - .server/**/*
   - public/**/*
   - package.json
-  - '!node_modules/**/*'
-
-# Node modules that MUST be present at runtime (native addons, server deps)
-extraResources:
-  - from: node_modules
-    to: node_modules
-    filter:
-      # Core server runtime
-      - better-sqlite3/**
-      - drizzle-orm/**
-      - next/**
-      - ws/**
-      - zod/**
-      - react/**
-      - react-dom/**
-      # Terminal
-      - node-pty/**
-      - '@xterm/**'
-      # Exclude dev-only packages
-      - '!eslint/**'
-      - '!prettier/**'
-      - '!typescript/**'
-      - '!vitest/**'
-      - '!tsx/**'
-      - '!electron/**'
-      - '!concurrently/**'
-      - '!wait-on/**'
-      - '!@types/**'
-      - '!tailwindcss/**'
-      - '!postcss/**'
-
-# ─── Icons ─────────────────────────────────────────────────────────────────────
-# All icons live in electron/assets/. Replace the files to change icons.
-# No code changes are required — electron-builder reads these paths directly.
+  # Runtime node_modules — include everything except dev-only tools
+  - node_modules/**/*
+  - '!node_modules/.bin/**'
+  - '!node_modules/.cache/**'
+  # Exclude dev-only packages
+  - '!node_modules/electron/**'
+  - '!node_modules/electron-builder/**'
+  - '!node_modules/eslint/**'
+  - '!node_modules/eslint-*/**'
+  - '!node_modules/prettier/**'
+  - '!node_modules/prettier-*/**'
+  - '!node_modules/typescript/**'
+  - '!node_modules/vitest/**'
+  - '!node_modules/@vitest/**'
+  - '!node_modules/tsx/**'
+  - '!node_modules/concurrently/**'
+  - '!node_modules/wait-on/**'
+  - '!node_modules/@types/**'
+  - '!node_modules/tailwindcss/**'
+  - '!node_modules/postcss/**'
+  - '!node_modules/@tailwindcss/**'
+  - '!node_modules/drizzle-kit/**'
+  - '!node_modules/.package-lock.json'
+  # Exclude source files (TypeScript, tests)
+  - '!src/**'
+  - '!electron/main.ts'
+  - '!electron/preload.ts'
+  - '!electron/tsconfig.json'
+  - '!tests/**'
+  - '!scripts/**'
+  - '!docs/**'
+  - '!*.md'
+  - '!*.yml'
+  - '!*.yaml'
+  - '!*.mjs'
+  - '!tsconfig*.json'
 
 # ─── macOS ─────────────────────────────────────────────────────────────────────
 mac:
   icon: electron/assets/icon.icns
   category: public.app-category.developer-tools
-  # Hardened runtime is required for notarization
+  # hardenedRuntime required for Notarization (future)
   hardenedRuntime: true
   entitlements: electron/entitlements.mac.plist
   entitlementsInherit: electron/entitlements.mac.plist
   gatekeeperAssess: false
+  # Skip signing for local packaging — set APPLE_ID env vars for notarization
+  identity: null
   target:
     - target: dmg
-      arch: [x64, arm64]
+      arch:
+        - arm64
+        - x64
     - target: zip
-      arch: [x64, arm64]
+      arch:
+        - arm64
+        - x64
 
 dmg:
   title: 'CommandDeck ${version}'
   icon: electron/assets/icon.icns
-  background: electron/assets/dmg-background.png
   iconSize: 80
   contents:
     - x: 190
@@ -99,18 +126,17 @@ dmg:
 # ─── Windows ───────────────────────────────────────────────────────────────────
 win:
   icon: electron/assets/icon.ico
+  # Skip signing for local packaging — set CSC_LINK env var for signing
+  certificateSubjectName: null
   target:
     - target: nsis
-      arch: [x64]
+      arch: x64
     - target: portable
-      arch: [x64]
+      arch: x64
 
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  installerIcon: electron/assets/icon.ico
-  uninstallerIcon: electron/assets/icon.ico
-  installerHeaderIcon: electron/assets/icon.ico
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: CommandDeck
@@ -121,26 +147,11 @@ linux:
   category: Development
   target:
     - target: AppImage
-      arch: [x64]
-    - target: deb
-      arch: [x64]
+      arch: x64
   desktop:
     Name: CommandDeck
     Comment: 'A local-first visual terminal workspace'
     Categories: Development;Utility;TerminalEmulator;
 
-# ─── Publish (auto-update — future) ───────────────────────────────────────────
-# Uncomment and configure when auto-update is implemented.
-# publish:
-#   provider: github
-#   owner: your-github-org
-#   repo: cmd-deck
-
-# ─── Build options ─────────────────────────────────────────────────────────────
-buildVersion: '1'
-removePackageScripts: true
-asar: true
-
-directories:
-  buildResources: electron/assets
-  output: dist
+# ─── Publish (reserved for auto-update — not yet implemented) ─────────────────
+# publish: null

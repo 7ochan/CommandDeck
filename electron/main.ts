@@ -201,9 +201,21 @@ let serverProcess: ChildProcess | null = null;
  */
 function startServer(): Promise<void> {
   return new Promise((resolve, reject) => {
+    // ── Path resolution ────────────────────────────────────────────────────
+    //
+    // Development:
+    //   __dirname = <repo>/.electron/
+    //   projectRoot = <repo>/
+    //
+    // Production (packaged, asar:false):
+    //   process.resourcesPath = <App>.app/Contents/Resources/
+    //   app root (where .server/, .next/, node_modules/ live) = Resources/app/
+    //   __dirname = Resources/app/.electron/
+    //   → projectRoot = join(__dirname, '..') works correctly
+    //
     const projectRoot = DEV
-      ? join(__dirname, '..') // .electron/main.js → project root
-      : join(__dirname, '..', '..'); // packaged dist → project root
+      ? join(__dirname, '..') // <repo>/.electron → <repo>/
+      : join(__dirname, '..'); // Resources/app/.electron → Resources/app/
 
     let command: string;
     let args: string[];
@@ -213,6 +225,8 @@ function startServer(): Promise<void> {
       command = tsxBin;
       args = ['watch', join(projectRoot, 'server.ts')];
     } else {
+      // In production, use Electron's own bundled Node runtime to run the
+      // compiled server JS. NODE_PATH tells Node where to find node_modules.
       command = process.execPath;
       args = [join(projectRoot, '.server', 'server.js'), '--production'];
     }
@@ -225,6 +239,11 @@ function startServer(): Promise<void> {
         ...process.env,
         PORT: String(APP_PORT),
         COMMANDDECK_HOST: APP_HOST,
+        // In production, when process.execPath (the Electron binary) is spawned,
+        // ELECTRON_RUN_AS_NODE=1 forces it to run as a Node.js CLI runtime.
+        ELECTRON_RUN_AS_NODE: '1',
+        // Ensure node_modules is resolvable in both dev and production
+        NODE_PATH: join(projectRoot, 'node_modules'),
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });

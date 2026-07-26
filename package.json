@@ -27,7 +27,10 @@
     "electron:dev": "npm run electron:compile && electron .",
     "electron:build": "npm run build && npm run electron:compile",
     "electron:start": "electron .",
-    "electron:package": "npm run electron:build && electron-builder --config electron-builder.yml"
+    "electron:package": "npm run electron:build && npx electron-builder --config electron-builder.yml",
+    "electron:package:mac": "npm run electron:build && npx electron-builder --mac --config electron-builder.yml",
+    "electron:package:win": "npm run electron:build && npx electron-builder --win --config electron-builder.yml",
+    "electron:package:linux": "npm run electron:build && npx electron-builder --linux --config electron-builder.yml"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -57,6 +60,7 @@
     "@types/ws": "8.18.1",
     "concurrently": "^10.0.4",
     "electron": "^43.2.0",
+    "electron-builder": "^25.1.8",
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.11",
     "eslint-config-prettier": "10.1.8",
@@ -72,7 +76,10 @@
   "allowScripts": {
     "better-sqlite3@13.0.1": true,
     "node-pty@1.2.0-beta.14": true,
-    "electron@43.2.0": true
+    "electron@43.2.0": true,
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true
   },
   "build": {
     "appId": "com.commanddeck.app",
