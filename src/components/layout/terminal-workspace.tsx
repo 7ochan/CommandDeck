@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
-import { Icon } from '@/components/ui/icon';
 import { CommandDeckPaletteSource } from '@/features/command-deck/components/command-deck-palette-source';
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
 import { useRegisterHistoryPaletteActions } from '@/features/command-history/command-palette';
@@ -122,46 +121,6 @@ function ActiveWorkspaceLayout({
 
   const [terminalConnectionStatus, setTerminalConnectionStatus] =
     useState<TerminalConnectionStatus>('connecting');
-
-  const [commandInputValue, setCommandInputValue] = useState('');
-  const [localHistory, setLocalHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-  const warpInputRef = useRef<HTMLInputElement>(null);
-
-  const handleInputSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const command = commandInputValue.trim();
-    if (!command) return;
-
-    const activeHandle = terminalRefs.current.get(activeWorkspace.workspaceId);
-    if (activeHandle) {
-      activeHandle.runCommand(command);
-    }
-
-    setLocalHistory((prev) => [command, ...prev]);
-    setHistoryIndex(-1);
-    setCommandInputValue('');
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (localHistory.length === 0) return;
-      const nextIndex = Math.min(historyIndex + 1, localHistory.length - 1);
-      setHistoryIndex(nextIndex);
-      setCommandInputValue(localHistory[nextIndex] ?? '');
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (historyIndex <= 0) {
-        setHistoryIndex(-1);
-        setCommandInputValue('');
-      } else {
-        const nextIndex = historyIndex - 1;
-        setHistoryIndex(nextIndex);
-        setCommandInputValue(localHistory[nextIndex] ?? '');
-      }
-    }
-  };
 
   const {
     entries,
@@ -537,82 +496,6 @@ function ActiveWorkspaceLayout({
                 </div>
               );
             })}
-          </div>
-
-          {/* Warp-Style Bottom Context & Exclusive Typing Panel */}
-          <div
-            className="shrink-0 cursor-text border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] p-3"
-            onClick={() => warpInputRef.current?.focus()}
-          >
-            {/* Top Row: Context Badges */}
-            <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[var(--text-primary)]">
-                <Icon
-                  name="workspace"
-                  size={12}
-                  className="text-[var(--text-muted)]"
-                />
-                ~/desktop/{activeWorkspace.name}
-              </span>
-              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[var(--text-secondary)]">
-                <Icon
-                  name="branch"
-                  size={11}
-                  className="text-[var(--text-muted)]"
-                />
-                main
-              </span>
-              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[var(--text-muted)]">
-                v22.0.0
-              </span>
-              <span className="rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-1 text-[var(--text-subtle)]">
-                ± 0
-              </span>
-            </div>
-
-            {/* Middle Row: Exclusive Interactive Warp Typing Bar */}
-            <form
-              onSubmit={handleInputSubmit}
-              className="mt-2.5 flex items-center gap-2.5 rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-1)] px-3 py-2 transition-colors focus-within:border-[var(--border-strong)]"
-            >
-              <span className="font-mono text-[13px] font-bold text-[var(--text-primary)] select-none">
-                ❯
-              </span>
-              <input
-                ref={warpInputRef}
-                type="text"
-                value={commandInputValue}
-                onChange={(e) => setCommandInputValue(e.target.value)}
-                onKeyDown={handleInputKeyDown}
-                placeholder="Enter shell command or script…"
-                className="w-full bg-transparent font-mono text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-subtle)]"
-                autoComplete="off"
-                spellCheck={false}
-                autoFocus
-              />
-              {commandInputValue ? (
-                <button
-                  type="submit"
-                  className="cd-button cd-button--primary h-6 min-h-0 shrink-0 px-2 font-mono text-[10px]"
-                >
-                  Run ↵
-                </button>
-              ) : (
-                <span className="cd-kbd shrink-0 text-[9px]">↵ Run</span>
-              )}
-            </form>
-
-            {/* Bottom Row: Helpers & Shortcut Badges */}
-            <div className="mt-2 flex items-center justify-between font-mono text-[10px] text-[var(--text-subtle)]">
-              <span className="flex items-center gap-2">
-                <span>↑/↓ History</span>
-                <span>·</span>
-                <span>Esc Clear</span>
-              </span>
-              <span className="flex items-center gap-2">
-                <span>⌘K Commands</span>
-              </span>
-            </div>
           </div>
         </div>
 
