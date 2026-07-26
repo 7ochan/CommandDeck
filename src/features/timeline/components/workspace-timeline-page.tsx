@@ -126,48 +126,49 @@ function ActiveWorkspaceTimeline({
   });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-      <div className="flex shrink-0 flex-col items-stretch gap-2.5 md:flex-row">
-        <section className="cd-surface cd-surface--toolbar flex min-w-0 flex-1 items-center gap-3 rounded-[12px] px-4 py-2.5">
-          <span className="cd-clay-tile cd-clay-tile--info flex size-8 shrink-0 items-center justify-center rounded-lg">
-            <Icon name="timeline" size={16} />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-[13px] font-semibold text-[var(--text-primary)]">
-              Workspace Timeline
-            </h2>
-            <p className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">
-              {activeWorkspace.name}
-              <span className="mx-1.5 text-[var(--text-subtle)]">·</span>
-              {activeWorkspace.historyCount} captured commands
-            </p>
+    <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
+      <WorkspaceSwitcher
+        workspaces={workspaces}
+        activeWorkspace={activeWorkspace}
+        onSelect={onSelectWorkspace}
+        onCreate={onCreateWorkspace}
+        onRename={onRenameWorkspace}
+        onDelete={onDeleteWorkspace}
+      />
+
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden">
+        <section className="cd-surface cd-surface--toolbar flex shrink-0 items-center justify-between gap-3 rounded-[15px] px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            <span className="cd-clay-tile cd-clay-tile--info flex size-8 shrink-0 items-center justify-center rounded-lg">
+              <Icon name="timeline" size={16} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-[13px] font-semibold text-[var(--text-primary)]">
+                Workspace Timeline
+              </h2>
+              <p className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">
+                {activeWorkspace.name}
+                <span className="mx-1.5 text-[var(--text-subtle)]">·</span>
+                {activeWorkspace.historyCount} captured commands
+              </p>
+            </div>
           </div>
         </section>
-        <div className="w-full shrink-0 md:w-[clamp(20rem,32vw,25rem)]">
-          <WorkspaceSwitcher
-            workspaces={workspaces}
-            activeWorkspace={activeWorkspace}
-            onSelect={onSelectWorkspace}
-            onCreate={onCreateWorkspace}
-            onRename={onRenameWorkspace}
-            onDelete={onDeleteWorkspace}
-          />
-        </div>
-      </div>
 
-      <WorkspaceTimeline
-        entries={history.entries}
-        deckHistoryIds={deckHistoryIds}
-        query={history.query}
-        isLoading={history.isLoading}
-        isSearching={history.isSearching}
-        loadError={history.loadError}
-        onSearchTermChange={history.setSearchTerm}
-        onToggleStatus={history.toggleStatus}
-        onClearQuery={history.clearQuery}
-        onRunAgain={runAgain}
-        onAddToDeck={addToDeck}
-      />
+        <WorkspaceTimeline
+          entries={history.entries}
+          deckHistoryIds={deckHistoryIds}
+          query={history.query}
+          isLoading={history.isLoading}
+          isSearching={history.isSearching}
+          loadError={history.loadError}
+          onSearchTermChange={history.setSearchTerm}
+          onToggleStatus={history.toggleStatus}
+          onClearQuery={history.clearQuery}
+          onRunAgain={runAgain}
+          onAddToDeck={addToDeck}
+        />
+      </div>
 
       <CommandDeckPaletteSource items={deckItems} onRun={runAgain} />
     </div>
