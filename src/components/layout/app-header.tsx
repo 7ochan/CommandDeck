@@ -115,18 +115,12 @@ export function AppHeader({ activeView }: AppHeaderProps) {
 
   return (
     <header className="flex h-13 shrink-0 items-center justify-between gap-3 px-0.5 sm:px-1.5">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <span
-          className="cd-clay-tile cd-clay-tile--accent flex size-8 shrink-0 items-center justify-center rounded-[9px]"
-          aria-label="CommandDeck"
-        >
-          <Icon name="terminal" size={17} strokeWidth={1.9} />
-        </span>
-        <div className="hidden sm:block">
-          <h1 className="text-[13px] leading-4 font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
+      <div className="flex min-w-0 items-center">
+        <div>
+          <h1 className="cd-brand-title text-[14px] leading-4 font-normal tracking-[-0.01em] text-[var(--text-primary)]">
             CommandDeck
           </h1>
-          <p className="text-[10px] leading-3.5 text-[var(--text-muted)]">
+          <p className="mt-0.5 text-[10px] leading-3.5 text-[var(--text-muted)]">
             Local command workspace
           </p>
         </div>
