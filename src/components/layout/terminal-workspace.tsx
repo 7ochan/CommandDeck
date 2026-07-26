@@ -123,6 +123,46 @@ function ActiveWorkspaceLayout({
   const [terminalConnectionStatus, setTerminalConnectionStatus] =
     useState<TerminalConnectionStatus>('connecting');
 
+  const [commandInputValue, setCommandInputValue] = useState('');
+  const [localHistory, setLocalHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const warpInputRef = useRef<HTMLInputElement>(null);
+
+  const handleInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const command = commandInputValue.trim();
+    if (!command) return;
+
+    const activeHandle = terminalRefs.current.get(activeWorkspace.workspaceId);
+    if (activeHandle) {
+      activeHandle.runCommand(command);
+    }
+
+    setLocalHistory((prev) => [command, ...prev]);
+    setHistoryIndex(-1);
+    setCommandInputValue('');
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (localHistory.length === 0) return;
+      const nextIndex = Math.min(historyIndex + 1, localHistory.length - 1);
+      setHistoryIndex(nextIndex);
+      setCommandInputValue(localHistory[nextIndex] ?? '');
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex <= 0) {
+        setHistoryIndex(-1);
+        setCommandInputValue('');
+      } else {
+        const nextIndex = historyIndex - 1;
+        setHistoryIndex(nextIndex);
+        setCommandInputValue(localHistory[nextIndex] ?? '');
+      }
+    }
+  };
+
   const {
     entries,
     paletteEntries,
@@ -499,8 +539,11 @@ function ActiveWorkspaceLayout({
             })}
           </div>
 
-          {/* Warp-style Bottom Status & Typing Bar Area */}
-          <div className="shrink-0 border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3.5 py-2.5">
+          {/* Warp-style Bottom Status & Interactive Typing Bar Area */}
+          <div
+            className="shrink-0 cursor-text border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3.5 py-2.5"
+            onClick={() => warpInputRef.current?.focus()}
+          >
             <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
               <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 font-semibold text-[var(--accent)]">
                 <span className="size-1.5 rounded-full bg-[var(--text-muted)]" />
@@ -526,11 +569,31 @@ function ActiveWorkspaceLayout({
                 ± 0
               </span>
             </div>
-            <div className="mt-2.5 flex items-center justify-between font-mono text-[11px] text-[var(--text-muted)]">
-              <span className="text-[var(--text-subtle)]">Run commands</span>
-              <span className="text-[10px] text-[var(--text-subtle)]">
-                ⌘ ↵ new /agent conversation
+
+            {/* Interactive Warp Typing Input Bar matching user screenshot */}
+            <form
+              onSubmit={handleInputSubmit}
+              className="mt-2.5 flex items-center gap-2"
+            >
+              <span className="font-mono text-[14px] leading-none font-bold text-[#79c0ff] select-none">
+                .
               </span>
+              <input
+                ref={warpInputRef}
+                type="text"
+                value={commandInputValue}
+                onChange={(e) => setCommandInputValue(e.target.value)}
+                onKeyDown={handleInputKeyDown}
+                placeholder="Typeing shd be here"
+                className="w-full bg-transparent font-mono text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-subtle)]"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </form>
+
+            <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-[var(--text-subtle)]">
+              <span>Press Enter ↵ to run</span>
+              <span>⌘ ↵ new /agent conversation</span>
             </div>
           </div>
         </div>
