@@ -7,6 +7,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -58,11 +59,86 @@ export type CommandBlockData = {
   startedAt: number;
 };
 
-function stripAnsi(str: string): string {
-  return str.replace(
-    /[\u001b\u009b][\[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=>]/g,
-    '',
-  );
+const ANSI_COLOR_MAP: Record<number, string> = {
+  30: 'var(--text-subtle, #484f58)',
+  31: '#f85149',
+  32: '#3fb950',
+  33: '#d29922',
+  34: '#58a6ff',
+  35: '#bc8cff',
+  36: '#39c5cf',
+  37: '#e6edf3',
+  90: '#8b949e',
+  91: '#ff7b72',
+  92: '#56d364',
+  93: '#e3b341',
+  94: '#79c0ff',
+  95: '#d2a8ff',
+  96: '#56d4dd',
+};
+
+function parseAnsiToReactNodes(text: string): React.ReactNode[] {
+  const regex = /\x1b\[([0-9;]*)m/g;
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  let currentColor: string | undefined = undefined;
+  let isBold = false;
+  let isDim = false;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    const rawText = text.slice(lastIndex, match.index);
+    if (rawText) {
+      nodes.push(
+        <span
+          key={nodes.length}
+          style={{
+            color: currentColor,
+            fontWeight: isBold ? 'bold' : undefined,
+            opacity: isDim ? 0.7 : undefined,
+          }}
+        >
+          {rawText}
+        </span>,
+      );
+    }
+
+    lastIndex = regex.lastIndex;
+    const codes = match[1] ? match[1].split(';').map(Number) : [0];
+
+    for (const code of codes) {
+      if (code === 0) {
+        currentColor = undefined;
+        isBold = false;
+        isDim = false;
+      } else if (code === 1) {
+        isBold = true;
+      } else if (code === 2) {
+        isDim = true;
+      } else if (ANSI_COLOR_MAP[code]) {
+        currentColor = ANSI_COLOR_MAP[code];
+      }
+    }
+  }
+
+  const remaining = text.slice(lastIndex);
+  if (remaining) {
+    nodes.push(
+      <span
+        key={nodes.length}
+        style={{
+          color: currentColor,
+          fontWeight: isBold ? 'bold' : undefined,
+          opacity: isDim ? 0.7 : undefined,
+        }}
+      >
+        {remaining}
+      </span>,
+    );
+  }
+
+  return nodes;
 }
 
 function CommandBlockSection({
@@ -72,57 +148,65 @@ function CommandBlockSection({
   block: CommandBlockData;
   isLast: boolean;
 }) {
-  const cleanOutput = stripAnsi(block.output).trimEnd();
+  const trimmedOutput = block.output.trimEnd();
+  const parsedNodes = useMemo(
+    () => parseAnsiToReactNodes(trimmedOutput),
+    [trimmedOutput],
+  );
 
   return (
     <section
-      className={`cd-command-section flex flex-col py-3 ${
+      className={`cd-command-section flex w-full flex-col ${
         isLast ? '' : 'border-b border-[var(--border-soft)]'
       }`}
     >
-      {/* Command Line Header */}
-      <div className="flex items-center justify-between gap-3 py-0.5 font-mono text-[13px]">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="font-bold text-[var(--accent)] select-none">❯</span>
-          <span className="truncate font-semibold text-[var(--text-primary)]">
-            {block.command}
-          </span>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2 font-mono text-[10px]">
-          {block.status === 'running' && (
-            <span className="flex animate-pulse items-center gap-1.5 font-medium text-[var(--accent)]">
-              <span className="size-1.5 rounded-full bg-[var(--accent)]" />
-              Running…
+      <div className="flex flex-col px-4 py-3.5 sm:px-6">
+        {/* Command Line Header */}
+        <div className="flex items-center justify-between gap-3 py-0.5 font-mono text-[13px]">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="font-bold text-[var(--accent)] select-none">
+              ❯
             </span>
-          )}
-          {block.status === 'completed' &&
-            block.exitCode != null &&
-            block.exitCode !== 0 && (
-              <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
-                <span className="size-1.5 rounded-full bg-[#f85149]" />
-                Exit {block.exitCode}
+            <span className="truncate font-semibold text-[var(--text-primary)]">
+              {block.command}
+            </span>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 font-mono text-[10px]">
+            {block.status === 'running' && (
+              <span className="flex animate-pulse items-center gap-1.5 font-medium text-[var(--accent)]">
+                <span className="size-1.5 rounded-full bg-[var(--accent)]" />
+                Running…
               </span>
             )}
-          {block.status === 'failed' && (
-            <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
-              <span className="size-1.5 rounded-full bg-[#f85149]" />
-              Failed {block.exitCode != null ? `(${block.exitCode})` : ''}
-            </span>
-          )}
+            {block.status === 'completed' &&
+              block.exitCode != null &&
+              block.exitCode !== 0 && (
+                <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
+                  <span className="size-1.5 rounded-full bg-[#f85149]" />
+                  Exit {block.exitCode}
+                </span>
+              )}
+            {block.status === 'failed' && (
+              <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
+                <span className="size-1.5 rounded-full bg-[#f85149]" />
+                Failed {block.exitCode != null ? `(${block.exitCode})` : ''}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Streamed Output directly below command line */}
-      {cleanOutput ? (
-        <pre className="mt-1.5 overflow-x-auto font-mono text-[12px] leading-relaxed break-words whitespace-pre-wrap text-[var(--text-secondary)]">
-          {cleanOutput}
-        </pre>
-      ) : block.status === 'running' ? (
-        <div className="mt-1 font-mono text-[11px] text-[var(--text-subtle)] italic">
-          Running process…
-        </div>
-      ) : null}
+        {/* ANSI-formatted Output Stream */}
+        {trimmedOutput ? (
+          <pre className="mt-2 overflow-x-auto font-mono text-[12px] leading-relaxed break-words whitespace-pre-wrap text-[var(--text-secondary)]">
+            {parsedNodes}
+          </pre>
+        ) : block.status === 'running' ? (
+          <div className="mt-1 font-mono text-[11px] text-[var(--text-subtle)] italic">
+            Running process…
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }
