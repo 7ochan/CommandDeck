@@ -9,7 +9,7 @@ import {
 describe('zsh prompt presentation', () => {
   it('renders only abbreviated cwd and the CommandDeck indicator', () => {
     expect(ZSH_COMMAND_INDICATOR).toBe('❯');
-    expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain('%F{cyan}%~%f');
+    expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain('%B%F{cyan}%~%f%b');
     expect(ZSH_PROMPT_PRESENTATION_SCRIPT).toContain(
       `%B%F{green}${ZSH_COMMAND_INDICATOR}%f%b `,
     );
