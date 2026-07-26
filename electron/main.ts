@@ -18,6 +18,8 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+app.name = 'CommandDeck';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEV = !app.isPackaged;
@@ -300,10 +302,6 @@ function createWindow(): void {
   // Show window once the page has finished loading (avoids blank flash)
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
-    if (DEV) {
-      // Open DevTools automatically in development
-      mainWindow?.webContents.openDevTools({ mode: 'detach' });
-    }
   });
 
   // Persist window state on close
