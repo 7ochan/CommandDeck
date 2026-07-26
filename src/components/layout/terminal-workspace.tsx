@@ -470,8 +470,8 @@ function ActiveWorkspaceLayout({
                   key={workspaceId}
                   className={
                     isActive
-                      ? 'absolute inset-0 z-10 flex p-2.5 sm:p-3.5'
-                      : 'absolute inset-0 z-0 flex p-2.5 sm:p-3.5'
+                      ? 'absolute inset-0 z-10 flex px-2.5 pt-1 pb-2.5'
+                      : 'absolute inset-0 z-0 flex px-2.5 pt-1 pb-2.5'
                   }
                   style={isActive ? undefined : { visibility: 'hidden' }}
                   aria-hidden={!isActive}

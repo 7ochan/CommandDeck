@@ -498,7 +498,7 @@ function TerminalView(
     >
       <div
         ref={containerRef}
-        className="commanddeck-terminal h-full min-h-0 w-full min-w-0 flex-1 p-2 sm:p-3"
+        className="commanddeck-terminal h-full min-h-0 w-full min-w-0 flex-1 p-0"
         aria-label="Interactive local terminal"
       />
     </div>
