@@ -65,12 +65,23 @@ function stripAnsi(str: string): string {
   );
 }
 
-function CommandBlockCard({ block }: { block: CommandBlockData }) {
+function CommandBlockSection({
+  block,
+  isLast,
+}: {
+  block: CommandBlockData;
+  isLast: boolean;
+}) {
   const cleanOutput = stripAnsi(block.output).trimEnd();
 
   return (
-    <div className="cd-command-block flex flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-1)] shadow-sm transition-all">
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3.5 py-2.5 font-mono text-[12px]">
+    <section
+      className={`cd-command-section flex flex-col py-3 ${
+        isLast ? '' : 'border-b border-[var(--border-soft)]'
+      }`}
+    >
+      {/* Command Line Header */}
+      <div className="flex items-center justify-between gap-3 py-0.5 font-mono text-[13px]">
         <div className="flex min-w-0 items-center gap-2">
           <span className="font-bold text-[var(--accent)] select-none">❯</span>
           <span className="truncate font-semibold text-[var(--text-primary)]">
@@ -85,14 +96,14 @@ function CommandBlockCard({ block }: { block: CommandBlockData }) {
               Running…
             </span>
           )}
-          {block.status === 'completed' && (
-            <span className="flex items-center gap-1.5 font-medium text-[#3fb950]">
-              <span className="size-1.5 rounded-full bg-[#3fb950]" />
-              {block.exitCode === 0 || block.exitCode == null
-                ? 'Success'
-                : `Exit ${block.exitCode}`}
-            </span>
-          )}
+          {block.status === 'completed' &&
+            block.exitCode != null &&
+            block.exitCode !== 0 && (
+              <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
+                <span className="size-1.5 rounded-full bg-[#f85149]" />
+                Exit {block.exitCode}
+              </span>
+            )}
           {block.status === 'failed' && (
             <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
               <span className="size-1.5 rounded-full bg-[#f85149]" />
@@ -102,16 +113,17 @@ function CommandBlockCard({ block }: { block: CommandBlockData }) {
         </div>
       </div>
 
+      {/* Streamed Output directly below command line */}
       {cleanOutput ? (
-        <pre className="cd-scrollbar max-h-[32rem] overflow-x-auto bg-[var(--terminal)] p-3.5 font-mono text-[12px] leading-relaxed break-words whitespace-pre-wrap text-[var(--text-secondary)]">
+        <pre className="mt-1.5 overflow-x-auto font-mono text-[12px] leading-relaxed break-words whitespace-pre-wrap text-[var(--text-secondary)]">
           {cleanOutput}
         </pre>
       ) : block.status === 'running' ? (
-        <div className="px-3.5 py-3 font-mono text-[11px] text-[var(--text-subtle)] italic">
+        <div className="mt-1 font-mono text-[11px] text-[var(--text-subtle)] italic">
           Running process…
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }
 
@@ -620,17 +632,21 @@ function TerminalView(
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="cd-scrollbar flex min-h-0 flex-1 flex-col justify-end overflow-y-auto p-4 sm:p-5"
+        className="cd-scrollbar flex min-h-0 flex-1 flex-col justify-end overflow-y-auto px-4 sm:px-6"
       >
-        <div className="mt-auto flex flex-col gap-3.5">
+        <div className="mt-auto flex flex-col">
           {commandBlocks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center font-mono text-[12px] text-[var(--text-subtle)]">
               <Icon name="terminal" size={24} className="mb-2.5 opacity-40" />
               <p>Terminal session active. Enter a command below.</p>
             </div>
           ) : (
-            commandBlocks.map((block) => (
-              <CommandBlockCard key={block.id} block={block} />
+            commandBlocks.map((block, index) => (
+              <CommandBlockSection
+                key={block.id}
+                block={block}
+                isLast={index === commandBlocks.length - 1}
+              />
             ))
           )}
         </div>
