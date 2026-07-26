@@ -7,11 +7,14 @@
  * - Preserves the full existing server architecture (Next.js, WebSocket,
  *   node-pty, SQLite, Drizzle) without modification.
  *
- * Phase 2 additions:
- * - Native application menus (macOS, Windows, Linux).
- * - IPC bridge for opening Settings from the menu (Cmd+,).
- * - Native filesystem actions: open workspace folder, reveal app data, etc.
- * - Maximized state persistence.
+ * Desktop polish (Phase 3):
+ * - Native application icon wired from electron/assets/ (swap the files to
+ *   change the icon — no code changes required).
+ * - Startup loading window so the first frame is never blank.
+ * - Per-platform icon selection (icns / ico / png).
+ * - Graceful error dialogs for server failures and renderer crashes.
+ * - Periodic window-state save (every 30 s) in addition to close-time save.
+ * - Renderer crash recovery with a native dialog.
  */
 
 import {
@@ -37,7 +40,8 @@ const __dirname = dirname(__filename);
 
 app.name = 'CommandDeck';
 
-// Windows: sets the app user model ID used for taskbar grouping / notifications
+// Windows: AppUserModelId is required for taskbar grouping and proper
+// association of notifications/Jump Lists with the executable.
 if (process.platform === 'win32') {
   app.setAppUserModelId('com.commanddeck.app');
 }
@@ -49,11 +53,49 @@ const APP_HOST = '127.0.0.1';
 const APP_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const APP_URL = `http://${APP_HOST}:${APP_PORT}`;
 
+/** Background color matching the app's dark canvas (#0e0e0e from globals.css) */
+const APP_BG = '#0e0e0e';
+
+// ─── Icon resolution ──────────────────────────────────────────────────────────
+//
+// Icons live in electron/assets/. Replacing the files is the ONLY thing needed
+// to change the application icon — no code changes required.
+//
+//   electron/assets/icon.icns   → macOS
+//   electron/assets/icon.ico    → Windows
+//   electron/assets/icon.png    → Linux (1024×1024 recommended)
+//
+// The assets directory is a sibling of the compiled .electron/ output dir.
+
+function resolveIcon(): string | undefined {
+  const assetsDir = join(__dirname, '..', 'electron', 'assets');
+
+  if (process.platform === 'darwin') {
+    const icns = join(assetsDir, 'icon.icns');
+    if (existsSync(icns)) return icns;
+  }
+
+  if (process.platform === 'win32') {
+    const ico = join(assetsDir, 'icon.ico');
+    if (existsSync(ico)) return ico;
+  }
+
+  // Linux and fallback
+  const png = join(assetsDir, 'icon.png');
+  if (existsSync(png)) return png;
+
+  return undefined;
+}
+
+const APP_ICON = resolveIcon();
+
 // ─── IPC channel names ────────────────────────────────────────────────────────
 
 const IPC = {
   /** Main → Renderer: open the Settings dialog */
   OPEN_SETTINGS: 'commanddeck:open-settings',
+  /** Main → Renderer: trigger new workspace creation */
+  NEW_WORKSPACE: 'commanddeck:new-workspace',
   /** Renderer → Main: open a native folder picker for workspace root */
   OPEN_WORKSPACE_FOLDER: 'commanddeck:open-workspace-folder',
   /** Renderer → Main: reveal the application data directory in Finder/Explorer */
@@ -90,8 +132,8 @@ function loadWindowState(): WindowState {
       return {
         x: parsed.x,
         y: parsed.y,
-        width: parsed.width ?? defaults.width,
-        height: parsed.height ?? defaults.height,
+        width: Math.max(parsed.width ?? defaults.width, 800),
+        height: Math.max(parsed.height ?? defaults.height, 600),
         maximized: parsed.maximized ?? defaults.maximized,
       };
     }
@@ -104,12 +146,17 @@ function loadWindowState(): WindowState {
 
 function saveWindowState(win: BrowserWindow): void {
   try {
+    if (win.isDestroyed()) return;
+
     const maximized = win.isMaximized();
-    // When maximized, save the restored (normal) bounds so the window reopens
-    // at its last normal size/position when restored.
-    const { x, y, width, height } = maximized
-      ? (win.getNormalBounds?.() ?? win.getBounds())
-      : win.getBounds();
+    const fullscreen = win.isFullScreen();
+
+    // When maximized or fullscreen, save normal bounds so the window reopens
+    // at its last normal size/position.
+    const { x, y, width, height } =
+      maximized || fullscreen
+        ? (win.getNormalBounds?.() ?? win.getBounds())
+        : win.getBounds();
 
     const stateDir = dirname(STATE_FILE);
     mkdirSync(stateDir, { recursive: true });
@@ -183,10 +230,18 @@ function startServer(): Promise<void> {
     });
 
     let resolved = false;
+
+    // 60 s hard timeout — show a proper dialog instead of hanging forever
     const timeout = setTimeout(() => {
       if (!resolved) {
         resolved = true;
-        reject(new Error('CommandDeck server did not start within 60 seconds'));
+        reject(
+          new Error(
+            'CommandDeck server did not start within 60 seconds.\n\n' +
+              'This may indicate a port conflict or a server-side error. ' +
+              'Check the logs for details.',
+          ),
+        );
       }
     }, 60_000);
 
@@ -306,6 +361,122 @@ function stopServer(): void {
   }
 }
 
+// ─── Error dialogs ─────────────────────────────────────────────────────────────
+
+/**
+ * Shows a native error dialog and optionally quits the application.
+ */
+async function showFatalError(
+  title: string,
+  message: string,
+  detail?: string,
+): Promise<void> {
+  await dialog.showMessageBox({
+    type: 'error',
+    title,
+    message,
+    detail,
+    buttons: ['Quit'],
+    defaultId: 0,
+  });
+  app.quit();
+}
+
+/**
+ * Shows a native warning dialog offering the user a chance to reload or quit.
+ * Returns true if the user chose to reload.
+ */
+async function showRendererCrashDialog(): Promise<boolean> {
+  const { response } = await dialog.showMessageBox({
+    type: 'error',
+    title: 'CommandDeck — Unexpected Error',
+    message: 'The application encountered an unexpected error.',
+    detail:
+      'The renderer process crashed unexpectedly. You can try reloading the window or quit the application.',
+    buttons: ['Reload', 'Quit'],
+    defaultId: 0,
+    cancelId: 1,
+  });
+  return response === 0;
+}
+
+// ─── Startup loading window ────────────────────────────────────────────────────
+//
+// Shown while the server is starting up. Hidden immediately once the main
+// window is ready to show. Ensures the user always sees a polished first frame.
+
+let loadingWindow: BrowserWindow | null = null;
+
+function createLoadingWindow(): void {
+  loadingWindow = new BrowserWindow({
+    width: 340,
+    height: 220,
+    frame: false,
+    resizable: false,
+    movable: true,
+    center: true,
+    show: false,
+    backgroundColor: APP_BG,
+    transparent: false,
+    alwaysOnTop: true,
+    ...(APP_ICON ? { icon: APP_ICON } : {}),
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+    },
+  });
+
+  // Load the splash HTML inline via a data URL — no extra file needed
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;background:#0e0e0e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;user-select:none;-webkit-app-region:drag}
+  .wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:20px}
+  .icon{font-size:40px;opacity:.9}
+  .name{font-size:16px;font-weight:600;color:#f5f5f5;letter-spacing:.5px}
+  .sub{font-size:12px;color:#6e6e6e;margin-top:-12px}
+  .dots{display:flex;gap:6px;margin-top:4px}
+  .dot{width:5px;height:5px;border-radius:50%;background:#424242;animation:pulse 1.4s ease-in-out infinite}
+  .dot:nth-child(2){animation-delay:.2s}
+  .dot:nth-child(3){animation-delay:.4s}
+  @keyframes pulse{0%,80%,100%{transform:scale(1);background:#424242}40%{transform:scale(1.2);background:#9e9e9e}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="icon">›_</div>
+  <div class="name">CommandDeck</div>
+  <div class="sub">Starting…</div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</div>
+</body>
+</html>`;
+
+  void loadingWindow.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
+  );
+
+  loadingWindow.once('ready-to-show', () => {
+    loadingWindow?.show();
+  });
+
+  loadingWindow.on('closed', () => {
+    loadingWindow = null;
+  });
+}
+
+function destroyLoadingWindow(): void {
+  if (loadingWindow && !loadingWindow.isDestroyed()) {
+    loadingWindow.close();
+    loadingWindow = null;
+  }
+}
+
 // ─── Native application menu ──────────────────────────────────────────────────
 
 /**
@@ -362,7 +533,7 @@ function buildMenu(): Menu {
       {
         label: 'New Workspace',
         accelerator: 'CmdOrCtrl+Shift+N',
-        click: () => sendToRenderer('commanddeck:new-workspace'),
+        click: () => sendToRenderer(IPC.NEW_WORKSPACE),
       },
       { type: 'separator' },
       {
@@ -412,7 +583,7 @@ function buildMenu(): Menu {
     submenu: viewSubmenu,
   };
 
-  // ── Go menu ───────────────────────────────────────────────────────────────
+  // ── Go menu (Windows/Linux: contains Settings) ────────────────────────────
   const goMenu: MenuItemConstructorOptions = {
     label: 'Go',
     submenu: [
@@ -420,7 +591,6 @@ function buildMenu(): Menu {
         label: 'Settings',
         accelerator: 'CmdOrCtrl+,',
         click: () => sendToRenderer(IPC.OPEN_SETTINGS),
-        // Hide on macOS — the app menu entry is canonical there
         visible: !isMac,
       },
     ],
@@ -460,10 +630,7 @@ function buildMenu(): Menu {
       },
       {
         label: 'Reveal Logs Folder…',
-        click: () => {
-          const logsDir = app.getPath('logs');
-          revealInFinder(logsDir);
-        },
+        click: () => revealInFinder(app.getPath('logs')),
       },
     ],
   };
@@ -494,7 +661,6 @@ function revealInFinder(target: string): void {
   if (existsSync(target)) {
     shell.showItemInFolder(target);
   } else {
-    // If the specific file doesn't exist, open the nearest parent that does
     const parent = dirname(target);
     if (existsSync(parent)) {
       shell.openPath(parent).catch(console.error);
@@ -503,8 +669,8 @@ function revealInFinder(target: string): void {
 }
 
 /**
- * Opens a native folder-picker dialog and reveals the selected folder in
- * Finder/Explorer. This is the "Open Workspace Folder" action.
+ * Opens a native folder-picker dialog. This is the "Open Workspace Folder"
+ * action — it reveals the chosen folder in Finder/Explorer.
  */
 async function openWorkspaceFolder(): Promise<void> {
   const win = BrowserWindow.getFocusedWindow() ?? mainWindow;
@@ -527,22 +693,18 @@ async function openWorkspaceFolder(): Promise<void> {
 // ─── IPC handlers ─────────────────────────────────────────────────────────────
 
 function registerIpcHandlers(): void {
-  // Renderer → Main: open a workspace folder picker
   ipcMain.handle(IPC.OPEN_WORKSPACE_FOLDER, async () => {
     await openWorkspaceFolder();
   });
 
-  // Renderer → Main: reveal app data directory
   ipcMain.handle(IPC.REVEAL_APP_DATA, () => {
     revealInFinder(resolveDataDirectory());
   });
 
-  // Renderer → Main: reveal database file
   ipcMain.handle(IPC.REVEAL_DATABASE, () => {
     revealInFinder(join(resolveDataDirectory(), 'commanddeck.db'));
   });
 
-  // Renderer → Main: reveal logs folder
   ipcMain.handle(IPC.REVEAL_LOGS, () => {
     revealInFinder(app.getPath('logs'));
   });
@@ -551,6 +713,7 @@ function registerIpcHandlers(): void {
 // ─── Browser window ───────────────────────────────────────────────────────────
 
 let mainWindow: BrowserWindow | null = null;
+let stateSaveInterval: ReturnType<typeof setInterval> | null = null;
 
 function createWindow(): void {
   const state = loadWindowState();
@@ -563,18 +726,21 @@ function createWindow(): void {
     height: state.height,
     minWidth: 800,
     minHeight: 600,
-    show: false, // Show only after content is ready to avoid blank flash
-    backgroundColor: '#0a0a0f', // Match the app's dark background
+    show: false, // Show only after content is ready — avoids any blank flash
+    backgroundColor: APP_BG,
+    ...(APP_ICON ? { icon: APP_ICON } : {}),
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
       webSecurity: true,
+      // Disable the default spell-checker — reduces unnecessary background work
+      spellcheck: false,
     },
   });
 
-  // Restore maximized state after window is created
+  // Restore maximized state
   if (state.maximized) {
     mainWindow.maximize();
   }
@@ -588,20 +754,71 @@ function createWindow(): void {
     return { action: 'allow' };
   });
 
-  // Show window once the page has finished loading (avoids blank flash)
+  // Show window and destroy the loading splash once the page is ready
   mainWindow.once('ready-to-show', () => {
+    destroyLoadingWindow();
     mainWindow?.show();
+    mainWindow?.focus();
   });
+
+  // Periodic window-state save (every 30 s) so state survives unexpected exits
+  stateSaveInterval = setInterval(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      saveWindowState(mainWindow);
+    }
+  }, 30_000);
 
   // Persist window state on close
   mainWindow.on('close', () => {
     if (mainWindow) {
       saveWindowState(mainWindow);
     }
+    if (stateSaveInterval) {
+      clearInterval(stateSaveInterval);
+      stateSaveInterval = null;
+    }
   });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // ── Renderer crash / GPU crash recovery ───────────────────────────────────
+
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[Electron] Renderer process gone:', details.reason);
+
+    // Unexpected crash — offer the user a chance to reload
+    if (details.reason !== 'clean-exit') {
+      showRendererCrashDialog()
+        .then((shouldReload) => {
+          if (shouldReload && mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.reload();
+          } else {
+            app.quit();
+          }
+        })
+        .catch(console.error);
+    }
+  });
+
+  mainWindow.webContents.on('unresponsive', () => {
+    console.warn('[Electron] Renderer is unresponsive.');
+    dialog
+      .showMessageBox({
+        type: 'warning',
+        title: 'CommandDeck — Not Responding',
+        message: 'The application is not responding.',
+        detail: 'Would you like to wait for it to recover or reload it?',
+        buttons: ['Wait', 'Reload'],
+        defaultId: 0,
+      })
+      .then(({ response }) => {
+        if (response === 1 && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.reload();
+        }
+      })
+      .catch(console.error);
   });
 
   void mainWindow.loadURL(APP_URL);
@@ -610,30 +827,40 @@ function createWindow(): void {
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.on('ready', async () => {
-  // Register IPC handlers before creating the window
+  // Register IPC handlers and build the menu before anything else so they
+  // are ready the instant the window opens — no async gap.
   registerIpcHandlers();
+  Menu.setApplicationMenu(buildMenu());
 
-  // Build and apply the native application menu
-  const menu = buildMenu();
-  Menu.setApplicationMenu(menu);
+  // Show the loading window immediately so the user sees something right away
+  createLoadingWindow();
 
   try {
     await startServer();
     createWindow();
   } catch (err) {
     console.error('[Electron] Failed to start CommandDeck:', err);
-    app.quit();
+    destroyLoadingWindow();
+
+    const message = err instanceof Error ? err.message : String(err);
+    await showFatalError(
+      'CommandDeck — Failed to Start',
+      'CommandDeck could not start its server.',
+      message,
+    );
   }
 });
 
-// On macOS, re-create the window when the dock icon is clicked
+// On macOS, re-create the window when the dock icon is clicked and there is no
+// window open (but the server is still running).
 app.on('activate', () => {
   if (mainWindow === null && serverProcess !== null) {
     createWindow();
   }
 });
 
-// Quit when all windows are closed (except on macOS)
+// Quit when all windows are closed (except on macOS where apps conventionally
+// remain running until the user explicitly quits).
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     stopServer();
@@ -642,5 +869,19 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  // Persist window state one final time before quitting
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    saveWindowState(mainWindow);
+  }
+  if (stateSaveInterval) {
+    clearInterval(stateSaveInterval);
+    stateSaveInterval = null;
+  }
   stopServer();
+});
+
+// Catch any unhandled promise rejections in the main process and log them
+// without crashing the entire application.
+process.on('unhandledRejection', (reason) => {
+  console.error('[Electron] Unhandled promise rejection:', reason);
 });

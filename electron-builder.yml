@@ -1,0 +1,146 @@
+# electron-builder configuration for CommandDeck
+# Documentation: https://www.electron.build/configuration/configuration
+#
+# Usage:
+#   npx electron-builder --mac --win --linux
+#   npx electron-builder --mac dmg
+#
+# Prerequisites before running:
+#   1. npm run electron:build   (builds Next.js + server + Electron TS)
+#   2. Code signing credentials (macOS: APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD,
+#      APPLE_TEAM_ID; Windows: CSC_LINK, CSC_KEY_PASSWORD)
+
+# ─── Application identity ──────────────────────────────────────────────────────
+appId: com.commanddeck.app
+productName: CommandDeck
+copyright: 'Copyright © 2024 CommandDeck. All rights reserved.'
+
+# ─── Version & executable ──────────────────────────────────────────────────────
+# Version is read automatically from package.json#version
+
+executableName: CommandDeck
+
+# ─── Build inputs ──────────────────────────────────────────────────────────────
+# Only the files actually needed at runtime are bundled.
+# Source TypeScript, test files, and dev tools are excluded.
+files:
+  - .electron/**/*
+  - .next/**/*
+  - .server/**/*
+  - public/**/*
+  - package.json
+  - '!node_modules/**/*'
+
+# Node modules that MUST be present at runtime (native addons, server deps)
+extraResources:
+  - from: node_modules
+    to: node_modules
+    filter:
+      # Core server runtime
+      - better-sqlite3/**
+      - drizzle-orm/**
+      - next/**
+      - ws/**
+      - zod/**
+      - react/**
+      - react-dom/**
+      # Terminal
+      - node-pty/**
+      - '@xterm/**'
+      # Exclude dev-only packages
+      - '!eslint/**'
+      - '!prettier/**'
+      - '!typescript/**'
+      - '!vitest/**'
+      - '!tsx/**'
+      - '!electron/**'
+      - '!concurrently/**'
+      - '!wait-on/**'
+      - '!@types/**'
+      - '!tailwindcss/**'
+      - '!postcss/**'
+
+# ─── Icons ─────────────────────────────────────────────────────────────────────
+# All icons live in electron/assets/. Replace the files to change icons.
+# No code changes are required — electron-builder reads these paths directly.
+
+# ─── macOS ─────────────────────────────────────────────────────────────────────
+mac:
+  icon: electron/assets/icon.icns
+  category: public.app-category.developer-tools
+  # Hardened runtime is required for notarization
+  hardenedRuntime: true
+  entitlements: electron/entitlements.mac.plist
+  entitlementsInherit: electron/entitlements.mac.plist
+  gatekeeperAssess: false
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+
+dmg:
+  title: 'CommandDeck ${version}'
+  icon: electron/assets/icon.icns
+  background: electron/assets/dmg-background.png
+  iconSize: 80
+  contents:
+    - x: 190
+      y: 250
+      type: file
+    - x: 490
+      y: 250
+      type: link
+      path: /Applications
+  window:
+    width: 680
+    height: 420
+
+# ─── Windows ───────────────────────────────────────────────────────────────────
+win:
+  icon: electron/assets/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: electron/assets/icon.ico
+  uninstallerIcon: electron/assets/icon.ico
+  installerHeaderIcon: electron/assets/icon.ico
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: CommandDeck
+
+# ─── Linux ─────────────────────────────────────────────────────────────────────
+linux:
+  icon: electron/assets/icon.png
+  category: Development
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: deb
+      arch: [x64]
+  desktop:
+    Name: CommandDeck
+    Comment: 'A local-first visual terminal workspace'
+    Categories: Development;Utility;TerminalEmulator;
+
+# ─── Publish (auto-update — future) ───────────────────────────────────────────
+# Uncomment and configure when auto-update is implemented.
+# publish:
+#   provider: github
+#   owner: your-github-org
+#   repo: cmd-deck
+
+# ─── Build options ─────────────────────────────────────────────────────────────
+buildVersion: '1'
+removePackageScripts: true
+asar: true
+
+directories:
+  buildResources: electron/assets
+  output: dist

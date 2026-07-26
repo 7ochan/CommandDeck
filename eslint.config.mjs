@@ -13,6 +13,7 @@ export default defineConfig([
     '.electron/**',
     'coverage/**',
     'node_modules/**',
+    'dist/**',
     'next-env.d.ts',
   ]),
 ]);

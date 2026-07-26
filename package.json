@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "A local-first visual terminal workspace.",
+  "author": {
+    "name": "CommandDeck",
+    "email": "hello@commanddeck.app"
+  },
+  "homepage": "https://commanddeck.app",
   "type": "module",
   "main": ".electron/main.js",
   "scripts": {
@@ -21,7 +26,8 @@
     "electron:compile": "tsc -p electron/tsconfig.json",
     "electron:dev": "npm run electron:compile && electron .",
     "electron:build": "npm run build && npm run electron:compile",
-    "electron:start": "electron ."
+    "electron:start": "electron .",
+    "electron:package": "npm run electron:build && electron-builder --config electron-builder.yml"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -68,8 +74,9 @@
     "node-pty@1.2.0-beta.14": true,
     "electron@43.2.0": true
   },
-  "electron": {
+  "build": {
     "appId": "com.commanddeck.app",
-    "productName": "CommandDeck"
+    "productName": "CommandDeck",
+    "extends": null
   }
 }

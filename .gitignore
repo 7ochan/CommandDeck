@@ -11,6 +11,9 @@ out/
 # Compiled Electron main process
 .electron/
 
+# Electron packaging output
+dist/
+
 # Tests and tooling
 coverage/
 *.tsbuildinfo
@@ -34,3 +37,7 @@ npm-debug.log*
 .DS_Store
 .idea/
 .vscode/
+
+# Icon build intermediates (keep final .icns/.ico/.png, not the source or intermediate)
+electron/assets/*.iconset/
+electron/assets/icon-source.jpg
