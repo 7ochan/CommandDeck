@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
@@ -9,6 +9,7 @@ import { CommandDeckPaletteSource } from '@/features/command-deck/components/com
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
 import { useRegisterHistoryPaletteActions } from '@/features/command-history/command-palette';
 import { useCommandHistory } from '@/features/command-history/hooks/use-command-history';
+import { useSettings } from '@/features/settings/settings-provider';
 import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-switcher';
 import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/command-palette';
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
@@ -75,6 +76,13 @@ function ActiveWorkspaceTimeline({
   const { items: deckItems, addFromHistory } = useCommandDeck(
     activeWorkspace.workspaceId,
   );
+  const { settings } = useSettings();
+  const { showLeftSidebar, hoverToRevealSidebars } = settings.general;
+  const [isLeftHovered, setIsLeftHovered] = useState(false);
+  const isLeftVisible =
+    showLeftSidebar || (hoverToRevealSidebars && isLeftHovered);
+  const isLeftOverlay = !showLeftSidebar && isLeftVisible;
+
   const deckHistoryIds = useMemo(
     () =>
       new Set(
@@ -126,15 +134,38 @@ function ActiveWorkspaceTimeline({
   });
 
   return (
-    <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
-      <WorkspaceSwitcher
-        workspaces={workspaces}
-        activeWorkspace={activeWorkspace}
-        onSelect={onSelectWorkspace}
-        onCreate={onCreateWorkspace}
-        onRename={onRenameWorkspace}
-        onDelete={onDeleteWorkspace}
-      />
+    <div className="relative flex min-h-0 flex-1 gap-2.5 overflow-hidden">
+      {/* Left Edge Hover Trigger Zone */}
+      {!showLeftSidebar && hoverToRevealSidebars && !isLeftHovered && (
+        <div
+          className="absolute top-0 bottom-0 left-0 z-40 w-4 cursor-pointer"
+          onMouseEnter={() => setIsLeftHovered(true)}
+          title="Hover to show Workspaces"
+        />
+      )}
+
+      {/* Left Sidebar (Workspace Switcher) */}
+      {isLeftVisible && (
+        <div
+          className={
+            isLeftOverlay
+              ? 'absolute top-0 bottom-0 left-0 z-50 flex shadow-2xl transition-transform duration-200'
+              : 'flex shrink-0'
+          }
+          onMouseLeave={
+            isLeftOverlay ? () => setIsLeftHovered(false) : undefined
+          }
+        >
+          <WorkspaceSwitcher
+            workspaces={workspaces}
+            activeWorkspace={activeWorkspace}
+            onSelect={onSelectWorkspace}
+            onCreate={onCreateWorkspace}
+            onRename={onRenameWorkspace}
+            onDelete={onDeleteWorkspace}
+          />
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden">
         <section className="cd-surface cd-surface--toolbar flex shrink-0 items-center justify-between gap-3 rounded-[15px] px-4 py-2.5">

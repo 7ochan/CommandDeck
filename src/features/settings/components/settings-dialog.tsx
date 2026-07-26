@@ -210,43 +210,75 @@ export function SettingsDialog({
                 className="m-0 min-w-0 border-0 p-0 disabled:opacity-60"
               >
                 {activeSection === 'general' && (
-                  <SettingsGroup
-                    title="Workspace behavior"
-                    description="Control how CommandDeck restores and protects your working context."
-                  >
-                    <ToggleSetting
-                      label="Restore previous workspace on startup"
-                      description="Open the workspace that was active when CommandDeck last closed."
-                      checked={draftSettings.general.restorePreviousWorkspace}
-                      onChange={(restorePreviousWorkspace) =>
-                        updateDraft({ general: { restorePreviousWorkspace } })
-                      }
-                    />
-                    <ToggleSetting
-                      label="Confirm before deleting workspace"
-                      description="Ask before permanently removing its History and Deck items."
-                      checked={
-                        draftSettings.general.confirmBeforeDeletingWorkspace
-                      }
-                      onChange={(confirmBeforeDeletingWorkspace) =>
-                        updateDraft({
-                          general: { confirmBeforeDeletingWorkspace },
-                        })
-                      }
-                    />
-                    <ToggleSetting
-                      label="Auto-focus terminal after switching"
-                      description="Move keyboard focus to the terminal when changing workspaces."
-                      checked={
-                        draftSettings.general.autoFocusTerminalAfterSwitching
-                      }
-                      onChange={(autoFocusTerminalAfterSwitching) =>
-                        updateDraft({
-                          general: { autoFocusTerminalAfterSwitching },
-                        })
-                      }
-                    />
-                  </SettingsGroup>
+                  <div className="space-y-6">
+                    <SettingsGroup
+                      title="Workspace behavior"
+                      description="Control how CommandDeck restores and protects your working context."
+                    >
+                      <ToggleSetting
+                        label="Restore previous workspace on startup"
+                        description="Open the workspace that was active when CommandDeck last closed."
+                        checked={draftSettings.general.restorePreviousWorkspace}
+                        onChange={(restorePreviousWorkspace) =>
+                          updateDraft({ general: { restorePreviousWorkspace } })
+                        }
+                      />
+                      <ToggleSetting
+                        label="Confirm before deleting workspace"
+                        description="Ask before permanently removing its History and Deck items."
+                        checked={
+                          draftSettings.general.confirmBeforeDeletingWorkspace
+                        }
+                        onChange={(confirmBeforeDeletingWorkspace) =>
+                          updateDraft({
+                            general: { confirmBeforeDeletingWorkspace },
+                          })
+                        }
+                      />
+                      <ToggleSetting
+                        label="Auto-focus terminal after switching"
+                        description="Move keyboard focus to the terminal when changing workspaces."
+                        checked={
+                          draftSettings.general.autoFocusTerminalAfterSwitching
+                        }
+                        onChange={(autoFocusTerminalAfterSwitching) =>
+                          updateDraft({
+                            general: { autoFocusTerminalAfterSwitching },
+                          })
+                        }
+                      />
+                    </SettingsGroup>
+
+                    <SettingsGroup
+                      title="Sidebar layout & hover peek"
+                      description="Hide panels to maximize terminal screen space, or reveal them by hovering at screen edges."
+                    >
+                      <ToggleSetting
+                        label="Show Left Sidebar (Workspaces)"
+                        description="Display the workspace switcher tabs panel on the left."
+                        checked={draftSettings.general.showLeftSidebar}
+                        onChange={(showLeftSidebar) =>
+                          updateDraft({ general: { showLeftSidebar } })
+                        }
+                      />
+                      <ToggleSetting
+                        label="Show Right Sidebar (Developer Hub)"
+                        description="Display the Command Deck and History tool panel on the right."
+                        checked={draftSettings.general.showRightSidebar}
+                        onChange={(showRightSidebar) =>
+                          updateDraft({ general: { showRightSidebar } })
+                        }
+                      />
+                      <ToggleSetting
+                        label="Hover to reveal sidebars when hidden"
+                        description="Move cursor to far left or right edge of screen to temporarily slide out the hidden sidebar."
+                        checked={draftSettings.general.hoverToRevealSidebars}
+                        onChange={(hoverToRevealSidebars) =>
+                          updateDraft({ general: { hoverToRevealSidebars } })
+                        }
+                      />
+                    </SettingsGroup>
+                  </div>
                 )}
 
                 {activeSection === 'terminal' && (
@@ -529,6 +561,10 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
       right.general.confirmBeforeDeletingWorkspace &&
     left.general.autoFocusTerminalAfterSwitching ===
       right.general.autoFocusTerminalAfterSwitching &&
+    left.general.showLeftSidebar === right.general.showLeftSidebar &&
+    left.general.showRightSidebar === right.general.showRightSidebar &&
+    left.general.hoverToRevealSidebars ===
+      right.general.hoverToRevealSidebars &&
     left.terminal.fontSize === right.terminal.fontSize &&
     left.terminal.cursorStyle === right.terminal.cursorStyle &&
     left.terminal.cursorBlink === right.terminal.cursorBlink &&

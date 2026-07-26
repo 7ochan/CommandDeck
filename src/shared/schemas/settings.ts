@@ -28,6 +28,9 @@ const generalSettingsSchema = z.object({
   restorePreviousWorkspace: z.boolean(),
   confirmBeforeDeletingWorkspace: z.boolean(),
   autoFocusTerminalAfterSwitching: z.boolean(),
+  showLeftSidebar: z.boolean().default(true),
+  showRightSidebar: z.boolean().default(true),
+  hoverToRevealSidebars: z.boolean().default(true),
 });
 const terminalSettingsSchema = z.object({
   fontSize: terminalFontSizeSchema,

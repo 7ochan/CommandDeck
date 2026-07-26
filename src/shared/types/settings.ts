@@ -18,6 +18,9 @@ export type AppSettings = {
     restorePreviousWorkspace: boolean;
     confirmBeforeDeletingWorkspace: boolean;
     autoFocusTerminalAfterSwitching: boolean;
+    showLeftSidebar: boolean;
+    showRightSidebar: boolean;
+    hoverToRevealSidebars: boolean;
   };
   terminal: {
     fontSize: number;
@@ -60,6 +63,9 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     restorePreviousWorkspace: true,
     confirmBeforeDeletingWorkspace: true,
     autoFocusTerminalAfterSwitching: true,
+    showLeftSidebar: true,
+    showRightSidebar: true,
+    hoverToRevealSidebars: true,
   },
   terminal: {
     fontSize: 14,

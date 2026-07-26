@@ -21,6 +21,9 @@ const KEYS = {
   restorePreviousWorkspace: 'general.restorePreviousWorkspace',
   confirmBeforeDeletingWorkspace: 'general.confirmBeforeDeletingWorkspace',
   autoFocusTerminalAfterSwitching: 'general.autoFocusTerminalAfterSwitching',
+  showLeftSidebar: 'general.showLeftSidebar',
+  showRightSidebar: 'general.showRightSidebar',
+  hoverToRevealSidebars: 'general.hoverToRevealSidebars',
   terminalFontSize: 'terminal.fontSize',
   terminalCursorStyle: 'terminal.cursorStyle',
   terminalCursorBlink: 'terminal.cursorBlink',
@@ -63,6 +66,24 @@ export class SettingsService {
             KEYS.autoFocusTerminalAfterSwitching,
             booleanSchema,
             DEFAULT_APP_SETTINGS.general.autoFocusTerminalAfterSwitching,
+          ),
+          showLeftSidebar: read(
+            values,
+            KEYS.showLeftSidebar,
+            booleanSchema,
+            DEFAULT_APP_SETTINGS.general.showLeftSidebar,
+          ),
+          showRightSidebar: read(
+            values,
+            KEYS.showRightSidebar,
+            booleanSchema,
+            DEFAULT_APP_SETTINGS.general.showRightSidebar,
+          ),
+          hoverToRevealSidebars: read(
+            values,
+            KEYS.hoverToRevealSidebars,
+            booleanSchema,
+            DEFAULT_APP_SETTINGS.general.hoverToRevealSidebars,
           ),
         },
         terminal: {
@@ -208,6 +229,9 @@ function addDefinedSettings(
     KEYS.autoFocusTerminalAfterSwitching,
     update?.general?.autoFocusTerminalAfterSwitching,
   );
+  add(KEYS.showLeftSidebar, update?.general?.showLeftSidebar);
+  add(KEYS.showRightSidebar, update?.general?.showRightSidebar);
+  add(KEYS.hoverToRevealSidebars, update?.general?.hoverToRevealSidebars);
   add(KEYS.terminalFontSize, update?.terminal?.fontSize);
   add(KEYS.terminalCursorStyle, update?.terminal?.cursorStyle);
   add(KEYS.terminalCursorBlink, update?.terminal?.cursorBlink);

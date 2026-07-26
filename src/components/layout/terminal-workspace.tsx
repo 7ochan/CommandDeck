@@ -21,6 +21,7 @@ import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-sw
 import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/command-palette';
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
 import { useKeybindings } from '@/features/keybindings/keybindings-provider';
+import { useSettings } from '@/features/settings/settings-provider';
 import type { CommandCompletedPayload, WorkspaceSummary } from '@/shared/types';
 
 import { DeveloperHub } from './developer-hub';
@@ -104,6 +105,20 @@ function ActiveWorkspaceLayout({
    * handle.
    */
   const terminalRefs = useRef(new Map<string, TerminalHandle>());
+
+  const { settings } = useSettings();
+  const { showLeftSidebar, showRightSidebar, hoverToRevealSidebars } =
+    settings.general;
+
+  const [isLeftHovered, setIsLeftHovered] = useState(false);
+  const [isRightHovered, setIsRightHovered] = useState(false);
+
+  const isLeftVisible =
+    showLeftSidebar || (hoverToRevealSidebars && isLeftHovered);
+  const isRightVisible =
+    showRightSidebar || (hoverToRevealSidebars && isRightHovered);
+  const isLeftOverlay = !showLeftSidebar && isLeftVisible;
+  const isRightOverlay = !showRightSidebar && isRightVisible;
 
   const [terminalConnectionStatus, setTerminalConnectionStatus] =
     useState<TerminalConnectionStatus>('connecting');
@@ -406,20 +421,43 @@ function ActiveWorkspaceLayout({
   ]);
 
   return (
-    <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
-      <WorkspaceSwitcher
-        workspaces={workspaces}
-        activeWorkspace={activeWorkspace}
-        connectionStatus={
-          CONNECTION_STATUS_PRESENTATION[terminalConnectionStatus]
-        }
-        onSelect={onSelectWorkspace}
-        onCreate={onCreateWorkspace}
-        onRename={onRenameWorkspace}
-        onDelete={handleDeleteWorkspace}
-      />
+    <div className="relative flex min-h-0 flex-1 gap-2.5 overflow-hidden">
+      {/* Left Edge Hover Trigger Zone */}
+      {!showLeftSidebar && hoverToRevealSidebars && !isLeftHovered && (
+        <div
+          className="absolute top-0 bottom-0 left-0 z-40 w-4 cursor-pointer"
+          onMouseEnter={() => setIsLeftHovered(true)}
+          title="Hover to show Workspaces"
+        />
+      )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2.5 lg:flex-row">
+      {/* Left Sidebar (Workspace Switcher) */}
+      {isLeftVisible && (
+        <div
+          className={
+            isLeftOverlay
+              ? 'absolute top-0 bottom-0 left-0 z-50 flex shadow-2xl transition-transform duration-200'
+              : 'flex shrink-0'
+          }
+          onMouseLeave={
+            isLeftOverlay ? () => setIsLeftHovered(false) : undefined
+          }
+        >
+          <WorkspaceSwitcher
+            workspaces={workspaces}
+            activeWorkspace={activeWorkspace}
+            connectionStatus={
+              CONNECTION_STATUS_PRESENTATION[terminalConnectionStatus]
+            }
+            onSelect={onSelectWorkspace}
+            onCreate={onCreateWorkspace}
+            onRename={onRenameWorkspace}
+            onDelete={handleDeleteWorkspace}
+          />
+        </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
         {/* Main Terminal Shell + Status Bar Container */}
         <div className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)]">
           {/*
@@ -487,27 +525,50 @@ function ActiveWorkspaceLayout({
           </div>
         </div>
 
-        <DeveloperHub
-          deckItems={deckItems}
-          isDeckLoading={isDeckLoading}
-          deckLoadError={deckLoadError}
-          historyEntries={entries}
-          selectedHistoryEntryId={selectedEntryId}
-          historyQuery={query}
-          isHistoryLoading={isLoading}
-          isHistorySearching={isSearching}
-          historyLoadError={loadError}
-          onHistorySearchTermChange={setSearchTerm}
-          onToggleHistoryStatus={toggleStatus}
-          onClearHistoryQuery={clearQuery}
-          onSelectHistoryEntry={selectEntry}
-          onClearHistorySelection={clearSelection}
-          onAddHistoryToDeck={handleAddToDeck}
-          onUpdateDeckItem={updateItem}
-          onRemoveDeckItem={handleRemoveFromDeck}
-          onRunCommand={runCommandAgain}
-        />
+        {/* Right Sidebar (Developer Hub) */}
+        {isRightVisible && (
+          <div
+            className={
+              isRightOverlay
+                ? 'absolute top-0 right-0 bottom-0 z-50 flex shadow-2xl transition-transform duration-200'
+                : 'flex shrink-0'
+            }
+            onMouseLeave={
+              isRightOverlay ? () => setIsRightHovered(false) : undefined
+            }
+          >
+            <DeveloperHub
+              deckItems={deckItems}
+              isDeckLoading={isDeckLoading}
+              deckLoadError={deckLoadError}
+              historyEntries={entries}
+              selectedHistoryEntryId={selectedEntryId}
+              historyQuery={query}
+              isHistoryLoading={isLoading}
+              isHistorySearching={isSearching}
+              historyLoadError={loadError}
+              onHistorySearchTermChange={setSearchTerm}
+              onToggleHistoryStatus={toggleStatus}
+              onClearHistoryQuery={clearQuery}
+              onSelectHistoryEntry={selectEntry}
+              onClearHistorySelection={clearSelection}
+              onAddHistoryToDeck={handleAddToDeck}
+              onUpdateDeckItem={updateItem}
+              onRemoveDeckItem={handleRemoveFromDeck}
+              onRunCommand={runCommandAgain}
+            />
+          </div>
+        )}
       </div>
+
+      {/* Right Edge Hover Trigger Zone */}
+      {!showRightSidebar && hoverToRevealSidebars && !isRightHovered && (
+        <div
+          className="absolute top-0 right-0 bottom-0 z-40 w-4 cursor-pointer"
+          onMouseEnter={() => setIsRightHovered(true)}
+          title="Hover to show Developer Hub"
+        />
+      )}
 
       <CommandDeckPaletteSource
         key={activeWorkspace.workspaceId}
