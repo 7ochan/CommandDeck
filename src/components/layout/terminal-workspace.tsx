@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { requestDeveloperHubTab } from '@/components/layout/developer-hub-navigation';
+import { Icon } from '@/components/ui/icon';
 import { CommandDeckPaletteSource } from '@/features/command-deck/components/command-deck-palette-source';
 import { useCommandDeck } from '@/features/command-deck/hooks/use-command-deck';
 import { useRegisterHistoryPaletteActions } from '@/features/command-history/command-palette';
@@ -301,7 +302,7 @@ function ActiveWorkspaceLayout({
   ]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+    <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
       <WorkspaceSwitcher
         workspaces={workspaces}
         activeWorkspace={activeWorkspace}
@@ -315,53 +316,71 @@ function ActiveWorkspaceLayout({
       />
 
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 lg:flex-row">
-        {/*
-         * Terminal stack: one <Terminal> per activated workspace.
-         *
-         * All terminals are kept mounted (never unmounted on switch) so their
-         * xterm.js buffer — scrollback, cursor, colors — is fully preserved.
-         * The inactive ones are hidden with `visibility: hidden` rather than
-         * `display: none` so xterm can still measure the container dimensions
-         * and the ResizeObserver keeps the PTY cols/rows in sync.
-         *
-         * The active workspace's terminal sits on top (z-10) and receives
-         * pointer events.  Inactive terminals are pointer-inert and
-         * aria-hidden so they are invisible to assistive technology.
-         */}
-        <div className="relative flex min-h-0 min-w-0 flex-1">
-          {[...activatedWorkspaceIds].map((workspaceId) => {
-            const isActive = workspaceId === activeWorkspace.workspaceId;
-            return (
-              <div
-                key={workspaceId}
-                className={
-                  isActive
-                    ? 'absolute inset-0 z-10 flex'
-                    : 'absolute inset-0 z-0 flex'
-                }
-                style={isActive ? undefined : { visibility: 'hidden' }}
-                aria-hidden={!isActive}
-              >
-                <Terminal
-                  ref={(handle) => {
-                    if (handle) {
-                      terminalRefs.current.set(workspaceId, handle);
-                    } else {
-                      terminalRefs.current.delete(workspaceId);
+        {/* Main Terminal Shell + Status Bar Container */}
+        <div className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)]">
+          {/*
+           * Terminal stack: one <Terminal> per activated workspace.
+           */}
+          <div className="relative flex min-h-0 min-w-0 flex-1">
+            {[...activatedWorkspaceIds].map((workspaceId) => {
+              const isActive = workspaceId === activeWorkspace.workspaceId;
+              return (
+                <div
+                  key={workspaceId}
+                  className={
+                    isActive
+                      ? 'absolute inset-0 z-10 flex p-2.5 sm:p-3.5'
+                      : 'absolute inset-0 z-0 flex p-2.5 sm:p-3.5'
+                  }
+                  style={isActive ? undefined : { visibility: 'hidden' }}
+                  aria-hidden={!isActive}
+                >
+                  <Terminal
+                    ref={(handle) => {
+                      if (handle) {
+                        terminalRefs.current.set(workspaceId, handle);
+                      } else {
+                        terminalRefs.current.delete(workspaceId);
+                      }
+                    }}
+                    workspaceId={workspaceId}
+                    active={isActive}
+                    onCommandCompleted={
+                      isActive ? handleCommandCompleted : undefined
                     }
-                  }}
-                  workspaceId={workspaceId}
-                  active={isActive}
-                  onCommandCompleted={
-                    isActive ? handleCommandCompleted : undefined
-                  }
-                  onConnectionStatusChange={
-                    isActive ? setTerminalConnectionStatus : undefined
-                  }
-                />
-              </div>
-            );
-          })}
+                    onConnectionStatusChange={
+                      isActive ? setTerminalConnectionStatus : undefined
+                    }
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom Status Bar matching user screenshot */}
+          <div className="shrink-0 border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--accent-strong)]">
+                <span className="size-1.5 rounded-full bg-[var(--accent)]" />
+                v22.0.0
+              </span>
+              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-primary)]">
+                <Icon name="workspace" size={12} />
+                ~/desktop/{activeWorkspace.name}
+              </span>
+              <span className="flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-muted)]">
+                <Icon name="branch" size={11} />
+                main
+              </span>
+              <span className="rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-0.5 text-[var(--text-subtle)]">
+                ± 0
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center justify-between font-mono text-[10px] text-[var(--text-subtle)]">
+              <span>Run commands</span>
+              <span>⌘ ↵ new /agent conversation</span>
+            </div>
+          </div>
         </div>
 
         <DeveloperHub

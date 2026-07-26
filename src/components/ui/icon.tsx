@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 export type IconName =
   | 'alert'
   | 'appearance'
+  | 'branch'
   | 'check'
   | 'chevron-down'
   | 'chevron-right'
@@ -11,6 +12,7 @@ export type IconName =
   | 'copy'
   | 'deck'
   | 'edit'
+  | 'filter'
   | 'history'
   | 'minus'
   | 'more'
@@ -72,6 +74,14 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
       <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
     </>
   ),
+  branch: (
+    <>
+      <line x1="6" y1="3" x2="6" y2="15" />
+      <circle cx="18" cy="6" r="3" />
+      <circle cx="6" cy="18" r="3" />
+      <path d="M18 9a9 9 0 0 1-9 9" />
+    </>
+  ),
   check: <path d="m5 12 4 4L19 6" />,
   'chevron-down': <path d="m6 9 6 6 6-6" />,
   'chevron-right': <path d="m9 18 6-6-6-6" />,
@@ -98,6 +108,14 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+    </>
+  ),
+  filter: (
+    <>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+      <circle cx="8" cy="6" r="2" />
+      <circle cx="16" cy="18" r="2" />
     </>
   ),
   history: (

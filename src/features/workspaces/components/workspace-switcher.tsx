@@ -32,6 +32,7 @@ export function WorkspaceSwitcher({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [isManaging, setIsManaging] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newName, setNewName] = useState('');
   const [draftNames, setDraftNames] = useState<Record<string, string>>({});
   const [busyWorkspaceId, setBusyWorkspaceId] = useState<string | null>(null);
@@ -52,6 +53,19 @@ export function WorkspaceSwitcher({
     }
   }, [isManaging]);
 
+  const handleQuickCreate = async () => {
+    const defaultName = `Session ${workspaces.length + 1}`;
+    setBusyWorkspaceId('new');
+    try {
+      const created = await onCreate(defaultName);
+      onSelect(created.workspaceId);
+    } catch {
+      setIsManaging(true);
+    } finally {
+      setBusyWorkspaceId(null);
+    }
+  };
+
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = newName.trim();
@@ -64,8 +78,9 @@ export function WorkspaceSwitcher({
     setError(null);
 
     try {
-      await onCreate(name);
+      const created = await onCreate(name);
       setNewName('');
+      onSelect(created.workspaceId);
     } catch (createError) {
       setError(errorMessage(createError, 'Unable to create Workspace.'));
     } finally {
@@ -115,74 +130,127 @@ export function WorkspaceSwitcher({
     }
   };
 
+  const filteredWorkspaces = workspaces.filter((ws) =>
+    ws.name.toLowerCase().includes(searchQuery.toLowerCase().trim()),
+  );
+
   return (
     <>
-      <section
-        className="cd-surface cd-surface--toolbar flex h-12 shrink-0 items-center justify-between gap-3 rounded-[12px] px-2.5 sm:px-3"
-        aria-label="Active Workspace"
+      <aside
+        className="cd-surface flex w-60 shrink-0 flex-col overflow-hidden rounded-[15px]"
+        aria-label="Workspace tabs navigation"
       >
-        <label className="flex min-w-0 items-center gap-2">
-          <span
-            className="cd-clay-tile hidden size-7 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] sm:flex"
-            aria-hidden="true"
-          >
-            <Icon name="workspace" size={14} />
-          </span>
-          <span className="min-w-0">
-            <span className="block font-mono text-[9px] leading-3 tracking-[0.1em] text-[var(--text-muted)] uppercase">
-              Workspace
+        {/* Sidebar Search + Filter Header */}
+        <div className="flex h-11 shrink-0 items-center justify-between gap-1.5 border-b border-[var(--border-soft)] px-2.5">
+          <div className="relative flex min-w-0 flex-1 items-center">
+            <span className="pointer-events-none absolute left-2 text-[var(--text-subtle)]">
+              <Icon name="search" size={13} />
             </span>
-            <select
-              value={activeWorkspace.workspaceId}
-              title={activeWorkspace.name}
-              className="block h-5 max-w-[40vw] cursor-pointer truncate border-0 bg-transparent p-0 pr-5 text-[12px] font-semibold text-[var(--text-primary)] outline-none sm:max-w-72"
-              onChange={(event) => onSelect(event.currentTarget.value)}
-            >
-              {workspaces.map((workspace) => (
-                <option
-                  key={workspace.workspaceId}
-                  value={workspace.workspaceId}
-                >
-                  {workspace.name}
-                </option>
-              ))}
-            </select>
-          </span>
-        </label>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          <span className="hidden font-mono text-[10px] text-[var(--text-muted)] md:inline">
-            {activeWorkspace.historyCount} history
-            <span className="mx-1.5 text-[var(--text-subtle)]">·</span>
-            {activeWorkspace.deckCount} deck
-          </span>
-          {connectionStatus && (
-            <span
-              className="ml-1 flex items-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] px-2 py-1 font-mono text-[10px] text-[var(--text-muted)]"
-              role="status"
-              aria-label={`Terminal ${connectionStatus.label}`}
-              aria-live="polite"
-            >
-              <span
-                className={`size-1.5 rounded-full ${connectionStatusDotClass(connectionStatus.tone)}`}
-                aria-hidden="true"
-              />
-              <span className="max-w-24 truncate" aria-hidden="true">
-                {connectionStatus.label}
-              </span>
-            </span>
-          )}
+            <input
+              type="text"
+              value={searchQuery}
+              placeholder="Search tabs…"
+              aria-label="Search tabs"
+              className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] py-1 pr-2 pl-7 text-[11px] text-[var(--text-primary)] placeholder-[var(--text-subtle)] outline-none transition-colors focus:border-[var(--accent-border)]"
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
           <button
             type="button"
-            className="cd-icon-button border-transparent text-[var(--text-muted)]"
-            aria-label="Manage Workspaces"
-            title="Manage Workspaces"
+            className="flex size-7 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            title="Filter / Manage Workspaces"
+            aria-label="Filter / Manage Workspaces"
             onClick={() => setIsManaging(true)}
           >
-            <Icon name="more" size={17} />
+            <Icon name="filter" size={14} />
+          </button>
+          <button
+            type="button"
+            className="flex size-7 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            title="New Workspace tab"
+            aria-label="New Workspace tab"
+            onClick={() => void handleQuickCreate()}
+          >
+            <Icon name="plus" size={14} />
           </button>
         </div>
-      </section>
+
+        {/* Workspace Tab Cards List */}
+        <div className="cd-scrollbar flex min-h-0 flex-1 flex-col space-y-1 overflow-y-auto p-2">
+          {filteredWorkspaces.map((workspace) => {
+            const isActive =
+              workspace.workspaceId === activeWorkspace.workspaceId;
+            return (
+              <button
+                key={workspace.workspaceId}
+                type="button"
+                onClick={() => onSelect(workspace.workspaceId)}
+                className={`group flex w-full items-center gap-2.5 rounded-[10px] border px-2.5 py-2 text-left transition-all ${
+                  isActive
+                    ? 'border-[#3a4450] bg-[#242b33] text-[var(--text-primary)] shadow-sm'
+                    : 'border-transparent text-[var(--text-secondary)] hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)]'
+                }`}
+              >
+                <div
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${
+                    isActive
+                      ? 'border-[var(--accent-border)] bg-[var(--surface-3)] text-[var(--accent-strong)]'
+                      : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] text-[var(--text-muted)]'
+                  }`}
+                >
+                  <Icon name="terminal" size={12} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate font-mono text-[12px] font-semibold leading-4 text-[var(--text-primary)]">
+                    {workspace.name}
+                  </span>
+                  <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-muted)]">
+                    <Icon name="branch" size={10} /> main
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+
+          {/* New Session Quick Item */}
+          <button
+            type="button"
+            onClick={() => void handleQuickCreate()}
+            className="group flex w-full items-center gap-2.5 rounded-[10px] border border-transparent px-2.5 py-2 text-left text-[var(--text-muted)] transition-all hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+          >
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--canvas-raised)] text-[var(--text-muted)]">
+              <Icon name="terminal" size={12} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block truncate font-mono text-[12px] font-medium leading-4 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
+                New session
+              </span>
+              <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-subtle)]">
+                <Icon name="branch" size={10} /> main
+              </span>
+            </div>
+          </button>
+        </div>
+
+        {/* Connection status indicator */}
+        {connectionStatus && (
+          <div className="flex shrink-0 items-center justify-between border-t border-[var(--border-soft)] px-3 py-2 text-[10px]">
+            <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+              <span
+                className={`size-1.5 rounded-full ${connectionStatusDotClass(connectionStatus.tone)}`}
+              />
+              {connectionStatus.label}
+            </span>
+            <button
+              type="button"
+              className="text-[var(--text-subtle)] hover:text-[var(--text-muted)]"
+              onClick={() => setIsManaging(true)}
+            >
+              Manage
+            </button>
+          </div>
+        )}
+      </aside>
 
       <dialog
         ref={dialogRef}
