@@ -332,12 +332,13 @@ export function WorkspaceSwitcher({
                       }
                       aria-label={`Rename ${workspace.name}`}
                       className="cd-input h-9 min-w-0 flex-1 px-2.5 text-[12px]"
-                      onChange={(event) =>
+                      onChange={(event) => {
+                        const nextValue = event.currentTarget.value;
                         setDraftNames((current) => ({
                           ...current,
-                          [workspace.workspaceId]: event.currentTarget.value,
-                        }))
-                      }
+                          [workspace.workspaceId]: nextValue,
+                        }));
+                      }}
                     />
                     <button
                       type="button"
