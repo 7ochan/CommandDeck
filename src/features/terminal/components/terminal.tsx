@@ -8,8 +8,10 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from 'react';
 
+import { Icon } from '@/components/ui/icon';
 import { parseTerminalServerMessage } from '@/shared/contracts';
 import type { CommandCompletedPayload } from '@/shared/types';
 import { useSettings } from '@/features/settings/settings-provider';
@@ -47,6 +49,72 @@ export type TerminalHandle = {
   clear: () => void;
 };
 
+export type CommandBlockData = {
+  id: string;
+  command: string;
+  output: string;
+  status: 'running' | 'completed' | 'failed';
+  exitCode?: number | null;
+  startedAt: number;
+};
+
+function stripAnsi(str: string): string {
+  return str.replace(
+    /[\u001b\u009b][\[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=>]/g,
+    '',
+  );
+}
+
+function CommandBlockCard({ block }: { block: CommandBlockData }) {
+  const cleanOutput = stripAnsi(block.output).trimEnd();
+
+  return (
+    <div className="cd-command-block flex flex-col overflow-hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-1)] shadow-sm transition-all">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3.5 py-2.5 font-mono text-[12px]">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="font-bold text-[var(--accent)] select-none">❯</span>
+          <span className="truncate font-semibold text-[var(--text-primary)]">
+            {block.command}
+          </span>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2 font-mono text-[10px]">
+          {block.status === 'running' && (
+            <span className="flex animate-pulse items-center gap-1.5 font-medium text-[var(--accent)]">
+              <span className="size-1.5 rounded-full bg-[var(--accent)]" />
+              Running…
+            </span>
+          )}
+          {block.status === 'completed' && (
+            <span className="flex items-center gap-1.5 font-medium text-[#3fb950]">
+              <span className="size-1.5 rounded-full bg-[#3fb950]" />
+              {block.exitCode === 0 || block.exitCode == null
+                ? 'Success'
+                : `Exit ${block.exitCode}`}
+            </span>
+          )}
+          {block.status === 'failed' && (
+            <span className="flex items-center gap-1.5 font-medium text-[#f85149]">
+              <span className="size-1.5 rounded-full bg-[#f85149]" />
+              Failed {block.exitCode != null ? `(${block.exitCode})` : ''}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {cleanOutput ? (
+        <pre className="cd-scrollbar max-h-[32rem] overflow-x-auto bg-[var(--terminal)] p-3.5 font-mono text-[12px] leading-relaxed break-words whitespace-pre-wrap text-[var(--text-secondary)]">
+          {cleanOutput}
+        </pre>
+      ) : block.status === 'running' ? (
+        <div className="px-3.5 py-3 font-mono text-[11px] text-[var(--text-subtle)] italic">
+          Running process…
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(TerminalView);
 
 function TerminalView(
@@ -60,6 +128,7 @@ function TerminalView(
 ) {
   const { settings, resolvedTheme } = useSettings();
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<XtermTerminal | null>(null);
   const terminalSettingsRef = useRef(settings.terminal);
   const resolvedThemeRef = useRef(resolvedTheme);
@@ -70,21 +139,41 @@ function TerminalView(
   const sessionIdRef = useRef<string | null>(null);
   const desiredWorkspaceIdRef = useRef(workspaceId);
   const assignedWorkspaceIdRef = useRef<string | null>(null);
+
+  const [commandBlocks, setCommandBlocks] = useState<CommandBlockData[]>([]);
+  const activeCommandIdRef = useRef<string | null>(null);
+  const isUserScrolledUpRef = useRef<boolean>(false);
+
   const pendingWorkspaceSelectionRef = useRef<{
     workspaceId: string;
     resolve: (selected: boolean) => void;
     timeoutId: number;
   } | null>(null);
-  // Populated by the initialize effect so that the `active` effect can trigger
-  // a fit + focus without being inside the same closure.
+
   const triggerFitAndFocusRef = useRef<
     ((shouldFocus?: boolean) => void) | null
   >(null);
+
   const reportConnectionStatus = useCallback(
     (status: TerminalConnectionStatus) =>
       onConnectionStatusChangeRef.current?.(status),
     [],
   );
+
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    isUserScrolledUpRef.current = distanceFromBottom > 35;
+  }, []);
+
+  useEffect(() => {
+    if (!isUserScrolledUpRef.current && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
+    }
+  }, [commandBlocks]);
 
   const selectWorkspace = useCallback(
     (targetWorkspaceId: string): Promise<boolean> => {
@@ -159,9 +248,9 @@ function TerminalView(
     },
     focus: () => {
       triggerFitAndFocusRef.current?.(true);
-      terminalRef.current?.focus();
     },
     clear: () => {
+      setCommandBlocks([]);
       terminalRef.current?.clear();
     },
   }));
@@ -204,9 +293,6 @@ function TerminalView(
     settings.terminal,
   ]);
 
-  // When this workspace's terminal becomes the visible one, snap to the
-  // correct dimensions and focus xterm. This handles the case where the
-  // window was resized while the terminal was CSS-hidden.
   useEffect(() => {
     if (active) {
       triggerFitAndFocusRef.current?.(autoFocusRef.current);
@@ -266,9 +352,7 @@ function TerminalView(
 
         try {
           fitAddon.fit();
-        } catch {
-          // A later ResizeObserver notification will retry after layout settles.
-        }
+        } catch {}
       };
 
       const scheduleFit = () => {
@@ -282,8 +366,6 @@ function TerminalView(
         });
       };
 
-      // Allow the `active`-prop effect to trigger a fit+focus from outside
-      // this closure without adding initialize as an effect dependency.
       triggerFitAndFocusRef.current = () => {
         fit();
       };
@@ -317,19 +399,13 @@ function TerminalView(
           if (sessionId && sessionId !== message.sessionId) {
             sectionPresentation.reset();
             terminal.reset();
+            setCommandBlocks([]);
           }
 
           sessionId = message.sessionId;
           sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
           reportConnectionStatus('connected');
-
-          if (
-            message.payload.bufferedOutput &&
-            message.payload.bufferedOutput.length > 0
-          ) {
-            terminal.write(message.payload.bufferedOutput);
-          }
 
           fit();
           sendTerminalResize(
@@ -348,16 +424,10 @@ function TerminalView(
             void selectWorkspace(desiredWorkspaceIdRef.current);
           }
 
-          if (autoFocusRef.current) terminal.focus();
           return;
         }
 
-        // Both terminal.started and terminal.workspace.selected are session-
-        // establishment messages. They must be processed before the sessionId
-        // guard because the client sessionId is null until one of them arrives.
         if (message.type === 'terminal.workspace.selected') {
-          // Existing PTY reattached: reset xterm buffer cleanly and write full
-          // output history (scrollback + active prompt).
           sectionPresentation.reset();
           terminal.reset();
 
@@ -365,10 +435,6 @@ function TerminalView(
           sessionIdRef.current = sessionId;
           assignedWorkspaceIdRef.current = message.payload.workspaceId;
           reportConnectionStatus('connected');
-
-          if (message.payload.bufferedOutput.length > 0) {
-            terminal.write(message.payload.bufferedOutput);
-          }
 
           fit();
           sendTerminalResize(
@@ -386,7 +452,6 @@ function TerminalView(
             pendingSelection.resolve(true);
           }
 
-          if (autoFocusRef.current) terminal.focus();
           return;
         }
 
@@ -394,19 +459,75 @@ function TerminalView(
           return;
         }
 
-        if (message.type === 'terminal.output') {
-          terminal.write(message.payload.data);
+        if (message.type === 'command.started') {
+          sectionPresentation.commandStarted(message.payload.commandId);
+          const commandText = message.payload.command || 'Command';
+          activeCommandIdRef.current = message.payload.commandId;
+
+          setCommandBlocks((prev) => [
+            ...prev,
+            {
+              id: message.payload.commandId,
+              command: commandText,
+              output: '',
+              status: 'running',
+              startedAt: Date.now(),
+            },
+          ]);
           return;
         }
 
-        if (message.type === 'command.started') {
-          sectionPresentation.commandStarted(message.payload.commandId);
+        if (message.type === 'terminal.output') {
+          terminal.write(message.payload.data);
+          const outputData = message.payload.data;
+          const activeId = activeCommandIdRef.current;
+
+          setCommandBlocks((prev) => {
+            if (prev.length === 0) {
+              return [
+                {
+                  id: 'init-' + Date.now(),
+                  command: 'Output',
+                  output: outputData,
+                  status: 'completed',
+                  startedAt: Date.now(),
+                },
+              ];
+            }
+
+            return prev.map((block) => {
+              if (
+                block.id === activeId ||
+                (!activeId && block === prev[prev.length - 1])
+              ) {
+                return { ...block, output: block.output + outputData };
+              }
+              return block;
+            });
+          });
           return;
         }
 
         if (message.type === 'command.completed') {
           sectionPresentation.commandCompleted(message.payload.commandId);
           onCommandCompletedRef.current?.(message.payload);
+
+          const { commandId, exitCode } = message.payload;
+          activeCommandIdRef.current = null;
+
+          setCommandBlocks((prev) =>
+            prev.map((block) => {
+              if (block.id === commandId) {
+                return {
+                  ...block,
+                  status:
+                    exitCode != null && exitCode !== 0 ? 'failed' : 'completed',
+                  exitCode,
+                };
+              }
+              return block;
+            }),
+          );
           return;
         }
 
@@ -487,14 +608,33 @@ function TerminalView(
 
   return (
     <div
-      className="relative flex min-h-0 min-w-0 flex-1 flex-col justify-end overflow-hidden"
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[var(--terminal)]"
       aria-label="Terminal"
     >
       <div
         ref={containerRef}
-        className="commanddeck-terminal flex min-h-0 w-full min-w-0 flex-1 flex-col justify-end"
-        aria-label="Interactive local terminal"
+        className="commanddeck-terminal hidden h-0 w-0 overflow-hidden"
+        aria-hidden="true"
       />
+
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="cd-scrollbar flex min-h-0 flex-1 flex-col justify-end overflow-y-auto p-4 sm:p-5"
+      >
+        <div className="mt-auto flex flex-col gap-3.5">
+          {commandBlocks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center font-mono text-[12px] text-[var(--text-subtle)]">
+              <Icon name="terminal" size={24} className="mb-2.5 opacity-40" />
+              <p>Terminal session active. Enter a command below.</p>
+            </div>
+          ) : (
+            commandBlocks.map((block) => (
+              <CommandBlockCard key={block.id} block={block} />
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 }
