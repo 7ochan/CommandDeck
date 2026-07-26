@@ -484,8 +484,10 @@ button.cd-clay-tile:active:not(:disabled) {
   scrollbar-width: thin;
 }
 
-.commanddeck-terminal {
-  background: var(--terminal);
+.commanddeck-terminal,
+.commanddeck-terminal .xterm,
+.commanddeck-terminal .xterm-viewport {
+  background-color: var(--terminal) !important;
 }
 
 .commanddeck-terminal .xterm {
@@ -503,8 +505,14 @@ button.cd-clay-tile:active:not(:disabled) {
   image-rendering: auto;
 }
 
+.commanddeck-terminal .xterm-decoration-container,
+.commanddeck-terminal .xterm-decoration,
 .commanddeck-terminal .xterm-decoration.commanddeck-command-section-separator {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
 }
 
 @keyframes cd-dialog-in {
@@ -533,11 +541,5 @@ button.cd-clay-tile:active:not(:disabled) {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .commanddeck-terminal
-    .xterm-decoration.commanddeck-command-section-separator {
-    opacity: 1;
-    animation: none;
   }
 }
