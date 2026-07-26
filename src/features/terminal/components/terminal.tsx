@@ -493,16 +493,14 @@ function TerminalView(
 
   return (
     <section
-      className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)]"
+      className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)] p-2.5 sm:p-3.5"
       aria-label="Terminal"
     >
-      <div className="min-h-0 flex-1 p-2.5 sm:p-3.5">
-        <div
-          ref={containerRef}
-          className="commanddeck-terminal h-full min-h-0 w-full min-w-0"
-          aria-label="Interactive local terminal"
-        />
-      </div>
+      <div
+        ref={containerRef}
+        className="commanddeck-terminal h-full min-h-0 w-full min-w-0 flex-1"
+        aria-label="Interactive local terminal"
+      />
     </section>
   );
 }
