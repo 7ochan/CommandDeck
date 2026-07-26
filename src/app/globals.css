@@ -547,3 +547,10 @@ button.cd-clay-tile:active:not(:disabled) {
     transition-duration: 0.01ms !important;
   }
 }
+
+.commanddeck-terminal .xterm-cursor-layer,
+.commanddeck-terminal .xterm-cursor {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}

@@ -18,7 +18,6 @@ import {
   createTerminalWebSocket,
   closeTerminalWorkspace,
   executeTerminalCommand,
-  sendTerminalInput,
   sendTerminalResize,
   selectTerminalWorkspace,
 } from '../terminal-client';
@@ -226,7 +225,6 @@ function TerminalView(
     let socket: WebSocket | null = null;
     let terminal: XtermTerminal | null = null;
     let commandSections: TerminalCommandSections | null = null;
-    let inputSubscription: IDisposable | null = null;
     let resizeSubscription: IDisposable | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let resizeFrame: number | null = null;
@@ -286,21 +284,9 @@ function TerminalView(
 
       // Allow the `active`-prop effect to trigger a fit+focus from outside
       // this closure without adding initialize as an effect dependency.
-      triggerFitAndFocusRef.current = (shouldFocus = true) => {
+      triggerFitAndFocusRef.current = () => {
         fit();
-        if (shouldFocus) terminal?.focus();
       };
-
-      inputSubscription = terminal.onData((data) => {
-        if (
-          socket &&
-          sessionId &&
-          pendingWorkspaceSelectionRef.current === null &&
-          assignedWorkspaceIdRef.current === desiredWorkspaceIdRef.current
-        ) {
-          sendTerminalInput(socket, sessionId, data);
-        }
-      });
 
       resizeSubscription = terminal.onResize(({ cols, rows }) => {
         if (socket && sessionId) {
@@ -484,7 +470,6 @@ function TerminalView(
         socketRef.current = null;
       }
 
-      inputSubscription?.dispose();
       resizeSubscription?.dispose();
       resizeObserver?.disconnect();
 

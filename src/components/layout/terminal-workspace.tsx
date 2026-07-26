@@ -539,16 +539,13 @@ function ActiveWorkspaceLayout({
             })}
           </div>
 
-          {/* Warp-style Bottom Status & Interactive Typing Bar Area */}
+          {/* Warp-Style Bottom Context & Exclusive Typing Panel */}
           <div
-            className="shrink-0 cursor-text border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-3.5 py-2.5"
+            className="shrink-0 cursor-text border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] p-3"
             onClick={() => warpInputRef.current?.focus()}
           >
+            {/* Top Row: Context Badges */}
             <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 font-semibold text-[var(--accent)]">
-                <span className="size-1.5 rounded-full bg-[var(--text-muted)]" />
-                v26.5.0
-              </span>
               <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[var(--text-primary)]">
                 <Icon
                   name="workspace"
@@ -565,18 +562,21 @@ function ActiveWorkspaceLayout({
                 />
                 main
               </span>
+              <span className="flex items-center gap-1.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[var(--text-muted)]">
+                v22.0.0
+              </span>
               <span className="rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-2)] px-2 py-1 text-[var(--text-subtle)]">
                 ± 0
               </span>
             </div>
 
-            {/* Interactive Warp Typing Input Bar matching user screenshot */}
+            {/* Middle Row: Exclusive Interactive Warp Typing Bar */}
             <form
               onSubmit={handleInputSubmit}
-              className="mt-2.5 flex items-center gap-2"
+              className="mt-2.5 flex items-center gap-2.5 rounded-[10px] border border-[var(--border-soft)] bg-[var(--surface-1)] px-3 py-2 transition-colors focus-within:border-[var(--border-strong)]"
             >
-              <span className="font-mono text-[14px] leading-none font-bold text-[#79c0ff] select-none">
-                .
+              <span className="font-mono text-[13px] font-bold text-[var(--text-primary)] select-none">
+                ❯
               </span>
               <input
                 ref={warpInputRef}
@@ -584,16 +584,34 @@ function ActiveWorkspaceLayout({
                 value={commandInputValue}
                 onChange={(e) => setCommandInputValue(e.target.value)}
                 onKeyDown={handleInputKeyDown}
-                placeholder="Typeing shd be here"
+                placeholder="Enter shell command or script…"
                 className="w-full bg-transparent font-mono text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-subtle)]"
                 autoComplete="off"
                 spellCheck={false}
+                autoFocus
               />
+              {commandInputValue ? (
+                <button
+                  type="submit"
+                  className="cd-button cd-button--primary h-6 min-h-0 shrink-0 px-2 font-mono text-[10px]"
+                >
+                  Run ↵
+                </button>
+              ) : (
+                <span className="cd-kbd shrink-0 text-[9px]">↵ Run</span>
+              )}
             </form>
 
-            <div className="mt-1 flex items-center justify-between font-mono text-[10px] text-[var(--text-subtle)]">
-              <span>Press Enter ↵ to run</span>
-              <span>⌘ ↵ new /agent conversation</span>
+            {/* Bottom Row: Helpers & Shortcut Badges */}
+            <div className="mt-2 flex items-center justify-between font-mono text-[10px] text-[var(--text-subtle)]">
+              <span className="flex items-center gap-2">
+                <span>↑/↓ History</span>
+                <span>·</span>
+                <span>Esc Clear</span>
+              </span>
+              <span className="flex items-center gap-2">
+                <span>⌘K Commands</span>
+              </span>
             </div>
           </div>
         </div>
