@@ -152,7 +152,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         <button
           type="button"
           className="cd-button h-9 px-2.5 sm:px-3"
-          aria-label="Open Command Palette, Command K or Control K"
+          aria-label={`Open Command Palette (${shortcutLabel})`}
           title="Open Command Palette"
           onClick={openPalette}
         >
