@@ -128,11 +128,9 @@ export function DeveloperHub({
     ],
   );
 
-  useEffect(() => {
-    if (!settings.developerHub.showHistoryTab && activeTab === 'history') {
-      setActiveTab('deck');
-    }
-  }, [settings.developerHub.showHistoryTab, activeTab]);
+  if (!settings.developerHub.showHistoryTab && activeTab === 'history') {
+    setActiveTab('deck');
+  }
 
   useEffect(() => {
     let subscribed = true;
@@ -184,7 +182,8 @@ export function DeveloperHub({
           aria-label="Developer Hub tools"
         >
           {DEVELOPER_HUB_TABS.filter(
-            (tab) => tab.id !== 'history' || settings.developerHub.showHistoryTab,
+            (tab) =>
+              tab.id !== 'history' || settings.developerHub.showHistoryTab,
           ).map((tab) => {
             const isActive = activeTab === tab.id;
 

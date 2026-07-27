@@ -16,6 +16,7 @@ import {
   clearPendingTimelineExecution,
   loadPendingTimelineExecution,
 } from '@/features/timeline/pending-execution';
+import { RenameWorkspaceDialog } from '@/features/workspaces/components/rename-workspace-dialog';
 import { WorkspaceSwitcher } from '@/features/workspaces/components/workspace-switcher';
 import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/command-palette';
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
@@ -121,6 +122,9 @@ function ActiveWorkspaceLayout({
 
   const [terminalConnectionStatus, setTerminalConnectionStatus] =
     useState<TerminalConnectionStatus>('connecting');
+
+  const [renamingWorkspace, setRenamingWorkspace] =
+    useState<WorkspaceSummary | null>(null);
 
   const {
     entries,
@@ -281,10 +285,7 @@ function ActiveWorkspaceLayout({
     });
 
     const unbindRenameWorkspace = setActionHandler('workspace.rename', () => {
-      const name = window.prompt('Rename Workspace:', activeWorkspace.name);
-      if (name?.trim() && name.trim() !== activeWorkspace.name) {
-        void onRenameWorkspace(activeWorkspace.workspaceId, name.trim());
-      }
+      setRenamingWorkspace(activeWorkspace);
     });
 
     const unbindNextWorkspace = setActionHandler('workspace.next', () => {
@@ -369,8 +370,7 @@ function ActiveWorkspaceLayout({
     };
   }, [
     activeTerminal,
-    activeWorkspace.name,
-    activeWorkspace.workspaceId,
+    activeWorkspace,
     handleDeleteWorkspace,
     handleQuickCreate,
     onRenameWorkspace,
@@ -565,6 +565,13 @@ function ActiveWorkspaceLayout({
         key={activeWorkspace.workspaceId}
         items={deckItems}
         onRun={runCommandAgain}
+      />
+
+      <RenameWorkspaceDialog
+        workspace={renamingWorkspace}
+        isOpen={Boolean(renamingWorkspace)}
+        onRename={onRenameWorkspace}
+        onClose={() => setRenamingWorkspace(null)}
       />
     </div>
   );

@@ -79,11 +79,7 @@ export function AddDeckItemDialog({
     setError(null);
 
     try {
-      await onSave(
-        displayName.trim(),
-        command,
-        description.trim() || null,
-      );
+      await onSave(displayName.trim(), command, description.trim() || null);
       onCancel();
     } catch (saveError) {
       setError(
@@ -195,16 +191,17 @@ export function AddDeckItemDialog({
               onChange={(event) => setCommand(event.currentTarget.value)}
             />
 
-            {parsedTemplate.isValid && parsedTemplate.placeholders.length > 0 && (
-              <div className="mt-2.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-2)] p-2.5">
-                <p className="text-[10px] font-medium text-[var(--text-subtle)]">
-                  Template preview:
-                </p>
-                <div className="mt-1 font-mono text-[11px] text-[var(--text-primary)]">
-                  <CommandTemplateHighlight parsed={parsedTemplate} />
+            {parsedTemplate.isValid &&
+              parsedTemplate.placeholders.length > 0 && (
+                <div className="mt-2.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-2)] p-2.5">
+                  <p className="text-[10px] font-medium text-[var(--text-subtle)]">
+                    Template preview:
+                  </p>
+                  <div className="mt-1 font-mono text-[11px] text-[var(--text-primary)]">
+                    <CommandTemplateHighlight parsed={parsedTemplate} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
 
           <div>

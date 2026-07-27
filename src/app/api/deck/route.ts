@@ -1,7 +1,4 @@
-import type {
-  AddCommandDeckItemRequest,
-  CommandDeckResponse,
-} from '@/shared/contracts';
+import type { CommandDeckResponse } from '@/shared/contracts';
 import {
   addCommandDeckItemSchema,
   commandDeckItemSchema,

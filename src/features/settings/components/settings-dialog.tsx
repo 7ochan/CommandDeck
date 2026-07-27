@@ -594,8 +594,7 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
     left.appearance.theme === right.appearance.theme &&
     left.developerHub.rememberLastSelectedTab ===
       right.developerHub.rememberLastSelectedTab &&
-    left.developerHub.showHistoryTab ===
-      right.developerHub.showHistoryTab &&
+    left.developerHub.showHistoryTab === right.developerHub.showHistoryTab &&
     JSON.stringify(left.keybindings ?? {}) ===
       JSON.stringify(right.keybindings ?? {})
   );
