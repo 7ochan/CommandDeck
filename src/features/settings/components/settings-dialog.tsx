@@ -577,7 +577,10 @@ function ToggleSetting({
         checked={checked}
         onChange={(event) => onChange(event.currentTarget.checked)}
       />
-      <span className="relative h-5 w-9 shrink-0 rounded-full border border-[var(--border-strong)] bg-[var(--surface-3)] shadow-[var(--shadow-pressed)] transition-colors peer-checked:border-[var(--accent-border)] peer-checked:bg-[var(--accent-soft)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--accent)] after:absolute after:top-0.5 after:left-0.5 after:size-3.5 after:rounded-full after:bg-[var(--text-muted)] after:shadow-sm after:transition-transform peer-checked:after:translate-x-4 peer-checked:after:bg-[var(--accent)]" />
+      <span
+        aria-hidden="true"
+        className="relative h-5.5 w-10 shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-3)] transition-all duration-200 peer-checked:border-[var(--accent-strong)] peer-checked:bg-[var(--accent)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--accent)] after:absolute after:top-[2px] after:left-[2px] after:size-4.5 after:rounded-full after:bg-[#94a3b8] after:shadow-md after:transition-all after:duration-200 peer-checked:after:translate-x-[18px] peer-checked:after:bg-white"
+      />
     </label>
   );
 }
