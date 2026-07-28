@@ -348,7 +348,7 @@ export function WorkspaceSwitcher({
                   <Icon name="terminal" size={11} />
                 </div>
 
-                <div className="min-w-0 flex-1 pr-6">
+                <div className="min-w-0 flex-1 pr-10">
                   <div className="flex items-center gap-1">
                     <span className="block truncate font-mono text-[11px] leading-4 font-semibold text-[var(--text-primary)]">
                       {workspace.name}
@@ -367,9 +367,9 @@ export function WorkspaceSwitcher({
                   </span>
                 </div>
 
-                {/* Top-Right Floating Hover Action Pill */}
+                {/* Top-Right Corner Actions (No Enclosing Box) */}
                 <div
-                  className={`absolute top-1 right-1 z-10 flex items-center gap-0.5 rounded-sm border border-[var(--border-soft)] bg-[var(--surface-3)] p-0.5 shadow-sm transition-all duration-150 ${
+                  className={`absolute top-1 right-1 z-10 flex items-center gap-0.5 transition-opacity duration-150 ${
                     isPinned
                       ? 'opacity-100'
                       : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
@@ -379,10 +379,10 @@ export function WorkspaceSwitcher({
                   <button
                     type="button"
                     onClick={(e) => togglePin(workspace.workspaceId, e)}
-                    className={`flex size-4.5 items-center justify-center rounded-xs transition-colors ${
+                    className={`flex size-4.5 items-center justify-center transition-colors ${
                       isPinned
-                        ? 'text-[var(--accent)] hover:bg-[var(--surface-2)]'
-                        : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
+                        ? 'text-[var(--accent)]'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                     }`}
                     title={isPinned ? 'Unpin tab' : 'Pin tab'}
                     aria-label={isPinned ? 'Unpin tab' : 'Pin tab'}
@@ -397,7 +397,7 @@ export function WorkspaceSwitcher({
                       e.stopPropagation();
                       void remove(workspace);
                     }}
-                    className="flex size-4.5 items-center justify-center rounded-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+                    className="flex size-4.5 items-center justify-center text-[var(--text-muted)] transition-colors hover:text-[var(--danger)]"
                     title="Close tab"
                     aria-label="Close tab"
                   >
