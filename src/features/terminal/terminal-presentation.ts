@@ -46,6 +46,69 @@ export const DIR_COLOR_PALETTES: Record<
   },
 };
 
+export const ACCENT_COLOR_MAP: Record<
+  DirColor,
+  {
+    accent: string;
+    accentSoft: string;
+    accentBorder: string;
+    accentStrong: string;
+  }
+> = {
+  cyan: {
+    accent: '#38bdf8',
+    accentSoft: 'rgba(56, 189, 248, 0.14)',
+    accentBorder: 'rgba(56, 189, 248, 0.38)',
+    accentStrong: '#7dd3fc',
+  },
+  emerald: {
+    accent: '#34d399',
+    accentSoft: 'rgba(52, 211, 153, 0.14)',
+    accentBorder: 'rgba(52, 211, 153, 0.38)',
+    accentStrong: '#6ee7b7',
+  },
+  purple: {
+    accent: '#c084fc',
+    accentSoft: 'rgba(192, 132, 252, 0.14)',
+    accentBorder: 'rgba(192, 132, 252, 0.38)',
+    accentStrong: '#e879f9',
+  },
+  amber: {
+    accent: '#fbbf24',
+    accentSoft: 'rgba(251, 191, 36, 0.14)',
+    accentBorder: 'rgba(251, 191, 36, 0.38)',
+    accentStrong: '#fde047',
+  },
+  coral: {
+    accent: '#f87171',
+    accentSoft: 'rgba(248, 113, 113, 0.14)',
+    accentBorder: 'rgba(248, 113, 113, 0.38)',
+    accentStrong: '#fb7185',
+  },
+  blue: {
+    accent: '#60a5fa',
+    accentSoft: 'rgba(96, 165, 250, 0.14)',
+    accentBorder: 'rgba(96, 165, 250, 0.38)',
+    accentStrong: '#93c5fd',
+  },
+  magenta: {
+    accent: '#f0abfc',
+    accentSoft: 'rgba(240, 171, 252, 0.14)',
+    accentBorder: 'rgba(240, 171, 252, 0.38)',
+    accentStrong: '#f472b6',
+  },
+};
+
+export function applyAccentTheme(dirColor: DirColor) {
+  if (typeof document === 'undefined') return;
+  const palette = ACCENT_COLOR_MAP[dirColor] || ACCENT_COLOR_MAP.emerald;
+  const root = document.documentElement;
+  root.style.setProperty('--accent', palette.accent);
+  root.style.setProperty('--accent-soft', palette.accentSoft);
+  root.style.setProperty('--accent-border', palette.accentBorder);
+  root.style.setProperty('--accent-strong', palette.accentStrong);
+}
+
 const TERMINAL_THEMES = {
   dark: {
     background: '#000000',

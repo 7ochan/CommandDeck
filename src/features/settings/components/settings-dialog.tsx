@@ -13,7 +13,10 @@ import type {
   DirColor,
   TerminalCursorStyle,
 } from '@/shared/types';
-import { DIR_COLOR_PALETTES } from '@/features/terminal/terminal-presentation';
+import {
+  DIR_COLOR_PALETTES,
+  applyAccentTheme,
+} from '@/features/terminal/terminal-presentation';
 import { DEFAULT_APP_SETTINGS } from '@/shared/types';
 
 const SECTIONS = [
@@ -97,6 +100,17 @@ export function SettingsDialog({
     }
   }, [isOpen, settings]);
 
+  useEffect(() => {
+    if (isOpen) {
+      applyAccentTheme(draftSettings.terminal.dirColor);
+    }
+  }, [isOpen, draftSettings.terminal.dirColor]);
+
+  const handleClose = () => {
+    applyAccentTheme(settings.terminal.dirColor);
+    onClose();
+  };
+
   const updateDraft = (update: AppSettingsUpdate) => {
     setDraftSettings((current) => mergeAppSettings(current, update));
   };
@@ -115,9 +129,9 @@ export function SettingsDialog({
       ref={dialogRef}
       className="cd-dialog max-h-[calc(100dvh-2rem)] w-[min(52rem,calc(100vw-2rem))] overflow-clip rounded-lg p-0"
       aria-labelledby={titleId}
-      onCancel={onClose}
+      onCancel={handleClose}
       onClose={() => {
-        if (isOpen) onClose();
+        if (isOpen) handleClose();
       }}
       onScroll={(event) => {
         event.currentTarget.scrollTop = 0;
@@ -579,7 +593,7 @@ function ToggleSetting({
       />
       <span
         aria-hidden="true"
-        className="relative h-5 w-9 shrink-0 rounded-full border border-[#374151] bg-[#1f2937] transition-colors duration-200 peer-checked:border-[#10b981] peer-checked:bg-[#10b981] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#10b981] after:absolute after:top-[2px] after:left-[2px] after:size-4 after:rounded-full after:bg-[#9ca3af] after:shadow-sm after:transition-transform after:duration-200 peer-checked:after:translate-x-4 peer-checked:after:bg-white"
+        className="relative h-5 w-9 shrink-0 rounded-full border border-[#374151] bg-[#1f2937] transition-colors duration-200 peer-checked:border-[var(--accent)] peer-checked:bg-[var(--accent)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--accent)] after:absolute after:top-[2px] after:left-[2px] after:size-4 after:rounded-full after:bg-[#9ca3af] after:shadow-sm after:transition-transform after:duration-200 peer-checked:after:translate-x-4 peer-checked:after:bg-white"
       />
     </label>
   );

@@ -26,12 +26,6 @@ const STATUS_STYLES: Record<CommandHistoryStatus, string> = {
     'aria-pressed:border-[rgb(232_185_106_/_30%)] aria-pressed:bg-[var(--warning-soft)] aria-pressed:text-[var(--warning)]',
 };
 
-const SHORT_STATUS_LABELS: Record<CommandHistoryStatus, string> = {
-  success: 'Success',
-  failed: 'Failed',
-  interrupted: 'Cancel',
-};
-
 export const HistorySearchControls = memo(function HistorySearchControls({
   query,
   isSearching,

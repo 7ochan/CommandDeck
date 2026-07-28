@@ -23,6 +23,7 @@ import {
 import { KeybindingsProvider } from '@/features/keybindings/keybindings-provider';
 import { loadSettings, saveSettings } from './api';
 import { SettingsDialog } from './components/settings-dialog';
+import { applyAccentTheme } from '@/features/terminal/terminal-presentation';
 import {
   mergeAppSettings,
   resolveApplicationTheme,
@@ -92,7 +93,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedTheme;
     document.documentElement.style.colorScheme = resolvedTheme;
-  }, [resolvedTheme]);
+    applyAccentTheme(settings.terminal.dirColor);
+  }, [resolvedTheme, settings.terminal.dirColor]);
 
   const queueSave = useCallback(
     (
