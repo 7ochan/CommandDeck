@@ -317,7 +317,7 @@ export function WorkspaceSwitcher({
                   setDragOverWorkspaceId(null);
                 }}
                 onClick={() => onSelect(workspace.workspaceId)}
-                className={`group relative flex w-full cursor-grab items-center gap-2 rounded-[10px] border px-2 py-2 text-left transition-all active:cursor-grabbing ${
+                className={`group relative flex w-full cursor-grab items-center gap-2 rounded-[10px] border px-2.5 py-2 text-left transition-all active:cursor-grabbing ${
                   isDragging ? 'opacity-40' : ''
                 } ${
                   isDragOver
@@ -344,32 +344,46 @@ export function WorkspaceSwitcher({
                   <Icon name="terminal" size={12} />
                 </div>
 
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 pr-7">
                   <div className="flex items-center gap-1.5">
                     <span className="block truncate font-mono text-[12px] leading-4 font-semibold text-[var(--text-primary)]">
                       {workspace.name}
                     </span>
+                    {isPinned && (
+                      <span
+                        className="text-[var(--accent)] group-hover:hidden"
+                        title="Pinned tab"
+                      >
+                        <Icon name="pin" size={10} />
+                      </span>
+                    )}
                   </div>
                   <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-muted)]">
                     <Icon name="branch" size={10} /> main
                   </span>
                 </div>
 
-                {/* Hover / Status Actions */}
-                <div className="flex shrink-0 items-center gap-0.5">
+                {/* Top-Right Floating Hover Action Pill */}
+                <div
+                  className={`absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-3)] p-0.5 shadow-md transition-all duration-150 ${
+                    isPinned
+                      ? 'opacity-100'
+                      : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
+                  }`}
+                >
                   {/* Pin action button */}
                   <button
                     type="button"
                     onClick={(e) => togglePin(workspace.workspaceId, e)}
-                    className={`flex size-6 items-center justify-center rounded transition-colors ${
+                    className={`flex size-5 items-center justify-center rounded transition-colors ${
                       isPinned
-                        ? 'text-[var(--accent)] opacity-100 hover:bg-[var(--surface-3)]'
-                        : 'text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
+                        ? 'text-[var(--accent)] hover:bg-[var(--surface-2)]'
+                        : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
                     }`}
                     title={isPinned ? 'Unpin tab' : 'Pin tab'}
                     aria-label={isPinned ? 'Unpin tab' : 'Pin tab'}
                   >
-                    <Icon name="pin" size={12} />
+                    <Icon name="pin" size={11} />
                   </button>
 
                   {/* Close tab button */}
@@ -379,11 +393,11 @@ export function WorkspaceSwitcher({
                       e.stopPropagation();
                       void remove(workspace);
                     }}
-                    className="flex size-6 items-center justify-center rounded text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--surface-3)] hover:text-[var(--danger)]"
+                    className="flex size-5 items-center justify-center rounded text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
                     title="Close tab"
                     aria-label="Close tab"
                   >
-                    <Icon name="x" size={12} />
+                    <Icon name="x" size={11} />
                   </button>
                 </div>
               </div>
