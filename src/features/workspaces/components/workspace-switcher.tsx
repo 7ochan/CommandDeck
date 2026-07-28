@@ -367,27 +367,27 @@ export function WorkspaceSwitcher({
                   </span>
                 </div>
 
-                {/* Floating Top-Right Corner Action Pill (Overlapping corner edge matching reference image) */}
+                {/* Floating Top-Right Corner Action Pill (Matching official reference layout) */}
                 <div
-                  className={`absolute -top-1.5 -right-1.5 z-10 flex items-center gap-1 rounded-md border border-[var(--border-soft)] bg-[var(--surface-3)] px-1.5 py-0.5 shadow-md transition-all duration-150 ${
+                  className={`absolute -top-1.5 -right-1.5 z-10 flex items-center gap-0.5 rounded-sm border border-[var(--border-soft)] bg-[var(--surface-3)] p-0.5 shadow-xs transition-all duration-150 ${
                     isPinned
                       ? 'opacity-100'
                       : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
                   }`}
                 >
-                  {/* Pin action button */}
+                  {/* Pin / Tab menu action button */}
                   <button
                     type="button"
                     onClick={(e) => togglePin(workspace.workspaceId, e)}
-                    className={`flex size-4 items-center justify-center rounded-xs transition-colors ${
+                    className={`rounded-2xs flex size-4 items-center justify-center transition-colors ${
                       isPinned
-                        ? 'text-[var(--accent)]'
-                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                        ? 'text-[var(--accent)] hover:bg-[var(--surface-2)]'
+                        : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
                     }`}
                     title={isPinned ? 'Unpin tab' : 'Pin tab'}
                     aria-label={isPinned ? 'Unpin tab' : 'Pin tab'}
                   >
-                    <Icon name="pin" size={10} />
+                    <Icon name="more-vertical" size={11} />
                   </button>
 
                   {/* Close tab button */}
@@ -397,11 +397,11 @@ export function WorkspaceSwitcher({
                       e.stopPropagation();
                       void remove(workspace);
                     }}
-                    className="flex size-4 items-center justify-center rounded-xs text-[var(--text-muted)] transition-colors hover:text-[var(--danger)]"
+                    className="rounded-2xs flex size-4 items-center justify-center text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
                     title="Close tab"
                     aria-label="Close tab"
                   >
-                    <Icon name="x" size={10} />
+                    <Icon name="x" size={11} />
                   </button>
                 </div>
               </div>
