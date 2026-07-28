@@ -6,6 +6,7 @@ import {
   DEFAULT_APP_SETTINGS,
   DEFAULT_APP_SETTINGS_STATE,
   DEVELOPER_HUB_TAB_IDS,
+  DIR_COLORS,
   TERMINAL_FONT_SIZE_RANGE,
   TERMINAL_CURSOR_STYLES,
   TERMINAL_SCROLLBACK_RANGE,
@@ -29,6 +30,7 @@ const KEYS = {
   terminalCursorStyle: 'terminal.cursorStyle',
   terminalCursorBlink: 'terminal.cursorBlink',
   terminalScrollbackSize: 'terminal.scrollbackSize',
+  dirColor: 'terminal.dirColor',
   theme: 'appearance.theme',
   rememberLastSelectedTab: 'developerHub.rememberLastSelectedTab',
   showHistoryTab: 'developerHub.showHistoryTab',
@@ -114,6 +116,12 @@ export class SettingsService {
             terminalScrollbackSizeSchema,
             DEFAULT_APP_SETTINGS.terminal.scrollbackSize,
           ),
+          dirColor: read(
+            values,
+            KEYS.dirColor,
+            dirColorSchema,
+            DEFAULT_APP_SETTINGS.terminal.dirColor,
+          ),
         },
         appearance: {
           theme: read(
@@ -189,6 +197,7 @@ const nullableWorkspaceIdSchema = z.string().min(1).max(200).nullable();
 const applicationThemeSchema = z.enum(APPLICATION_THEMES);
 const developerHubTabIdSchema = z.enum(DEVELOPER_HUB_TAB_IDS);
 const deckScopeSchema = z.enum(DECK_SCOPES);
+const dirColorSchema = z.enum(DIR_COLORS);
 const terminalCursorStyleSchema = z.enum(TERMINAL_CURSOR_STYLES);
 const terminalFontSizeSchema = z
   .number()
@@ -252,6 +261,7 @@ function addDefinedSettings(
   add(KEYS.terminalCursorStyle, update?.terminal?.cursorStyle);
   add(KEYS.terminalCursorBlink, update?.terminal?.cursorBlink);
   add(KEYS.terminalScrollbackSize, update?.terminal?.scrollbackSize);
+  add(KEYS.dirColor, update?.terminal?.dirColor);
   add(KEYS.theme, update?.appearance?.theme);
   add(
     KEYS.rememberLastSelectedTab,

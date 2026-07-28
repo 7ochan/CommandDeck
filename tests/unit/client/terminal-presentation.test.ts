@@ -23,6 +23,7 @@ describe('terminal presentation options', () => {
         cursorStyle: 'underline',
         cursorBlink: false,
         scrollbackSize: 20_000,
+        dirColor: 'cyan',
       },
       'light',
     );

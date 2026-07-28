@@ -4,6 +4,7 @@ import {
   APPLICATION_THEMES,
   DECK_SCOPES,
   DEVELOPER_HUB_TAB_IDS,
+  DIR_COLORS,
   TERMINAL_FONT_SIZE_RANGE,
   TERMINAL_CURSOR_STYLES,
   TERMINAL_SCROLLBACK_RANGE,
@@ -25,6 +26,7 @@ export const applicationThemeSchema = z.enum(APPLICATION_THEMES);
 export const terminalCursorStyleSchema = z.enum(TERMINAL_CURSOR_STYLES);
 export const developerHubTabIdSchema = z.enum(DEVELOPER_HUB_TAB_IDS);
 export const deckScopeSchema = z.enum(DECK_SCOPES);
+export const dirColorSchema = z.enum(DIR_COLORS);
 
 const generalSettingsSchema = z.object({
   restorePreviousWorkspace: z.boolean(),
@@ -39,6 +41,7 @@ const terminalSettingsSchema = z.object({
   cursorStyle: terminalCursorStyleSchema,
   cursorBlink: z.boolean(),
   scrollbackSize: terminalScrollbackSizeSchema,
+  dirColor: dirColorSchema.default('cyan'),
 });
 const appearanceSettingsSchema = z.object({ theme: applicationThemeSchema });
 const developerHubSettingsSchema = z.object({

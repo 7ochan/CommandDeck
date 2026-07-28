@@ -10,8 +10,10 @@ import type {
   AppSettingsUpdate,
   ApplicationTheme,
   DeckScope,
+  DirColor,
   TerminalCursorStyle,
 } from '@/shared/types';
+import { DIR_COLOR_PALETTES } from '@/features/terminal/terminal-presentation';
 import { DEFAULT_APP_SETTINGS } from '@/shared/types';
 
 const SECTIONS = [
@@ -309,6 +311,65 @@ export function SettingsDialog({
                     title="Terminal presentation"
                     description="These options update every open terminal immediately."
                   >
+                    <SelectSetting
+                      label="Directory name color (Dir Color Theme)"
+                      description="Choose a unique theme color for directory names in shell output."
+                      value={draftSettings.terminal.dirColor}
+                      onChange={(value) =>
+                        updateDraft({
+                          terminal: { dirColor: value as DirColor },
+                        })
+                      }
+                    >
+                      {Object.entries(DIR_COLOR_PALETTES).map(([key, item]) => (
+                        <option key={key} value={key}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </SelectSetting>
+
+                    <div className="py-2">
+                      <p className="text-[11px] font-medium text-[var(--text-secondary)] mb-2">
+                        Directory Color Swatches
+                      </p>
+                      <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
+                        {(Object.keys(DIR_COLOR_PALETTES) as DirColor[]).map(
+                          (col) => {
+                            const palette = DIR_COLOR_PALETTES[col];
+                            const isSelected =
+                              draftSettings.terminal.dirColor === col;
+                            return (
+                              <button
+                                key={col}
+                                type="button"
+                                onClick={() =>
+                                  updateDraft({
+                                    terminal: { dirColor: col },
+                                  })
+                                }
+                                className={`flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-all ${
+                                  isSelected
+                                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]'
+                                    : 'border-[var(--border-soft)] bg-[var(--surface-1)] hover:bg-[var(--surface-2)]'
+                                }`}
+                              >
+                                <span
+                                  className="size-4.5 rounded-full shadow-sm"
+                                  style={{
+                                    backgroundColor: palette.dark.main,
+                                    boxShadow: `0 0 8px ${palette.dark.main}66`,
+                                  }}
+                                />
+                                <span className="max-w-full truncate text-[9.5px] font-medium capitalize text-[var(--text-primary)]">
+                                  {col}
+                                </span>
+                              </button>
+                            );
+                          },
+                        )}
+                      </div>
+                    </div>
+
                     <SelectSetting
                       label="Font size"
                       description="Terminal text size in pixels."
@@ -609,6 +670,7 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
     left.terminal.cursorStyle === right.terminal.cursorStyle &&
     left.terminal.cursorBlink === right.terminal.cursorBlink &&
     left.terminal.scrollbackSize === right.terminal.scrollbackSize &&
+    left.terminal.dirColor === right.terminal.dirColor &&
     left.appearance.theme === right.appearance.theme &&
     left.developerHub.rememberLastSelectedTab ===
       right.developerHub.rememberLastSelectedTab &&

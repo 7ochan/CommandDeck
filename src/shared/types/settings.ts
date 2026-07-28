@@ -4,6 +4,17 @@ export type ApplicationTheme = (typeof APPLICATION_THEMES)[number];
 export const TERMINAL_CURSOR_STYLES = ['block', 'underline', 'bar'] as const;
 export type TerminalCursorStyle = (typeof TERMINAL_CURSOR_STYLES)[number];
 
+export const DIR_COLORS = [
+  'cyan',
+  'emerald',
+  'purple',
+  'amber',
+  'coral',
+  'blue',
+  'magenta',
+] as const;
+export type DirColor = (typeof DIR_COLORS)[number];
+
 export const TERMINAL_FONT_SIZE_RANGE = { min: 10, max: 24 } as const;
 export const TERMINAL_SCROLLBACK_RANGE = {
   min: 1_000,
@@ -30,6 +41,7 @@ export type AppSettings = {
     cursorStyle: TerminalCursorStyle;
     cursorBlink: boolean;
     scrollbackSize: number;
+    dirColor: DirColor;
   };
   appearance: {
     theme: ApplicationTheme;
@@ -77,6 +89,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     cursorStyle: 'bar',
     cursorBlink: true,
     scrollbackSize: 5_000,
+    dirColor: 'cyan',
   },
   appearance: {
     theme: 'dark',
