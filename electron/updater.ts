@@ -11,7 +11,10 @@
  */
 
 import { app, dialog, BrowserWindow } from 'electron';
-import { autoUpdater, type UpdateInfo } from 'electron-updater';
+import pkg from 'electron-updater';
+import type { UpdateInfo } from 'electron-updater';
+
+const autoUpdater = pkg.autoUpdater;
 
 let isDownloading = false;
 let isDownloaded = false;

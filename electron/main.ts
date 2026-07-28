@@ -24,7 +24,9 @@ import {
   ipcMain,
   Menu,
   shell,
+  utilityProcess,
   type MenuItemConstructorOptions,
+  type UtilityProcess,
 } from 'electron';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -192,12 +194,16 @@ function isServerAlreadyRunning(): Promise<boolean> {
 }
 
 let serverProcess: ChildProcess | null = null;
+let serverUtilityProcess: UtilityProcess | null = null;
 
 /**
  * Starts the existing CommandDeck Node/Next.js server as a child process.
  *
  * In development: uses `tsx watch server.ts` (identical to `npm run dev`).
- * In production: uses the compiled `node .server/server.js --production`.
+ * In production: uses Electron's official `utilityProcess.fork` to run
+ * `.server/server.js --production` as a Node process inside Electron's Node runtime.
+ * This prevents launching another Electron GUI executable process, solving the
+ * recursive application spawning bug in packaged apps.
  *
  * If the server is already running (e.g. started via `npm run dev` in a
  * separate terminal), this function reuses the existing server.
@@ -216,41 +222,7 @@ function startServer(): Promise<void> {
     //   __dirname = Resources/app/.electron/
     //   → projectRoot = join(__dirname, '..') works correctly
     //
-    const projectRoot = DEV
-      ? join(__dirname, '..') // <repo>/.electron → <repo>/
-      : join(__dirname, '..'); // Resources/app/.electron → Resources/app/
-
-    let command: string;
-    let args: string[];
-
-    if (DEV) {
-      const tsxBin = join(projectRoot, 'node_modules', '.bin', 'tsx');
-      command = tsxBin;
-      args = ['watch', join(projectRoot, 'server.ts')];
-    } else {
-      // In production, use Electron's own bundled Node runtime to run the
-      // compiled server JS. NODE_PATH tells Node where to find node_modules.
-      command = process.execPath;
-      args = [join(projectRoot, '.server', 'server.js'), '--production'];
-    }
-
-    console.log(`[Electron] Starting server: ${command} ${args.join(' ')}`);
-
-    serverProcess = spawn(command, args, {
-      cwd: projectRoot,
-      env: {
-        ...process.env,
-        PORT: String(APP_PORT),
-        COMMANDDECK_HOST: APP_HOST,
-        // In production, when process.execPath (the Electron binary) is spawned,
-        // ELECTRON_RUN_AS_NODE=1 forces it to run as a Node.js CLI runtime.
-        ELECTRON_RUN_AS_NODE: '1',
-        // Ensure node_modules is resolvable in both dev and production
-        NODE_PATH: join(projectRoot, 'node_modules'),
-      },
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
+    const projectRoot = join(__dirname, '..');
     let resolved = false;
 
     // 60 s hard timeout — show a proper dialog instead of hanging forever
@@ -302,84 +274,214 @@ function startServer(): Promise<void> {
       }
     };
 
-    serverProcess.stdout?.on('data', checkReady);
-    serverProcess.stderr?.on('data', (data: Buffer) => {
-      const text = data.toString();
-      process.stderr.write(`[server] ${text}`);
+    if (DEV) {
+      const tsxBin = join(projectRoot, 'node_modules', '.bin', 'tsx');
+      const command = tsxBin;
+      const args = ['watch', join(projectRoot, 'server.ts')];
 
-      if (text.includes('CommandDeck is ready at')) {
-        markReady();
-        return;
-      }
+      console.log(
+        `[Electron] Starting dev server: ${command} ${args.join(' ')}`,
+      );
 
-      if (text.includes('Another next dev server is already running')) {
-        console.log('[Electron] Existing server detected — reusing it.');
-        setTimeout(() => {
+      const child = spawn(command, args, {
+        cwd: projectRoot,
+        env: {
+          ...process.env,
+          PORT: String(APP_PORT),
+          COMMANDDECK_HOST: APP_HOST,
+          NODE_PATH: join(projectRoot, 'node_modules'),
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      serverProcess = child;
+
+      child.stdout?.on('data', checkReady);
+      child.stderr?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        process.stderr.write(`[server] ${text}`);
+
+        if (text.includes('CommandDeck is ready at')) {
+          markReady();
+          return;
+        }
+
+        if (text.includes('Another next dev server is already running')) {
+          console.log('[Electron] Existing server detected — reusing it.');
+          setTimeout(() => {
+            isServerAlreadyRunning()
+              .then((running) => {
+                if (running) markReady();
+                else
+                  reject(
+                    new Error('Existing server reported but port is not open'),
+                  );
+              })
+              .catch(reject);
+          }, 1000);
+        }
+      });
+
+      child.on('error', (err) => {
+        console.error('[Electron] Failed to start dev server process:', err);
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          reject(err);
+        }
+      });
+
+      child.on('exit', (code, signal) => {
+        console.log(
+          `[Electron] Dev server process exited with code=${code} signal=${signal}`,
+        );
+        serverProcess = null;
+
+        if (!resolved) {
           isServerAlreadyRunning()
             .then((running) => {
-              if (running) markReady();
-              else
-                reject(
-                  new Error('Existing server reported but port is not open'),
+              if (running) {
+                console.log(
+                  '[Electron] Dev server exited but port is open — reusing existing server.',
                 );
+                markReady();
+              } else {
+                resolved = true;
+                clearTimeout(timeout);
+                reject(
+                  new Error(
+                    `Dev server process exited prematurely (code=${code} signal=${signal})`,
+                  ),
+                );
+              }
             })
-            .catch(reject);
-        }, 1000);
-      }
-    });
-
-    serverProcess.on('error', (err) => {
-      console.error('[Electron] Failed to start server process:', err);
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timeout);
-        reject(err);
-      }
-    });
-
-    serverProcess.on('exit', (code, signal) => {
-      console.log(
-        `[Electron] Server process exited with code=${code} signal=${signal}`,
-      );
-      serverProcess = null;
-
-      if (!resolved) {
-        isServerAlreadyRunning()
-          .then((running) => {
-            if (running) {
-              console.log(
-                '[Electron] Server process exited but port is open — reusing existing server.',
-              );
-              markReady();
-            } else {
+            .catch(() => {
               resolved = true;
               clearTimeout(timeout);
               reject(
                 new Error(
-                  `Server process exited prematurely (code=${code} signal=${signal})`,
+                  `Dev server process exited prematurely (code=${code} signal=${signal})`,
                 ),
               );
-            }
-          })
-          .catch(() => {
-            resolved = true;
-            clearTimeout(timeout);
-            reject(
-              new Error(
-                `Server process exited prematurely (code=${code} signal=${signal})`,
-              ),
-            );
-          });
-      }
-    });
+            });
+        }
+      });
+    } else {
+      // In production (packaged application), process.execPath is the executable of the
+      // packaged Electron app bundle (e.g. CommandDeck.app/Contents/MacOS/CommandDeck).
+      // Spawning process.execPath directly with ELECTRON_RUN_AS_NODE=1 fails because
+      // macOS app bundle executables and fused Electron binaries ignore ELECTRON_RUN_AS_NODE,
+      // launching a new Electron GUI instance instead of a Node process. This caused
+      // infinite recursive application spawning.
+      //
+      // Using Electron's official utilityProcess.fork runs the compiled Node.js server
+      // (.server/server.js) inside Electron's Node runtime as a headless background process,
+      // completely bypassing the Electron GUI main process entry point.
+      const serverScript = join(projectRoot, '.server', 'server.js');
+      const args = ['--production'];
+
+      console.log(
+        `[Electron] Starting production utilityProcess server: ${serverScript} ${args.join(' ')}`,
+      );
+
+      const child = utilityProcess.fork(serverScript, args, {
+        cwd: projectRoot,
+        env: {
+          ...process.env,
+          PORT: String(APP_PORT),
+          COMMANDDECK_HOST: APP_HOST,
+          NODE_PATH: join(projectRoot, 'node_modules'),
+        },
+        stdio: 'pipe',
+      });
+      serverUtilityProcess = child;
+
+      child.stdout?.on('data', checkReady);
+      child.stderr?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        process.stderr.write(`[server] ${text}`);
+
+        if (text.includes('CommandDeck is ready at')) {
+          markReady();
+          return;
+        }
+
+        if (text.includes('Another next dev server is already running')) {
+          console.log('[Electron] Existing server detected — reusing it.');
+          setTimeout(() => {
+            isServerAlreadyRunning()
+              .then((running) => {
+                if (running) markReady();
+                else
+                  reject(
+                    new Error('Existing server reported but port is not open'),
+                  );
+              })
+              .catch(reject);
+          }, 1000);
+        }
+      });
+
+      child.on('error', (err) => {
+        console.error(
+          '[Electron] Failed to start production server utility process:',
+          err,
+        );
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timeout);
+          reject(err);
+        }
+      });
+
+      child.on('exit', (code) => {
+        console.log(
+          `[Electron] Production server utility process exited with code=${code}`,
+        );
+        serverUtilityProcess = null;
+
+        if (!resolved) {
+          isServerAlreadyRunning()
+            .then((running) => {
+              if (running) {
+                console.log(
+                  '[Electron] Server utility process exited but port is open — reusing existing server.',
+                );
+                markReady();
+              } else {
+                resolved = true;
+                clearTimeout(timeout);
+                reject(
+                  new Error(
+                    `Server utility process exited prematurely (code=${code})`,
+                  ),
+                );
+              }
+            })
+            .catch(() => {
+              resolved = true;
+              clearTimeout(timeout);
+              reject(
+                new Error(
+                  `Server utility process exited prematurely (code=${code})`,
+                ),
+              );
+            });
+        }
+      });
+    }
   });
 }
 
 function stopServer(): void {
   if (serverProcess) {
-    console.log('[Electron] Stopping server process…');
+    console.log('[Electron] Stopping dev server process…');
     serverProcess.kill('SIGTERM');
     serverProcess = null;
+  }
+  if (serverUtilityProcess) {
+    console.log('[Electron] Stopping production server utility process…');
+    serverUtilityProcess.kill();
+    serverUtilityProcess = null;
   }
 }
 

@@ -159,3 +159,4 @@ publish:
   owner: 7ochan
   repo: CommandDeck
   releaseType: release
+  publishAutoUpdate: true
