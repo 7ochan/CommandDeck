@@ -207,10 +207,8 @@ button.cd-clay-tile:active:not(:disabled) {
 }
 
 .cd-palette-search:focus-within {
-  border-color: var(--accent-border);
-  box-shadow:
-    var(--shadow-recessed),
-    0 0 0 3px var(--accent-soft);
+  outline: none;
+  box-shadow: var(--shadow-recessed);
 }
 
 .cd-input {
@@ -235,12 +233,19 @@ button.cd-clay-tile:active:not(:disabled) {
 }
 
 .cd-input:focus {
-  border-color: var(--accent-border);
   background: var(--input-focus);
-  box-shadow:
-    var(--shadow-recessed),
-    0 0 0 3px var(--accent-soft);
+  box-shadow: var(--shadow-recessed);
   outline: none;
+}
+
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .cd-button,
@@ -438,7 +443,7 @@ button.cd-clay-tile:active:not(:disabled) {
 }
 
 .cd-terminal-shell:focus-within {
-  border-color: var(--accent-border);
+  outline: none;
 }
 
 .cd-deck-card {
