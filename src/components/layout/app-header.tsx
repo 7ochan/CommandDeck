@@ -136,7 +136,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
       <div className="flex w-32 shrink-0 items-center justify-end gap-1.5">
         <button
           type="button"
-          className="cd-button h-7.5 px-2.5 text-[11px]"
+          className="cd-button h-[30px] px-2.5 text-[11px]"
           aria-label={`Open Command Palette (${shortcutLabel})`}
           title="Open Command Palette"
           onClick={openPalette}
@@ -147,7 +147,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         </button>
         <button
           type="button"
-          className="cd-icon-button h-7.5 w-7.5"
+          className="cd-icon-button h-[30px] w-[30px] shrink-0"
           aria-label="Open Settings"
           title="Settings"
           onClick={openSettings}

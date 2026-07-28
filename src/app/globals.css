@@ -260,9 +260,9 @@ button.cd-clay-tile:active:not(:disabled) {
 }
 
 .cd-button {
-  min-height: 34px;
-  gap: 7px;
-  padding: 0 12px;
+  min-height: 30px;
+  gap: 6px;
+  padding: 0 10px;
   background: var(--surface-2);
   font-size: 12px;
   font-weight: 550;
@@ -270,8 +270,8 @@ button.cd-clay-tile:active:not(:disabled) {
 }
 
 .cd-icon-button {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   background: var(--surface-2);
   box-shadow: var(--shadow-raised);

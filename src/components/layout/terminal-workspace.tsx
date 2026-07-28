@@ -601,15 +601,13 @@ function ActiveWorkspaceLayout({
           {/* Left Sidebar Resizer Divider */}
           {!isLeftOverlay && (
             <div
-              className="group relative z-30 flex w-1 shrink-0 cursor-col-resize items-center justify-center bg-[var(--border-soft)] transition-colors hover:bg-[var(--accent)] active:bg-[var(--accent)]"
+              className="relative z-30 -mr-1 -ml-1 w-2 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[var(--accent)]/30 active:bg-[var(--accent)]/50"
               onMouseDown={handleLeftResizeStart}
               onDoubleClick={handleLeftResizeReset}
               title="Drag to resize Left Sidebar (Double-click to reset)"
               aria-label="Resize Left Sidebar"
               role="separator"
-            >
-              <div className="h-6 w-0.5 rounded-full bg-[var(--text-subtle)] opacity-0 transition-opacity group-hover:opacity-100" />
-            </div>
+            />
           )}
         </>
       )}
@@ -668,15 +666,13 @@ function ActiveWorkspaceLayout({
             {/* Right Sidebar Resizer Divider */}
             {!isRightOverlay && (
               <div
-                className="group relative z-30 flex w-1 shrink-0 cursor-col-resize items-center justify-center bg-[var(--border-soft)] transition-colors hover:bg-[var(--accent)] active:bg-[var(--accent)]"
+                className="relative z-30 -mr-1 -ml-1 w-2 shrink-0 cursor-col-resize bg-transparent transition-colors hover:bg-[var(--accent)]/30 active:bg-[var(--accent)]/50"
                 onMouseDown={handleRightResizeStart}
                 onDoubleClick={handleRightResizeReset}
                 title="Drag to resize Right Sidebar (Double-click to reset)"
                 aria-label="Resize Right Sidebar"
                 role="separator"
-              >
-                <div className="h-6 w-0.5 rounded-full bg-[var(--text-subtle)] opacity-0 transition-opacity group-hover:opacity-100" />
-              </div>
+              />
             )}
 
             <div
