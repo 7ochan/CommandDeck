@@ -579,7 +579,7 @@ function ToggleSetting({
       />
       <span
         aria-hidden="true"
-        className="relative h-5.5 w-10 shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-3)] transition-all duration-200 peer-checked:border-[var(--accent-strong)] peer-checked:bg-[var(--accent)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--accent)] after:absolute after:top-[2px] after:left-[2px] after:size-4.5 after:rounded-full after:bg-[#94a3b8] after:shadow-md after:transition-all after:duration-200 peer-checked:after:translate-x-[18px] peer-checked:after:bg-white"
+        className="relative h-5 w-9 shrink-0 rounded-full border border-[#374151] bg-[#1f2937] transition-colors duration-200 peer-checked:border-[#10b981] peer-checked:bg-[#10b981] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#10b981] after:absolute after:top-[2px] after:left-[2px] after:size-4 after:rounded-full after:bg-[#9ca3af] after:shadow-sm after:transition-transform after:duration-200 peer-checked:after:translate-x-4 peer-checked:after:bg-white"
       />
     </label>
   );
