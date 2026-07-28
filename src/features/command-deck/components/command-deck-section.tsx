@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState, type DragEvent } from 'react';
 
 import { Icon } from '@/components/ui/icon';
 import type { CommandDeckItem, CommandDeckItemUpdate } from '../types';
@@ -27,11 +27,85 @@ export function CommandDeckSection({
   onRemove,
 }: CommandDeckSectionProps) {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [deckItemOrder, setDeckItemOrder] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('cmd-deck-items-order');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+
   const visibleSelectedId = items.some(
     ({ deckItemId }) => deckItemId === selectedItemId,
   )
     ? selectedItemId
     : null;
+
+  const orderedItems = useMemo(() => {
+    const map = new Map(items.map((item) => [item.deckItemId, item]));
+    const ordered: CommandDeckItem[] = [];
+
+    deckItemOrder.forEach((id) => {
+      const item = map.get(id);
+      if (item) {
+        ordered.push(item);
+        map.delete(id);
+      }
+    });
+
+    map.forEach((item) => ordered.push(item));
+    return ordered;
+  }, [items, deckItemOrder]);
+
+  const handleDragStart = (event: DragEvent, deckItemId: string) => {
+    event.dataTransfer.setData('text/plain', deckItemId);
+    event.dataTransfer.effectAllowed = 'move';
+    setDraggedItemId(deckItemId);
+  };
+
+  const handleDragOver = (event: DragEvent, deckItemId: string) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    if (draggedItemId && draggedItemId !== deckItemId) {
+      setDragOverItemId(deckItemId);
+    }
+  };
+
+  const handleDrop = (event: DragEvent, targetDeckItemId: string) => {
+    event.preventDefault();
+    const sourceId =
+      draggedItemId || event.dataTransfer.getData('text/plain');
+    if (!sourceId || sourceId === targetDeckItemId) {
+      setDraggedItemId(null);
+      setDragOverItemId(null);
+      return;
+    }
+
+    const currentIds = orderedItems.map((i) => i.deckItemId);
+    const sourceIndex = currentIds.indexOf(sourceId);
+    const targetIndex = currentIds.indexOf(targetDeckItemId);
+
+    if (sourceIndex !== -1 && targetIndex !== -1) {
+      const nextOrder = [...currentIds];
+      const [moved] = nextOrder.splice(sourceIndex, 1);
+      nextOrder.splice(targetIndex, 0, moved);
+      setDeckItemOrder(nextOrder);
+      try {
+        localStorage.setItem(
+          'cmd-deck-items-order',
+          JSON.stringify(nextOrder),
+        );
+      } catch {}
+    }
+
+    setDraggedItemId(null);
+    setDragOverItemId(null);
+  };
 
   return (
     <section
@@ -71,21 +145,45 @@ export function CommandDeckSection({
             </p>
           )}
           <div className="flex flex-col gap-2">
-            {items.map((item, index) => (
-              <CommandDeckItemView
-                key={item.deckItemId}
-                item={item}
-                isSelected={item.deckItemId === visibleSelectedId}
-                isTabStop={
-                  item.deckItemId === visibleSelectedId ||
-                  (!visibleSelectedId && index === 0)
-                }
-                onSelect={setSelectedItemId}
-                onRun={onRun}
-                onUpdate={onUpdate}
-                onRemove={onRemove}
-              />
-            ))}
+            {orderedItems.map((item, index) => {
+              const isDragging = draggedItemId === item.deckItemId;
+              const isDragOver = dragOverItemId === item.deckItemId;
+
+              return (
+                <div
+                  key={item.deckItemId}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, item.deckItemId)}
+                  onDragOver={(e) => handleDragOver(e, item.deckItemId)}
+                  onDragLeave={() => setDragOverItemId(null)}
+                  onDrop={(e) => handleDrop(e, item.deckItemId)}
+                  onDragEnd={() => {
+                    setDraggedItemId(null);
+                    setDragOverItemId(null);
+                  }}
+                  className={`group relative cursor-grab rounded-[12px] transition-all active:cursor-grabbing ${
+                    isDragging ? 'opacity-40' : ''
+                  } ${
+                    isDragOver
+                      ? 'ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface-2)]'
+                      : ''
+                  }`}
+                >
+                  <CommandDeckItemView
+                    item={item}
+                    isSelected={item.deckItemId === visibleSelectedId}
+                    isTabStop={
+                      item.deckItemId === visibleSelectedId ||
+                      (!visibleSelectedId && index === 0)
+                    }
+                    onSelect={setSelectedItemId}
+                    onRun={onRun}
+                    onUpdate={onUpdate}
+                    onRemove={onRemove}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
