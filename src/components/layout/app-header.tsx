@@ -115,7 +115,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
 
   return (
     <header className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface-1)] px-3">
-      <div className="flex w-32 shrink-0 items-center" />
+      <div className="flex min-w-0 flex-1 items-center" />
 
       <nav
         className="cd-inset-tray flex items-center rounded-sm p-0.5"
@@ -133,10 +133,10 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         </ViewLink>
       </nav>
 
-      <div className="flex w-32 shrink-0 items-center justify-end gap-1.5">
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
         <button
           type="button"
-          className="cd-button h-[30px] px-2.5 text-[11px]"
+          className="cd-button h-7 px-2.5 text-[11px]"
           aria-label={`Open Command Palette (${shortcutLabel})`}
           title="Open Command Palette"
           onClick={openPalette}
@@ -147,7 +147,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         </button>
         <button
           type="button"
-          className="cd-icon-button h-[30px] w-[30px] shrink-0"
+          className="cd-icon-button h-7 w-7 shrink-0"
           aria-label="Open Settings"
           title="Settings"
           onClick={openSettings}
@@ -174,7 +174,7 @@ function ViewLink({
     <Link
       href={href}
       aria-current={isActive ? 'page' : undefined}
-      className={`flex h-6.5 items-center gap-1.5 rounded-sm border px-2.5 text-[11px] font-medium transition-[background-color,color,border-color,box-shadow] ${
+      className={`flex h-7 items-center gap-1.5 rounded-sm border px-2.5 text-[11px] font-medium transition-[background-color,color,border-color,box-shadow] ${
         isActive
           ? 'cd-segment-active'
           : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'

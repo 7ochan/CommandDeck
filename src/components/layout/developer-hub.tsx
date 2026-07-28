@@ -347,7 +347,7 @@ export function DeveloperHub({
     >
       <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
         <div
-          className="cd-scrollbar flex h-full min-w-0 flex-1 items-center gap-1 overflow-x-auto p-1"
+          className="flex h-full min-w-0 flex-1 items-center gap-1 overflow-x-hidden p-1"
           role="tablist"
           aria-label="Developer Hub tools"
         >
