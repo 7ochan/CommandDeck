@@ -8,7 +8,6 @@ import {
   useState,
   type DragEvent,
   type KeyboardEvent,
-  type MouseEvent,
   type ReactNode,
 } from 'react';
 
@@ -112,25 +111,12 @@ export function DeveloperHub({
     }
   });
 
-  const [pinnedTabs, setPinnedTabs] = useState<DeveloperHubTab[]>(() => {
-    if (typeof window === 'undefined') return [];
+  useEffect(() => {
     try {
-      const stored = localStorage.getItem('cmd-deck-devhub-pinned-tabs');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [closedTabs, setClosedTabs] = useState<DeveloperHubTab[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored = localStorage.getItem('cmd-deck-devhub-closed-tabs');
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+      localStorage.removeItem('cmd-deck-devhub-closed-tabs');
+      localStorage.removeItem('cmd-deck-devhub-pinned-tabs');
+    } catch {}
+  }, []);
 
   const [draggedDevTab, setDraggedDevTab] = useState<DeveloperHubTab | null>(
     null,
@@ -171,51 +157,6 @@ export function DeveloperHub({
     ],
   );
 
-  const togglePinTab = (tabId: DeveloperHubTab, event: MouseEvent) => {
-    event.stopPropagation();
-    setPinnedTabs((prev) => {
-      const next = prev.includes(tabId)
-        ? prev.filter((id) => id !== tabId)
-        : [...prev, tabId];
-      try {
-        localStorage.setItem(
-          'cmd-deck-devhub-pinned-tabs',
-          JSON.stringify(next),
-        );
-      } catch {}
-      return next;
-    });
-  };
-
-  const closeTab = (tabId: DeveloperHubTab, event: MouseEvent) => {
-    event.stopPropagation();
-    setClosedTabs((prev) => {
-      if (prev.includes(tabId)) return prev;
-      const next = [...prev, tabId];
-      try {
-        localStorage.setItem(
-          'cmd-deck-devhub-closed-tabs',
-          JSON.stringify(next),
-        );
-      } catch {}
-      return next;
-    });
-  };
-
-  const restoreTab = (tabId: DeveloperHubTab) => {
-    setClosedTabs((prev) => {
-      const next = prev.filter((id) => id !== tabId);
-      try {
-        localStorage.setItem(
-          'cmd-deck-devhub-closed-tabs',
-          JSON.stringify(next),
-        );
-      } catch {}
-      return next;
-    });
-    selectTab(tabId);
-  };
-
   const visibleTabs = useMemo(() => {
     const map = new Map(DEVELOPER_HUB_TABS.map((t) => [t.id, t]));
     const ordered: (typeof DEVELOPER_HUB_TABS)[number][] = [];
@@ -230,21 +171,13 @@ export function DeveloperHub({
 
     map.forEach((tab) => ordered.push(tab));
 
-    const filtered = ordered.filter((tab) => {
+    return ordered.filter((tab) => {
       if (tab.id === 'history' && !settings.developerHub.showHistoryTab) {
-        return false;
-      }
-      if (closedTabs.includes(tab.id)) {
         return false;
       }
       return true;
     });
-
-    const pinned = filtered.filter((t) => pinnedTabs.includes(t.id));
-    const unpinned = filtered.filter((t) => !pinnedTabs.includes(t.id));
-
-    return [...pinned, ...unpinned];
-  }, [tabOrder, settings.developerHub.showHistoryTab, closedTabs, pinnedTabs]);
+  }, [tabOrder, settings.developerHub.showHistoryTab]);
 
   const visibleIds = visibleTabs.map((t) => t.id);
   if (visibleIds.length > 0 && !visibleIds.includes(activeTab)) {
@@ -423,52 +356,35 @@ export function DeveloperHub({
       </div>
 
       <div className="flex min-h-0 flex-1">
-        {visibleTabs.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
-            <p className="text-[12px] text-[var(--text-muted)]">
-              All Developer Hub tabs are closed.
-            </p>
-            <button
-              type="button"
-              onClick={() => setClosedTabs([])}
-              className="mt-2 font-mono text-[11px] text-[var(--accent)] hover:underline"
-            >
-              Restore all tabs
-            </button>
-          </div>
-        ) : (
-          <>
-            <DeveloperHubPanel tab="deck" activeTab={activeTab}>
-              <CommandDeckSection
-                items={deckItems}
-                isLoading={isDeckLoading}
-                loadError={deckLoadError}
-                onRun={onRunCommand}
-                onUpdate={onUpdateDeckItem}
-                onRemove={onRemoveDeckItem}
-              />
-            </DeveloperHubPanel>
+        <DeveloperHubPanel tab="deck" activeTab={activeTab}>
+          <CommandDeckSection
+            items={deckItems}
+            isLoading={isDeckLoading}
+            loadError={deckLoadError}
+            onRun={onRunCommand}
+            onUpdate={onUpdateDeckItem}
+            onRemove={onRemoveDeckItem}
+          />
+        </DeveloperHubPanel>
 
-            <DeveloperHubPanel tab="history" activeTab={activeTab}>
-              <CommandHistorySection
-                entries={historyEntries}
-                selectedEntryId={selectedHistoryEntryId}
-                deckHistoryIds={deckHistoryIds}
-                query={historyQuery}
-                isLoading={isHistoryLoading}
-                isSearching={isHistorySearching}
-                loadError={historyLoadError}
-                onSearchTermChange={onHistorySearchTermChange}
-                onToggleStatus={onToggleHistoryStatus}
-                onClearQuery={onClearHistoryQuery}
-                onSelectEntry={onSelectHistoryEntry}
-                onClearSelection={onClearHistorySelection}
-                onRunAgain={onRunCommand}
-                onAddToDeck={onAddHistoryToDeck}
-              />
-            </DeveloperHubPanel>
-          </>
-        )}
+        <DeveloperHubPanel tab="history" activeTab={activeTab}>
+          <CommandHistorySection
+            entries={historyEntries}
+            selectedEntryId={selectedHistoryEntryId}
+            deckHistoryIds={deckHistoryIds}
+            query={historyQuery}
+            isLoading={isHistoryLoading}
+            isSearching={isHistorySearching}
+            loadError={historyLoadError}
+            onSearchTermChange={onHistorySearchTermChange}
+            onToggleStatus={onToggleHistoryStatus}
+            onClearQuery={onClearHistoryQuery}
+            onSelectEntry={onSelectHistoryEntry}
+            onClearSelection={onClearHistorySelection}
+            onRunAgain={onRunCommand}
+            onAddToDeck={onAddHistoryToDeck}
+          />
+        </DeveloperHubPanel>
       </div>
 
       {onCreateDeckItem && (
