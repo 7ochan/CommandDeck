@@ -66,7 +66,7 @@ export const HistorySearchControls = memo(function HistorySearchControls({
       </div>
 
       <div
-        className="cd-no-scrollbar mt-2 flex items-center gap-1.5 overflow-x-auto py-0.5"
+        className="mt-2 grid grid-cols-3 gap-1"
         aria-label="Filter History by status"
       >
         {COMMAND_HISTORY_STATUSES.map((status) => (
@@ -75,7 +75,7 @@ export const HistorySearchControls = memo(function HistorySearchControls({
             type="button"
             aria-pressed={query.statuses.includes(status)}
             title={`Filter by ${STATUS_LABELS[status]}`}
-            className={`flex h-6.5 shrink-0 items-center justify-center gap-1.5 rounded-sm border border-[var(--border-soft)] bg-[var(--canvas-raised)] px-2 text-[10px] font-medium text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)] ${STATUS_STYLES[status]}`}
+            className={`flex h-6.5 min-w-0 items-center justify-center gap-1 overflow-hidden rounded-sm border border-[var(--border-soft)] bg-[var(--canvas-raised)] px-1 text-[10px] font-medium text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)] ${STATUS_STYLES[status]}`}
             onClick={() => onToggleStatus(status)}
           >
             <span
@@ -88,9 +88,7 @@ export const HistorySearchControls = memo(function HistorySearchControls({
               }`}
               aria-hidden="true"
             />
-            <span className="font-mono text-[10px] whitespace-nowrap">
-              {STATUS_LABELS[status]}
-            </span>
+            <span className="truncate">{STATUS_LABELS[status]}</span>
           </button>
         ))}
       </div>
