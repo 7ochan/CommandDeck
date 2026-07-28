@@ -22,6 +22,7 @@ type WorkspaceSwitcherProps = {
     label: string;
     tone: 'connected' | 'pending' | 'offline' | 'error';
   };
+  width?: number;
   onSelect: (workspaceId: string) => void;
   onCreate: (name: string) => Promise<WorkspaceSummary>;
   onRename: (workspaceId: string, name: string) => Promise<WorkspaceSummary>;
@@ -32,6 +33,7 @@ export function WorkspaceSwitcher({
   workspaces,
   activeWorkspace,
   connectionStatus,
+  width,
   onSelect,
   onCreate,
   onRename,
@@ -258,7 +260,8 @@ export function WorkspaceSwitcher({
   return (
     <>
       <aside
-        className="cd-surface flex w-60 shrink-0 flex-col overflow-hidden rounded-none border-r border-[var(--border-soft)] bg-[var(--surface-1)] shadow-none lg:w-60"
+        className="cd-surface flex shrink-0 flex-col overflow-hidden rounded-none border-r border-[var(--border-soft)] bg-[var(--surface-1)] shadow-none"
+        style={{ width: width ? `${width}px` : undefined }}
         aria-label="Workspace tabs navigation"
       >
         {/* Sidebar Search + Filter Header */}

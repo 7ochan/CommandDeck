@@ -45,6 +45,7 @@ type DeveloperHubProps = {
   isHistoryLoading: boolean;
   isHistorySearching: boolean;
   historyLoadError: string | null;
+  width?: number;
   onHistorySearchTermChange: (searchTerm: string) => void;
   onToggleHistoryStatus: (status: CommandHistoryStatus) => void;
   onClearHistoryQuery: () => void;
@@ -74,6 +75,7 @@ export function DeveloperHub({
   isHistoryLoading,
   isHistorySearching,
   historyLoadError,
+  width,
   onHistorySearchTermChange,
   onToggleHistoryStatus,
   onClearHistoryQuery,
@@ -339,7 +341,8 @@ export function DeveloperHub({
 
   return (
     <aside
-      className="cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-none border-l border-[var(--border-soft)] bg-[var(--surface-1)] shadow-none"
+      className="cd-surface flex shrink-0 flex-col overflow-hidden rounded-none border-l border-[var(--border-soft)] bg-[var(--surface-1)] shadow-none"
+      style={{ width: width ? `${width}px` : undefined }}
       aria-label="Developer Hub"
     >
       <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">

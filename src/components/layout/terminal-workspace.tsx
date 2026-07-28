@@ -120,6 +120,114 @@ function ActiveWorkspaceLayout({
   const isLeftOverlay = !showLeftSidebar && isLeftVisible;
   const isRightOverlay = !showRightSidebar && isRightVisible;
 
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 240;
+    try {
+      const stored = localStorage.getItem('cmd-deck-left-sidebar-width');
+      return stored ? Math.max(160, Math.min(480, Number(stored))) : 240;
+    } catch {
+      return 240;
+    }
+  });
+
+  const [rightSidebarWidth, setRightSidebarWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 256;
+    try {
+      const stored = localStorage.getItem('cmd-deck-right-sidebar-width');
+      return stored ? Math.max(180, Math.min(540, Number(stored))) : 256;
+    } catch {
+      return 256;
+    }
+  });
+
+  const isDraggingLeftRef = useRef(false);
+  const isDraggingRightRef = useRef(false);
+
+  const handleLeftResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingLeftRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingLeftRef.current) return;
+      const newWidth = Math.max(160, Math.min(480, moveEvent.clientX));
+      setLeftSidebarWidth(newWidth);
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    const onMouseUp = () => {
+      isDraggingLeftRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.dispatchEvent(new Event('resize'));
+
+      setLeftSidebarWidth((current) => {
+        try {
+          localStorage.setItem('cmd-deck-left-sidebar-width', String(current));
+        } catch {}
+        return current;
+      });
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, []);
+
+  const handleLeftResizeReset = useCallback(() => {
+    setLeftSidebarWidth(240);
+    try {
+      localStorage.setItem('cmd-deck-left-sidebar-width', '240');
+    } catch {}
+    window.dispatchEvent(new Event('resize'));
+  }, []);
+
+  const handleRightResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRightRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!isDraggingRightRef.current) return;
+      const newWidth = Math.max(
+        180,
+        Math.min(540, window.innerWidth - moveEvent.clientX),
+      );
+      setRightSidebarWidth(newWidth);
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    const onMouseUp = () => {
+      isDraggingRightRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.dispatchEvent(new Event('resize'));
+
+      setRightSidebarWidth((current) => {
+        try {
+          localStorage.setItem('cmd-deck-right-sidebar-width', String(current));
+        } catch {}
+        return current;
+      });
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, []);
+
+  const handleRightResizeReset = useCallback(() => {
+    setRightSidebarWidth(256);
+    try {
+      localStorage.setItem('cmd-deck-right-sidebar-width', '256');
+    } catch {}
+    window.dispatchEvent(new Event('resize'));
+  }, []);
+
   const [terminalConnectionStatus, setTerminalConnectionStatus] =
     useState<TerminalConnectionStatus>('connecting');
 
@@ -465,28 +573,45 @@ function ActiveWorkspaceLayout({
 
       {/* Left Sidebar (Workspace Switcher) */}
       {isLeftVisible && (
-        <div
-          className={
-            isLeftOverlay
-              ? 'absolute top-0 bottom-0 left-0 z-50 flex shadow-2xl transition-transform duration-200'
-              : 'flex shrink-0'
-          }
-          onMouseLeave={
-            isLeftOverlay ? () => setIsLeftHovered(false) : undefined
-          }
-        >
-          <WorkspaceSwitcher
-            workspaces={workspaces}
-            activeWorkspace={activeWorkspace}
-            connectionStatus={
-              CONNECTION_STATUS_PRESENTATION[terminalConnectionStatus]
+        <>
+          <div
+            className={
+              isLeftOverlay
+                ? 'absolute top-0 bottom-0 left-0 z-50 flex shadow-2xl transition-transform duration-200'
+                : 'flex shrink-0'
             }
-            onSelect={handleSelectWorkspace}
-            onCreate={onCreateWorkspace}
-            onRename={onRenameWorkspace}
-            onDelete={handleDeleteWorkspace}
-          />
-        </div>
+            onMouseLeave={
+              isLeftOverlay ? () => setIsLeftHovered(false) : undefined
+            }
+          >
+            <WorkspaceSwitcher
+              workspaces={workspaces}
+              activeWorkspace={activeWorkspace}
+              connectionStatus={
+                CONNECTION_STATUS_PRESENTATION[terminalConnectionStatus]
+              }
+              width={leftSidebarWidth}
+              onSelect={handleSelectWorkspace}
+              onCreate={onCreateWorkspace}
+              onRename={onRenameWorkspace}
+              onDelete={handleDeleteWorkspace}
+            />
+          </div>
+
+          {/* Left Sidebar Resizer Divider */}
+          {!isLeftOverlay && (
+            <div
+              className="group relative z-30 flex w-1 shrink-0 cursor-col-resize items-center justify-center bg-[var(--border-soft)] transition-colors hover:bg-[var(--accent)] active:bg-[var(--accent)]"
+              onMouseDown={handleLeftResizeStart}
+              onDoubleClick={handleLeftResizeReset}
+              title="Drag to resize Left Sidebar (Double-click to reset)"
+              aria-label="Resize Left Sidebar"
+              role="separator"
+            >
+              <div className="h-6 w-0.5 rounded-full bg-[var(--text-subtle)] opacity-0 transition-opacity group-hover:opacity-100" />
+            </div>
+          )}
+        </>
       )}
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -539,38 +664,55 @@ function ActiveWorkspaceLayout({
 
         {/* Right Sidebar (Developer Hub) */}
         {isRightVisible && (
-          <div
-            className={
-              isRightOverlay
-                ? 'absolute top-0 right-0 bottom-0 z-50 flex shadow-2xl transition-transform duration-200'
-                : 'flex shrink-0'
-            }
-            onMouseLeave={
-              isRightOverlay ? () => setIsRightHovered(false) : undefined
-            }
-          >
-            <DeveloperHub
-              deckItems={deckItems}
-              isDeckLoading={isDeckLoading}
-              deckLoadError={deckLoadError}
-              historyEntries={entries}
-              selectedHistoryEntryId={selectedEntryId}
-              historyQuery={query}
-              isHistoryLoading={isLoading}
-              isHistorySearching={isSearching}
-              historyLoadError={loadError}
-              onHistorySearchTermChange={setSearchTerm}
-              onToggleHistoryStatus={toggleStatus}
-              onClearHistoryQuery={clearQuery}
-              onSelectHistoryEntry={selectEntry}
-              onClearHistorySelection={clearSelection}
-              onAddHistoryToDeck={handleAddToDeck}
-              onCreateDeckItem={createCustomItem}
-              onUpdateDeckItem={updateItem}
-              onRemoveDeckItem={handleRemoveFromDeck}
-              onRunCommand={runCommandAgain}
-            />
-          </div>
+          <>
+            {/* Right Sidebar Resizer Divider */}
+            {!isRightOverlay && (
+              <div
+                className="group relative z-30 flex w-1 shrink-0 cursor-col-resize items-center justify-center bg-[var(--border-soft)] transition-colors hover:bg-[var(--accent)] active:bg-[var(--accent)]"
+                onMouseDown={handleRightResizeStart}
+                onDoubleClick={handleRightResizeReset}
+                title="Drag to resize Right Sidebar (Double-click to reset)"
+                aria-label="Resize Right Sidebar"
+                role="separator"
+              >
+                <div className="h-6 w-0.5 rounded-full bg-[var(--text-subtle)] opacity-0 transition-opacity group-hover:opacity-100" />
+              </div>
+            )}
+
+            <div
+              className={
+                isRightOverlay
+                  ? 'absolute top-0 right-0 bottom-0 z-50 flex shadow-2xl transition-transform duration-200'
+                  : 'flex shrink-0'
+              }
+              onMouseLeave={
+                isRightOverlay ? () => setIsRightHovered(false) : undefined
+              }
+            >
+              <DeveloperHub
+                deckItems={deckItems}
+                isDeckLoading={isDeckLoading}
+                deckLoadError={deckLoadError}
+                historyEntries={entries}
+                selectedHistoryEntryId={selectedEntryId}
+                historyQuery={query}
+                isHistoryLoading={isLoading}
+                isHistorySearching={isSearching}
+                historyLoadError={loadError}
+                width={rightSidebarWidth}
+                onHistorySearchTermChange={setSearchTerm}
+                onToggleHistoryStatus={toggleStatus}
+                onClearHistoryQuery={clearQuery}
+                onSelectHistoryEntry={selectEntry}
+                onClearHistorySelection={clearSelection}
+                onAddHistoryToDeck={handleAddToDeck}
+                onCreateDeckItem={createCustomItem}
+                onUpdateDeckItem={updateItem}
+                onRemoveDeckItem={handleRemoveFromDeck}
+                onRunCommand={runCommandAgain}
+              />
+            </div>
+          </>
         )}
       </div>
 
