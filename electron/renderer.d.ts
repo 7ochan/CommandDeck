@@ -28,6 +28,7 @@ declare global {
     revealAppData(): Promise<void>;
     revealDatabase(): Promise<void>;
     revealLogs(): Promise<void>;
+    checkForUpdates(): Promise<void>;
 
     // ── Event subscriptions (Main → Renderer) ─────────────────────────────
     /**

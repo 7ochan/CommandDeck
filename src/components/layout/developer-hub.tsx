@@ -244,26 +244,18 @@ export function DeveloperHub({
     return [...pinned, ...unpinned];
   }, [tabOrder, settings.developerHub.showHistoryTab, closedTabs, pinnedTabs]);
 
-  useEffect(() => {
-    const visibleIds = visibleTabs.map((t) => t.id);
-    if (visibleIds.length > 0 && !visibleIds.includes(activeTab)) {
-      setActiveTab(visibleIds[0]);
-    }
-  }, [visibleTabs, activeTab]);
+  const visibleIds = visibleTabs.map((t) => t.id);
+  if (visibleIds.length > 0 && !visibleIds.includes(activeTab)) {
+    setActiveTab(visibleIds[0]);
+  }
 
-  const handleDevTabDragStart = (
-    event: DragEvent,
-    tabId: DeveloperHubTab,
-  ) => {
+  const handleDevTabDragStart = (event: DragEvent, tabId: DeveloperHubTab) => {
     event.dataTransfer.setData('text/plain', tabId);
     event.dataTransfer.effectAllowed = 'move';
     setDraggedDevTab(tabId);
   };
 
-  const handleDevTabDragOver = (
-    event: DragEvent,
-    tabId: DeveloperHubTab,
-  ) => {
+  const handleDevTabDragOver = (event: DragEvent, tabId: DeveloperHubTab) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
     if (draggedDevTab && draggedDevTab !== tabId) {
@@ -271,10 +263,7 @@ export function DeveloperHub({
     }
   };
 
-  const handleDevTabDrop = (
-    event: DragEvent,
-    targetTabId: DeveloperHubTab,
-  ) => {
+  const handleDevTabDrop = (event: DragEvent, targetTabId: DeveloperHubTab) => {
     event.preventDefault();
     const sourceId =
       draggedDevTab ||
@@ -389,7 +378,7 @@ export function DeveloperHub({
                 aria-selected={isActive}
                 aria-controls={`developer-hub-panel-${tab.id}`}
                 tabIndex={isActive ? 0 : -1}
-                className={`group relative flex h-8 min-w-0 flex-1 items-center justify-between gap-1 rounded-md border px-2 text-[11px] font-medium transition-all cursor-grab active:cursor-grabbing ${
+                className={`group relative flex h-8 min-w-0 flex-1 cursor-grab items-center justify-between gap-1 rounded-md border px-2 text-[11px] font-medium transition-all active:cursor-grabbing ${
                   isDragging ? 'opacity-40' : ''
                 } ${
                   isDragOver

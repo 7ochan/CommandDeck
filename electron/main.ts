@@ -32,6 +32,7 @@ import { createConnection } from 'node:net';
 import { homedir, platform } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { initAutoUpdater, checkForUpdates } from './updater.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -104,6 +105,8 @@ const IPC = {
   REVEAL_DATABASE: 'commanddeck:reveal-database',
   /** Renderer → Main: reveal the logs folder (if present) */
   REVEAL_LOGS: 'commanddeck:reveal-logs',
+  /** Renderer/Main: check for updates via electron-updater */
+  CHECK_FOR_UPDATES: 'commanddeck:check-for-updates',
 } as const;
 
 // ─── Window state persistence ─────────────────────────────────────────────────
@@ -530,6 +533,10 @@ function buildMenu(): Menu {
     label: app.name,
     submenu: [
       { role: 'about', label: `About ${app.name}` },
+      {
+        label: 'Check for Updates…',
+        click: () => void checkForUpdates(true),
+      },
       { type: 'separator' },
       {
         label: 'Settings…',
@@ -639,6 +646,11 @@ function buildMenu(): Menu {
     role: 'help',
     submenu: [
       {
+        label: 'Check for Updates…',
+        click: () => void checkForUpdates(true),
+      },
+      { type: 'separator' },
+      {
         label: 'Reveal Application Data…',
         click: () => revealInFinder(resolveDataDirectory()),
       },
@@ -727,6 +739,10 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IPC.REVEAL_LOGS, () => {
     revealInFinder(app.getPath('logs'));
   });
+
+  ipcMain.handle(IPC.CHECK_FOR_UPDATES, async () => {
+    await checkForUpdates(true);
+  });
 }
 
 // ─── Browser window ───────────────────────────────────────────────────────────
@@ -778,6 +794,9 @@ function createWindow(): void {
     destroyLoadingWindow();
     mainWindow?.show();
     mainWindow?.focus();
+
+    // Perform non-blocking background update check after main window is ready
+    void checkForUpdates(false);
   });
 
   // Periodic window-state save (every 30 s) so state survives unexpected exits
@@ -846,6 +865,9 @@ function createWindow(): void {
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.on('ready', async () => {
+  // Initialize auto-updater
+  initAutoUpdater(stopServer, () => mainWindow);
+
   // Register IPC handlers and build the menu before anything else so they
   // are ready the instant the window opens — no async gap.
   registerIpcHandlers();

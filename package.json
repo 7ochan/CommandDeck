@@ -8,6 +8,10 @@
     "email": "hello@commanddeck.app"
   },
   "homepage": "https://commanddeck.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/7ochan/CommandDeck.git"
+  },
   "type": "module",
   "main": ".electron/main.js",
   "scripts": {
@@ -44,6 +48,7 @@
     "@xterm/xterm": "6.0.0",
     "better-sqlite3": "^13.0.1",
     "drizzle-orm": "^0.45.2",
+    "electron-updater": "^6.8.9",
     "next": "16.2.11",
     "node-pty": "1.2.0-beta.14",
     "react": "19.2.8",

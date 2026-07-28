@@ -492,7 +492,7 @@ function ActiveWorkspaceLayout({
       <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
         {/* Main Terminal Shell + Status Bar Container */}
         <div
-          className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)] cursor-text"
+          className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 cursor-text flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)]"
           onClick={() => {
             activeTerminal()?.focus();
           }}

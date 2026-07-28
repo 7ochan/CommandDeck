@@ -329,7 +329,7 @@ export function SettingsDialog({
                     </SelectSetting>
 
                     <div className="py-2">
-                      <p className="text-[11px] font-medium text-[var(--text-secondary)] mb-2">
+                      <p className="mb-2 text-[11px] font-medium text-[var(--text-secondary)]">
                         Directory Color Swatches
                       </p>
                       <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-7">
@@ -360,7 +360,7 @@ export function SettingsDialog({
                                     boxShadow: `0 0 8px ${palette.dark.main}66`,
                                   }}
                                 />
-                                <span className="max-w-full truncate text-[9.5px] font-medium capitalize text-[var(--text-primary)]">
+                                <span className="max-w-full truncate text-[9.5px] font-medium text-[var(--text-primary)] capitalize">
                                   {col}
                                 </span>
                               </button>

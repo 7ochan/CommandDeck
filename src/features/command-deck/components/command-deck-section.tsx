@@ -78,8 +78,7 @@ export function CommandDeckSection({
 
   const handleDrop = (event: DragEvent, targetDeckItemId: string) => {
     event.preventDefault();
-    const sourceId =
-      draggedItemId || event.dataTransfer.getData('text/plain');
+    const sourceId = draggedItemId || event.dataTransfer.getData('text/plain');
     if (!sourceId || sourceId === targetDeckItemId) {
       setDraggedItemId(null);
       setDragOverItemId(null);
@@ -96,10 +95,7 @@ export function CommandDeckSection({
       nextOrder.splice(targetIndex, 0, moved);
       setDeckItemOrder(nextOrder);
       try {
-        localStorage.setItem(
-          'cmd-deck-items-order',
-          JSON.stringify(nextOrder),
-        );
+        localStorage.setItem('cmd-deck-items-order', JSON.stringify(nextOrder));
       } catch {}
     }
 

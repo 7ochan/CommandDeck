@@ -96,7 +96,10 @@ export function WorkspaceSwitcher({
         ? prev.filter((id) => id !== workspaceId)
         : [...prev, workspaceId];
       try {
-        localStorage.setItem('cmd-deck-pinned-workspaces', JSON.stringify(next));
+        localStorage.setItem(
+          'cmd-deck-pinned-workspaces',
+          JSON.stringify(next),
+        );
       } catch {}
       return next;
     });
@@ -298,9 +301,7 @@ export function WorkspaceSwitcher({
           {filteredWorkspaces.map((workspace) => {
             const isActive =
               workspace.workspaceId === activeWorkspace.workspaceId;
-            const isPinned = pinnedWorkspaceIds.includes(
-              workspace.workspaceId,
-            );
+            const isPinned = pinnedWorkspaceIds.includes(workspace.workspaceId);
             const isDragging = draggedWorkspaceId === workspace.workspaceId;
             const isDragOver = dragOverWorkspaceId === workspace.workspaceId;
 

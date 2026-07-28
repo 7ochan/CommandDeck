@@ -20,6 +20,7 @@ const IPC = {
   REVEAL_APP_DATA: 'commanddeck:reveal-app-data',
   REVEAL_DATABASE: 'commanddeck:reveal-database',
   REVEAL_LOGS: 'commanddeck:reveal-logs',
+  CHECK_FOR_UPDATES: 'commanddeck:check-for-updates',
 } as const;
 
 type IpcChannel = (typeof IPC)[keyof typeof IPC];
@@ -48,6 +49,10 @@ contextBridge.exposeInMainWorld('commandDeckDesktop', {
 
   /** Reveals the application logs folder in Finder / Explorer. */
   revealLogs: (): Promise<void> => ipcRenderer.invoke(IPC.REVEAL_LOGS),
+
+  /** Checks GitHub Releases for application updates. */
+  checkForUpdates: (): Promise<void> =>
+    ipcRenderer.invoke(IPC.CHECK_FOR_UPDATES),
 
   // ── Event subscriptions (Main → Renderer) ────────────────────────────────
   /**

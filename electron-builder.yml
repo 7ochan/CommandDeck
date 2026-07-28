@@ -153,5 +153,9 @@ linux:
     Comment: 'A local-first visual terminal workspace'
     Categories: Development;Utility;TerminalEmulator;
 
-# ─── Publish (reserved for auto-update — not yet implemented) ─────────────────
-# publish: null
+# ─── Publish (GitHub Releases for electron-updater) ───────────────────────────
+publish:
+  provider: github
+  owner: 7ochan
+  repo: CommandDeck
+  releaseType: release
