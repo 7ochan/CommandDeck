@@ -167,11 +167,11 @@ function ActiveWorkspaceTimeline({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden">
-        <section className="cd-surface cd-surface--toolbar flex shrink-0 items-center justify-between gap-3 rounded-[15px] px-4 py-2.5">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <section className="cd-surface cd-surface--toolbar flex shrink-0 items-center justify-between gap-3 rounded-none border-b border-[var(--border-soft)] bg-[var(--surface-1)] px-4 py-2 shadow-none">
           <div className="flex items-center gap-3">
-            <span className="cd-clay-tile cd-clay-tile--info flex size-8 shrink-0 items-center justify-center rounded-lg">
-              <Icon name="timeline" size={16} />
+            <span className="cd-clay-tile cd-clay-tile--info flex size-7 shrink-0 items-center justify-center rounded-sm">
+              <Icon name="timeline" size={15} />
             </span>
             <div className="min-w-0">
               <h2 className="text-[13px] font-semibold text-[var(--text-primary)]">
@@ -214,7 +214,7 @@ function TimelinePageState({
   isError?: boolean;
 }) {
   return (
-    <div className="cd-surface flex min-h-0 flex-1 items-center justify-center rounded-[13px]">
+    <div className="cd-surface flex min-h-0 flex-1 items-center justify-center rounded-none">
       <p
         className={`text-[12px] ${isError ? 'text-[var(--danger)]' : 'text-[var(--text-muted)]'}`}
       >

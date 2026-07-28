@@ -161,7 +161,7 @@ export function CommandDeckSection({
                     setDraggedItemId(null);
                     setDragOverItemId(null);
                   }}
-                  className={`group relative cursor-grab rounded-[12px] transition-all active:cursor-grabbing ${
+                  className={`group relative cursor-grab rounded-sm transition-all active:cursor-grabbing ${
                     isDragging ? 'opacity-40' : ''
                   } ${
                     isDragOver

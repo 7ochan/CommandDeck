@@ -3,7 +3,7 @@ import { WorkspaceTimelinePage } from '@/features/timeline/components/workspace-
 
 export default function TimelinePage() {
   return (
-    <main className="cd-app flex h-dvh min-h-0 flex-col overflow-hidden p-2.5 sm:p-3">
+    <main className="cd-app flex h-dvh min-h-0 flex-col overflow-hidden p-0">
       <AppHeader activeView="timeline" />
       <WorkspaceTimelinePage />
     </main>

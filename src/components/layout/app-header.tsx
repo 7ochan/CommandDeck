@@ -114,15 +114,11 @@ export function AppHeader({ activeView }: AppHeaderProps) {
   useRegisterCommandPaletteActions('app-navigation', navigationActions);
 
   return (
-    <header className="flex h-13 shrink-0 items-center justify-between gap-3 px-0.5 sm:px-1.5">
-      <div className="flex min-w-0 items-center">
-        <h1 className="cd-brand-title text-[15px] leading-4 font-normal tracking-[-0.01em] text-[var(--text-primary)]">
-          CommandDeck
-        </h1>
-      </div>
+    <header className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface-1)] px-3">
+      <div className="flex w-32 shrink-0 items-center" />
 
       <nav
-        className="cd-inset-tray flex items-center rounded-[10px] p-1"
+        className="cd-inset-tray flex items-center rounded-sm p-0.5"
         aria-label="Primary views"
       >
         <ViewLink href="/" icon="terminal" isActive={activeView === 'terminal'}>
@@ -137,26 +133,26 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         </ViewLink>
       </nav>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex w-32 shrink-0 items-center justify-end gap-1.5">
         <button
           type="button"
-          className="cd-button h-9 px-2.5 sm:px-3"
+          className="cd-button h-7.5 px-2.5 text-[11px]"
           aria-label={`Open Command Palette (${shortcutLabel})`}
           title="Open Command Palette"
           onClick={openPalette}
         >
-          <Icon name="search" size={15} />
+          <Icon name="search" size={13} />
           <span className="hidden sm:inline">Commands</span>
           <kbd className="cd-kbd hidden md:inline-flex">{shortcutLabel}</kbd>
         </button>
         <button
           type="button"
-          className="cd-icon-button h-9 w-9"
+          className="cd-icon-button h-7.5 w-7.5"
           aria-label="Open Settings"
           title="Settings"
           onClick={openSettings}
         >
-          <Icon name="settings" size={16} />
+          <Icon name="settings" size={14} />
         </button>
       </div>
     </header>
@@ -178,13 +174,13 @@ function ViewLink({
     <Link
       href={href}
       aria-current={isActive ? 'page' : undefined}
-      className={`flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-medium transition-[background-color,color,border-color,box-shadow] ${
+      className={`flex h-6.5 items-center gap-1.5 rounded-sm border px-2.5 text-[11px] font-medium transition-[background-color,color,border-color,box-shadow] ${
         isActive
           ? 'cd-segment-active'
           : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
       }`}
     >
-      <Icon name={icon} size={14} />
+      <Icon name={icon} size={13} />
       {children}
     </Link>
   );

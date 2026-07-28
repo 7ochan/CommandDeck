@@ -95,7 +95,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 
   return (
     <article
-      className={`cd-deck-card relative isolate overflow-hidden rounded-[12px] border transition-[border-color,background-color,box-shadow] ${
+      className={`cd-deck-card relative isolate overflow-hidden rounded-sm border transition-[border-color,background-color,box-shadow] ${
         isSelected
           ? 'cd-deck-card--selected border-[var(--accent-border)] bg-[var(--accent-soft)]'
           : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
@@ -104,7 +104,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
       <div className="flex items-stretch">
         <button
           type="button"
-          className="min-w-0 flex-1 cursor-pointer px-3 py-2.5 text-left focus-visible:outline-offset-[-2px]"
+          className="min-w-0 flex-1 cursor-pointer px-2.5 py-2 text-left focus-visible:outline-offset-[-2px]"
           aria-expanded={isSelected}
           aria-controls={actionPanelId}
           aria-pressed={isSelected}
@@ -129,7 +129,7 @@ export const CommandDeckItem = memo(function CommandDeckItem({
 
         <button
           type="button"
-          className="cd-clay-tile cd-clay-tile--accent m-2 ml-0 flex w-8 shrink-0 items-center justify-center rounded-md hover:text-[var(--accent-strong)]"
+          className="cd-clay-tile cd-clay-tile--accent m-1.5 ml-0 flex w-7.5 shrink-0 items-center justify-center rounded-sm hover:text-[var(--accent-strong)]"
           aria-label={`Run ${item.displayName}`}
           title="Run command"
           onClick={run}

@@ -155,10 +155,10 @@ export function CommandPalette({
         }
       }}
     >
-      <div className="border-b border-[var(--border-soft)] p-3.5">
-        <div className="cd-inset-tray cd-palette-search flex items-center gap-3 rounded-[11px] px-3.5">
+      <div className="border-b border-[var(--border-soft)] p-3">
+        <div className="cd-inset-tray cd-palette-search flex items-center gap-2.5 rounded-md px-3">
           <span className="text-[var(--accent)]" aria-hidden="true">
-            <Icon name="search" size={17} />
+            <Icon name="search" size={16} />
           </span>
           <input
             ref={inputRef}
@@ -175,7 +175,7 @@ export function CommandPalette({
                 : undefined
             }
             placeholder="Search commands, history, workspaces…"
-            className="h-12 min-w-0 flex-1 bg-transparent font-mono text-[13px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-subtle)]"
+            className="h-10 min-w-0 flex-1 bg-transparent font-mono text-[12px] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-subtle)]"
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
           />
@@ -186,7 +186,7 @@ export function CommandPalette({
       <div
         ref={resultListRef}
         id="command-palette-results"
-        className="command-palette-scrollbar max-h-[min(30rem,62vh)] min-h-32 overflow-y-auto p-2.5"
+        className="command-palette-scrollbar max-h-[min(30rem,62vh)] min-h-32 overflow-y-auto p-2"
         role="listbox"
         aria-label="Command Palette results"
       >
@@ -209,7 +209,7 @@ export function CommandPalette({
                 aria-selected={isSelected}
                 aria-disabled={action.disabled || undefined}
                 data-palette-index={resultIndex}
-                className={`flex w-full items-center gap-3 rounded-[9px] border px-3 py-2.5 text-left transition-colors ${
+                className={`flex w-full items-center gap-2.5 rounded-sm border px-2.5 py-2 text-left transition-colors ${
                   isSelected
                     ? 'border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--text-primary)]'
                     : 'border-transparent text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'

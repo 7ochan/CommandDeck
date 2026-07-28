@@ -58,8 +58,8 @@ export function WorkspaceTimeline({
   const hasActiveQuery = hasActiveCommandHistoryQuery(query);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5 xl:flex-row">
-      <section className="cd-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[13px]">
+    <div className="flex min-h-0 flex-1 flex-col divide-x divide-[var(--border-soft)] xl:flex-row">
+      <section className="cd-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-none shadow-none">
         <div className="flex shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-4 py-3.5">
           <div>
             <div className="flex items-center gap-2">

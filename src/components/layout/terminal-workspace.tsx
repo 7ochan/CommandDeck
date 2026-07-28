@@ -453,7 +453,7 @@ function ActiveWorkspaceLayout({
   ]);
 
   return (
-    <div className="relative flex min-h-0 flex-1 gap-2.5 overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 overflow-hidden">
       {/* Left Edge Hover Trigger Zone */}
       {!showLeftSidebar && hoverToRevealSidebars && !isLeftHovered && (
         <div
@@ -489,10 +489,10 @@ function ActiveWorkspaceLayout({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Main Terminal Shell + Status Bar Container */}
         <div
-          className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 cursor-text flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)]"
+          className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 cursor-text flex-col overflow-hidden rounded-none border-0 bg-[var(--terminal)]"
           onClick={() => {
             activeTerminal()?.focus();
           }}
@@ -508,8 +508,8 @@ function ActiveWorkspaceLayout({
                   key={workspaceId}
                   className={
                     isActive
-                      ? 'absolute inset-0 z-10 flex px-2.5 pt-1 pb-2.5'
-                      : 'absolute inset-0 z-0 flex px-2.5 pt-1 pb-2.5'
+                      ? 'absolute inset-0 z-10 flex px-2 py-1'
+                      : 'absolute inset-0 z-0 flex px-2 py-1'
                   }
                   style={isActive ? undefined : { visibility: 'hidden' }}
                   aria-hidden={!isActive}

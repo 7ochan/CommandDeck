@@ -339,12 +339,12 @@ export function DeveloperHub({
 
   return (
     <aside
-      className="cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-[15px]"
+      className="cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-none border-l border-[var(--border-soft)] bg-[var(--surface-1)] shadow-none"
       aria-label="Developer Hub"
     >
-      <div className="flex h-12 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
+      <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
         <div
-          className="cd-scrollbar flex h-full min-w-0 flex-1 items-center gap-1 overflow-x-auto p-1.5"
+          className="cd-scrollbar flex h-full min-w-0 flex-1 items-center gap-1 overflow-x-auto p-1"
           role="tablist"
           aria-label="Developer Hub tools"
         >
@@ -378,7 +378,7 @@ export function DeveloperHub({
                 aria-selected={isActive}
                 aria-controls={`developer-hub-panel-${tab.id}`}
                 tabIndex={isActive ? 0 : -1}
-                className={`group relative flex h-8 min-w-0 flex-1 cursor-grab items-center justify-between gap-1 rounded-md border px-2 text-[11px] font-medium transition-all active:cursor-grabbing ${
+                className={`group relative flex h-7 min-w-0 flex-1 cursor-grab items-center justify-between gap-1 rounded-sm border px-2 text-[11px] font-medium transition-all active:cursor-grabbing ${
                   isDragging ? 'opacity-40' : ''
                 } ${
                   isDragOver

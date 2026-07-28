@@ -32,10 +32,10 @@
   --input-focus: #181818;
   --backdrop: rgb(0 0 0 / 80%);
   --highlight-text: #ffffff;
-  --radius-sm: 6px;
-  --radius-md: 9px;
-  --radius-lg: 12px;
-  --radius-xl: 15px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
   --shadow-surface:
     inset 0 1px 0 rgb(255 255 255 / 4%), inset 0 -1px 0 rgb(0 0 0 / 18%),
     -3px -3px 10px rgb(255 255 255 / 1.2%), 7px 9px 22px rgb(0 0 0 / 24%);
@@ -334,7 +334,7 @@ button.cd-clay-tile:active:not(:disabled) {
   min-height: 20px;
   align-items: center;
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 3px;
   background: var(--canvas-raised);
   padding: 0 6px;
   color: var(--text-muted);
@@ -348,7 +348,7 @@ button.cd-clay-tile:active:not(:disabled) {
   margin: auto;
   overflow: clip !important;
   border: 1px solid var(--border-strong);
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--dialog-bg);
   color: var(--text-primary);
   box-shadow: var(--shadow-dialog);

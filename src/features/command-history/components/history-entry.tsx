@@ -70,7 +70,7 @@ export const CommandHistoryEntry = memo(function CommandHistoryEntry({
 
   return (
     <article
-      className={`cd-history-row group/history relative isolate overflow-hidden rounded-[10px] border transition-[border-color,background-color,box-shadow] duration-150 motion-reduce:transition-none ${
+      className={`cd-history-row group/history relative isolate overflow-hidden rounded-sm border transition-[border-color,background-color,box-shadow] duration-150 motion-reduce:transition-none ${
         isSelected
           ? 'cd-history-row--selected border-[var(--accent-border)] bg-[var(--accent-soft)]'
           : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] hover:border-[var(--border)] hover:bg-[var(--surface-2)]'
@@ -79,7 +79,7 @@ export const CommandHistoryEntry = memo(function CommandHistoryEntry({
       <button
         ref={buttonRef}
         type="button"
-        className="group w-full cursor-pointer p-3 text-left focus-visible:outline-offset-[-2px]"
+        className="group w-full cursor-pointer p-2 text-left focus-visible:outline-offset-[-2px]"
         aria-expanded={isSelected}
         aria-controls={actionPanelId}
         aria-pressed={isSelected}
@@ -91,20 +91,20 @@ export const CommandHistoryEntry = memo(function CommandHistoryEntry({
         onKeyDown={handleKeyDown}
       >
         <div className="flex items-start justify-between gap-2">
-          <span className="block min-w-0 flex-1 overflow-hidden font-mono text-[12px] leading-[1.15rem] break-words whitespace-pre-wrap text-[var(--text-primary)]">
+          <span className="block min-w-0 flex-1 overflow-hidden font-mono text-[11px] leading-[1.15rem] break-words whitespace-pre-wrap text-[var(--text-primary)]">
             <HighlightedText text={entry.command} searchTerm={searchTerm} />
           </span>
           <StatusBadge status={status} exitCode={entry.exitCode} />
         </div>
 
         <p
-          className="mt-2 truncate font-mono text-[10px] text-[var(--text-muted)]"
+          className="mt-1.5 truncate font-mono text-[10px] text-[var(--text-muted)]"
           title={entry.cwd}
         >
           <HighlightedText text={entry.cwd} searchTerm={searchTerm} />
         </p>
 
-        <div className="mt-2 flex items-center justify-between gap-2 border-t border-[var(--border-soft)] pt-2 font-mono text-[10px] text-[var(--text-muted)]">
+        <div className="mt-1.5 flex items-center justify-between gap-2 border-t border-[var(--border-soft)] pt-1.5 font-mono text-[9px] text-[var(--text-muted)]">
           <span>{formatDuration(entry.durationMs)}</span>
           <span>{TIME_FORMATTER.format(entry.endedAt)}</span>
         </div>

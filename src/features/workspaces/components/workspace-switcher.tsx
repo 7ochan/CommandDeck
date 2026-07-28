@@ -258,46 +258,46 @@ export function WorkspaceSwitcher({
   return (
     <>
       <aside
-        className="cd-surface flex w-64 shrink-0 flex-col overflow-hidden rounded-[15px] lg:w-64"
+        className="cd-surface flex w-60 shrink-0 flex-col overflow-hidden rounded-none border-r border-[var(--border-soft)] bg-[var(--surface-1)] shadow-none lg:w-60"
         aria-label="Workspace tabs navigation"
       >
         {/* Sidebar Search + Filter Header */}
-        <div className="flex h-11 shrink-0 items-center justify-between gap-1.5 border-b border-[var(--border-soft)] px-2.5">
+        <div className="flex h-9 shrink-0 items-center justify-between gap-1 border-b border-[var(--border-soft)] px-2">
           <div className="relative flex min-w-0 flex-1 items-center">
             <span className="pointer-events-none absolute left-2 text-[var(--text-subtle)]">
-              <Icon name="search" size={13} />
+              <Icon name="search" size={12} />
             </span>
             <input
               type="text"
               value={searchQuery}
               placeholder="Search tabs…"
               aria-label="Search tabs"
-              className="w-full rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] py-1 pr-2 pl-7 text-[11px] text-[var(--text-primary)] placeholder-[var(--text-subtle)] transition-colors outline-none focus:border-[var(--accent-border)]"
+              className="w-full rounded-sm border border-[var(--border-soft)] bg-[var(--canvas-raised)] py-0.5 pr-2 pl-6 text-[11px] text-[var(--text-primary)] placeholder-[var(--text-subtle)] transition-colors outline-none focus:border-[var(--accent-border)]"
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <button
             type="button"
-            className="flex size-7 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            className="flex size-6 shrink-0 items-center justify-center rounded-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
             title="Filter / Manage Workspaces"
             aria-label="Filter / Manage Workspaces"
             onClick={() => setIsManaging(true)}
           >
-            <Icon name="filter" size={14} />
+            <Icon name="filter" size={13} />
           </button>
           <button
             type="button"
-            className="flex size-7 shrink-0 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            className="flex size-6 shrink-0 items-center justify-center rounded-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
             title="New Workspace tab"
             aria-label="New Workspace tab"
             onClick={() => void handleQuickCreate()}
           >
-            <Icon name="plus" size={14} />
+            <Icon name="plus" size={13} />
           </button>
         </div>
 
         {/* Workspace Tab Cards List */}
-        <div className="cd-scrollbar flex min-h-0 flex-1 flex-col space-y-1 overflow-y-auto p-2">
+        <div className="cd-scrollbar flex min-h-0 flex-1 flex-col space-y-0.5 overflow-y-auto p-1.5">
           {filteredWorkspaces.map((workspace) => {
             const isActive =
               workspace.workspaceId === activeWorkspace.workspaceId;
@@ -318,13 +318,13 @@ export function WorkspaceSwitcher({
                   setDragOverWorkspaceId(null);
                 }}
                 onClick={() => onSelect(workspace.workspaceId)}
-                className={`group relative flex w-full cursor-grab items-center gap-2 rounded-[10px] border px-2.5 py-2 text-left transition-all active:cursor-grabbing ${
+                className={`group relative flex w-full cursor-grab items-center gap-1.5 rounded-sm border px-2 py-1.5 text-left transition-all active:cursor-grabbing ${
                   isDragging ? 'opacity-40' : ''
                 } ${
                   isDragOver
                     ? 'border-[var(--accent)] bg-[var(--surface-3)] ring-1 ring-[var(--accent)]'
                     : isActive
-                      ? 'border-[var(--border-strong)] bg-[var(--surface-3)] text-[var(--text-primary)] shadow-sm'
+                      ? 'border-[var(--border-strong)] bg-[var(--surface-3)] text-[var(--text-primary)] shadow-xs'
                       : 'border-transparent text-[var(--text-secondary)] hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)]'
                 }`}
               >
@@ -332,22 +332,22 @@ export function WorkspaceSwitcher({
                   className="mr-0.5 hidden text-[var(--text-subtle)] opacity-0 transition-opacity group-hover:block group-hover:opacity-100"
                   title="Drag to reorder"
                 >
-                  <Icon name="grip-vertical" size={12} />
+                  <Icon name="grip-vertical" size={11} />
                 </div>
 
                 <div
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${
+                  className={`flex size-6 shrink-0 items-center justify-center rounded-sm border text-[10px] font-semibold ${
                     isActive
                       ? 'border-[var(--accent-border)] bg-[var(--surface-3)] text-[var(--accent-strong)]'
                       : 'border-[var(--border-soft)] bg-[var(--canvas-raised)] text-[var(--text-muted)]'
                   }`}
                 >
-                  <Icon name="terminal" size={12} />
+                  <Icon name="terminal" size={11} />
                 </div>
 
-                <div className="min-w-0 flex-1 pr-7">
-                  <div className="flex items-center gap-1.5">
-                    <span className="block truncate font-mono text-[12px] leading-4 font-semibold text-[var(--text-primary)]">
+                <div className="min-w-0 flex-1 pr-6">
+                  <div className="flex items-center gap-1">
+                    <span className="block truncate font-mono text-[11px] leading-4 font-semibold text-[var(--text-primary)]">
                       {workspace.name}
                     </span>
                     {isPinned && (
@@ -355,18 +355,18 @@ export function WorkspaceSwitcher({
                         className="text-[var(--accent)] group-hover:hidden"
                         title="Pinned tab"
                       >
-                        <Icon name="pin" size={10} />
+                        <Icon name="pin" size={9} />
                       </span>
                     )}
                   </div>
-                  <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-muted)]">
-                    <Icon name="branch" size={10} /> main
+                  <span className="flex items-center gap-1 font-mono text-[9px] text-[var(--text-muted)]">
+                    <Icon name="branch" size={9} /> main
                   </span>
                 </div>
 
                 {/* Top-Right Floating Hover Action Pill */}
                 <div
-                  className={`absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5 rounded-[6px] border border-[var(--border-soft)] bg-[var(--surface-3)] p-0.5 shadow-md transition-all duration-150 ${
+                  className={`absolute top-1 right-1 z-10 flex items-center gap-0.5 rounded-sm border border-[var(--border-soft)] bg-[var(--surface-3)] p-0.5 shadow-sm transition-all duration-150 ${
                     isPinned
                       ? 'opacity-100'
                       : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
@@ -376,7 +376,7 @@ export function WorkspaceSwitcher({
                   <button
                     type="button"
                     onClick={(e) => togglePin(workspace.workspaceId, e)}
-                    className={`flex size-5 items-center justify-center rounded transition-colors ${
+                    className={`flex size-4.5 items-center justify-center rounded-xs transition-colors ${
                       isPinned
                         ? 'text-[var(--accent)] hover:bg-[var(--surface-2)]'
                         : 'text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
@@ -384,7 +384,7 @@ export function WorkspaceSwitcher({
                     title={isPinned ? 'Unpin tab' : 'Pin tab'}
                     aria-label={isPinned ? 'Unpin tab' : 'Pin tab'}
                   >
-                    <Icon name="pin" size={11} />
+                    <Icon name="pin" size={10} />
                   </button>
 
                   {/* Close tab button */}
@@ -394,11 +394,11 @@ export function WorkspaceSwitcher({
                       e.stopPropagation();
                       void remove(workspace);
                     }}
-                    className="flex size-5 items-center justify-center rounded text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
+                    className="flex size-4.5 items-center justify-center rounded-xs text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--danger)]"
                     title="Close tab"
                     aria-label="Close tab"
                   >
-                    <Icon name="x" size={11} />
+                    <Icon name="x" size={10} />
                   </button>
                 </div>
               </div>
@@ -409,17 +409,17 @@ export function WorkspaceSwitcher({
           <button
             type="button"
             onClick={() => void handleQuickCreate()}
-            className="group flex w-full items-center gap-2.5 rounded-[10px] border border-transparent px-2.5 py-2 text-left text-[var(--text-muted)] transition-all hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
+            className="group flex w-full items-center gap-2 rounded-sm border border-transparent px-2 py-1.5 text-left text-[var(--text-muted)] transition-all hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
           >
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--canvas-raised)] text-[var(--text-muted)]">
-              <Icon name="terminal" size={12} />
+            <div className="flex size-6 shrink-0 items-center justify-center rounded-sm border border-[var(--border-soft)] bg-[var(--canvas-raised)] text-[var(--text-muted)]">
+              <Icon name="terminal" size={11} />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block truncate font-mono text-[12px] leading-4 font-medium text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
+              <span className="block truncate font-mono text-[11px] leading-4 font-medium text-[var(--text-muted)] group-hover:text-[var(--text-primary)]">
                 New session
               </span>
-              <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-subtle)]">
-                <Icon name="branch" size={10} /> main
+              <span className="flex items-center gap-1 font-mono text-[9px] text-[var(--text-subtle)]">
+                <Icon name="branch" size={9} /> main
               </span>
             </div>
           </button>
@@ -427,7 +427,7 @@ export function WorkspaceSwitcher({
 
         {/* Connection status indicator */}
         {connectionStatus && (
-          <div className="flex shrink-0 items-center justify-between border-t border-[var(--border-soft)] px-3 py-2 text-[10px]">
+          <div className="flex h-7 shrink-0 items-center justify-between border-t border-[var(--border-soft)] px-2.5 text-[10px]">
             <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
               <span
                 className={`size-1.5 rounded-full ${connectionStatusDotClass(connectionStatus.tone)}`}

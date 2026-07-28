@@ -113,7 +113,7 @@ export function SettingsDialog({
   return (
     <dialog
       ref={dialogRef}
-      className="cd-dialog max-h-[calc(100dvh-2rem)] w-[min(52rem,calc(100vw-2rem))] overflow-clip rounded-[16px] p-0"
+      className="cd-dialog max-h-[calc(100dvh-2rem)] w-[min(52rem,calc(100vw-2rem))] overflow-clip rounded-lg p-0"
       aria-labelledby={titleId}
       onCancel={onClose}
       onClose={() => {
@@ -133,7 +133,7 @@ export function SettingsDialog({
       >
         <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] px-4 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="cd-clay-tile cd-clay-tile--accent flex size-8 shrink-0 items-center justify-center rounded-lg">
+            <span className="cd-clay-tile cd-clay-tile--accent flex size-8 shrink-0 items-center justify-center rounded-sm">
               <Icon name="settings" size={15} />
             </span>
             <div>
@@ -194,7 +194,7 @@ export function SettingsDialog({
                     key={section.id}
                     type="button"
                     aria-current={isActive ? 'page' : undefined}
-                    className="cd-settings-nav-item flex h-9.5 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-[11px] font-medium"
+                    className="cd-settings-nav-item flex h-9.5 min-w-0 items-center gap-2.5 rounded-sm px-2.5 text-left text-[11px] font-medium"
                     onClick={() => setActiveSection(section.id)}
                   >
                     <Icon name={section.icon} size={14} />
