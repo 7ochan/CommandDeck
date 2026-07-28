@@ -1,6 +1,15 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type FormEvent,
+  type MouseEvent,
+} from 'react';
 
 import { Icon } from '@/components/ui/icon';
 import type { WorkspaceSummary } from '@/shared/types';
@@ -38,6 +47,33 @@ export function WorkspaceSwitcher({
   const [busyWorkspaceId, setBusyWorkspaceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [pinnedWorkspaceIds, setPinnedWorkspaceIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('cmd-deck-pinned-workspaces');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [workspaceOrder, setWorkspaceOrder] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('cmd-deck-workspace-order');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [draggedWorkspaceId, setDraggedWorkspaceId] = useState<string | null>(
+    null,
+  );
+  const [dragOverWorkspaceId, setDragOverWorkspaceId] = useState<string | null>(
+    null,
+  );
+
   useEffect(() => {
     const dialog = dialogRef.current;
 
@@ -52,6 +88,19 @@ export function WorkspaceSwitcher({
       dialog.close();
     }
   }, [isManaging]);
+
+  const togglePin = (workspaceId: string, event: MouseEvent) => {
+    event.stopPropagation();
+    setPinnedWorkspaceIds((prev) => {
+      const next = prev.includes(workspaceId)
+        ? prev.filter((id) => id !== workspaceId)
+        : [...prev, workspaceId];
+      try {
+        localStorage.setItem('cmd-deck-pinned-workspaces', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const handleQuickCreate = async () => {
     const defaultName = `Session ${workspaces.length + 1}`;
@@ -130,9 +179,78 @@ export function WorkspaceSwitcher({
     }
   };
 
-  const filteredWorkspaces = workspaces.filter((ws) =>
+  const sortedWorkspaces = useMemo(() => {
+    const map = new Map(workspaces.map((w) => [w.workspaceId, w]));
+    const ordered: WorkspaceSummary[] = [];
+
+    workspaceOrder.forEach((id) => {
+      const ws = map.get(id);
+      if (ws) {
+        ordered.push(ws);
+        map.delete(id);
+      }
+    });
+
+    map.forEach((ws) => ordered.push(ws));
+
+    const pinned = ordered.filter((w) =>
+      pinnedWorkspaceIds.includes(w.workspaceId),
+    );
+    const unpinned = ordered.filter(
+      (w) => !pinnedWorkspaceIds.includes(w.workspaceId),
+    );
+
+    return [...pinned, ...unpinned];
+  }, [workspaces, workspaceOrder, pinnedWorkspaceIds]);
+
+  const filteredWorkspaces = sortedWorkspaces.filter((ws) =>
     ws.name.toLowerCase().includes(searchQuery.toLowerCase().trim()),
   );
+
+  const handleDragStart = (event: DragEvent, workspaceId: string) => {
+    event.dataTransfer.setData('text/plain', workspaceId);
+    event.dataTransfer.effectAllowed = 'move';
+    setDraggedWorkspaceId(workspaceId);
+  };
+
+  const handleDragOver = (event: DragEvent, workspaceId: string) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    if (draggedWorkspaceId && draggedWorkspaceId !== workspaceId) {
+      setDragOverWorkspaceId(workspaceId);
+    }
+  };
+
+  const handleDrop = (event: DragEvent, targetWorkspaceId: string) => {
+    event.preventDefault();
+    const sourceId =
+      draggedWorkspaceId || event.dataTransfer.getData('text/plain');
+    if (!sourceId || sourceId === targetWorkspaceId) {
+      setDraggedWorkspaceId(null);
+      setDragOverWorkspaceId(null);
+      return;
+    }
+
+    const currentIds = sortedWorkspaces.map((w) => w.workspaceId);
+    const sourceIndex = currentIds.indexOf(sourceId);
+    const targetIndex = currentIds.indexOf(targetWorkspaceId);
+
+    if (sourceIndex !== -1 && targetIndex !== -1) {
+      const nextOrder = [...currentIds];
+      const [moved] = nextOrder.splice(sourceIndex, 1);
+      nextOrder.splice(targetIndex, 0, moved);
+      setWorkspaceOrder(nextOrder);
+      try {
+        localStorage.setItem(
+          'cmd-deck-workspace-order',
+          JSON.stringify(nextOrder),
+        );
+      } catch {}
+    }
+
+    setDraggedWorkspaceId(null);
+    setDragOverWorkspaceId(null);
+  };
 
   return (
     <>
@@ -180,17 +298,42 @@ export function WorkspaceSwitcher({
           {filteredWorkspaces.map((workspace) => {
             const isActive =
               workspace.workspaceId === activeWorkspace.workspaceId;
+            const isPinned = pinnedWorkspaceIds.includes(
+              workspace.workspaceId,
+            );
+            const isDragging = draggedWorkspaceId === workspace.workspaceId;
+            const isDragOver = dragOverWorkspaceId === workspace.workspaceId;
+
             return (
-              <button
+              <div
                 key={workspace.workspaceId}
-                type="button"
+                draggable
+                onDragStart={(e) => handleDragStart(e, workspace.workspaceId)}
+                onDragOver={(e) => handleDragOver(e, workspace.workspaceId)}
+                onDragLeave={() => setDragOverWorkspaceId(null)}
+                onDrop={(e) => handleDrop(e, workspace.workspaceId)}
+                onDragEnd={() => {
+                  setDraggedWorkspaceId(null);
+                  setDragOverWorkspaceId(null);
+                }}
                 onClick={() => onSelect(workspace.workspaceId)}
-                className={`group flex w-full items-center gap-2.5 rounded-[10px] border px-2.5 py-2 text-left transition-all ${
-                  isActive
-                    ? 'border-[var(--border-strong)] bg-[var(--surface-3)] text-[var(--text-primary)] shadow-sm'
-                    : 'border-transparent text-[var(--text-secondary)] hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)]'
+                className={`group relative flex w-full cursor-grab items-center gap-2 rounded-[10px] border px-2 py-2 text-left transition-all active:cursor-grabbing ${
+                  isDragging ? 'opacity-40' : ''
+                } ${
+                  isDragOver
+                    ? 'border-[var(--accent)] bg-[var(--surface-3)] ring-1 ring-[var(--accent)]'
+                    : isActive
+                      ? 'border-[var(--border-strong)] bg-[var(--surface-3)] text-[var(--text-primary)] shadow-sm'
+                      : 'border-transparent text-[var(--text-secondary)] hover:border-[var(--border-soft)] hover:bg-[var(--surface-2)]'
                 }`}
               >
+                <div
+                  className="mr-0.5 hidden text-[var(--text-subtle)] opacity-0 transition-opacity group-hover:block group-hover:opacity-100"
+                  title="Drag to reorder"
+                >
+                  <Icon name="grip-vertical" size={12} />
+                </div>
+
                 <div
                   className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${
                     isActive
@@ -200,15 +343,50 @@ export function WorkspaceSwitcher({
                 >
                   <Icon name="terminal" size={12} />
                 </div>
+
                 <div className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-[12px] leading-4 font-semibold text-[var(--text-primary)]">
-                    {workspace.name}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="block truncate font-mono text-[12px] leading-4 font-semibold text-[var(--text-primary)]">
+                      {workspace.name}
+                    </span>
+                  </div>
                   <span className="flex items-center gap-1 font-mono text-[10px] text-[var(--text-muted)]">
                     <Icon name="branch" size={10} /> main
                   </span>
                 </div>
-              </button>
+
+                {/* Hover / Status Actions */}
+                <div className="flex shrink-0 items-center gap-0.5">
+                  {/* Pin action button */}
+                  <button
+                    type="button"
+                    onClick={(e) => togglePin(workspace.workspaceId, e)}
+                    className={`flex size-6 items-center justify-center rounded transition-colors ${
+                      isPinned
+                        ? 'text-[var(--accent)] opacity-100 hover:bg-[var(--surface-3)]'
+                        : 'text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
+                    }`}
+                    title={isPinned ? 'Unpin tab' : 'Pin tab'}
+                    aria-label={isPinned ? 'Unpin tab' : 'Pin tab'}
+                  >
+                    <Icon name="pin" size={12} />
+                  </button>
+
+                  {/* Close tab button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void remove(workspace);
+                    }}
+                    className="flex size-6 items-center justify-center rounded text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[var(--surface-3)] hover:text-[var(--danger)]"
+                    title="Close tab"
+                    aria-label="Close tab"
+                  >
+                    <Icon name="x" size={12} />
+                  </button>
+                </div>
+              </div>
             );
           })}
 

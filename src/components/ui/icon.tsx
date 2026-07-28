@@ -13,10 +13,12 @@ export type IconName =
   | 'deck'
   | 'edit'
   | 'filter'
+  | 'grip-vertical'
   | 'history'
   | 'keyboard'
   | 'minus'
   | 'more'
+  | 'pin'
   | 'play'
   | 'plus'
   | 'search'
@@ -119,6 +121,16 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
       <circle cx="16" cy="18" r="2" />
     </>
   ),
+  'grip-vertical': (
+    <>
+      <circle cx="9" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="6" r="1" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="18" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="6" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="18" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
   history: (
     <>
       <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
@@ -137,6 +149,12 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
       <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
       <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
       <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none" />
+    </>
+  ),
+  pin: (
+    <>
+      <line x1="12" y1="17" x2="12" y2="22" />
+      <path d="M5 17h14l-1.5-5h1.5V8H3v4h1.5L5 17z" />
     </>
   ),
   play: <path d="m8 5 11 7-11 7Z" />,
