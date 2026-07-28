@@ -347,18 +347,17 @@ export function DeveloperHub({
     >
       <div className="flex h-9 shrink-0 items-center border-b border-[var(--border-soft)] bg-[var(--surface-2)] shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
         <div
-          className="flex h-full min-w-0 flex-1 items-center gap-1 overflow-x-hidden p-1"
+          className="flex h-full min-w-0 flex-1 items-center gap-1 overflow-hidden p-1"
           role="tablist"
           aria-label="Developer Hub tools"
         >
           {visibleTabs.map((tab) => {
             const isActive = activeTab === tab.id;
-            const isPinned = pinnedTabs.includes(tab.id);
             const isDragging = draggedDevTab === tab.id;
             const isDragOver = dragOverDevTab === tab.id;
 
             return (
-              <div
+              <button
                 key={tab.id}
                 ref={(element) => {
                   if (element) {
@@ -368,6 +367,7 @@ export function DeveloperHub({
                   }
                 }}
                 id={`developer-hub-tab-${tab.id}`}
+                type="button"
                 role="tab"
                 draggable
                 onDragStart={(e) => handleDevTabDragStart(e, tab.id)}
@@ -381,7 +381,7 @@ export function DeveloperHub({
                 aria-selected={isActive}
                 aria-controls={`developer-hub-panel-${tab.id}`}
                 tabIndex={isActive ? 0 : -1}
-                className={`group relative flex h-7 min-w-0 flex-1 cursor-grab items-center justify-between gap-1 rounded-sm border px-2 text-[11px] font-medium transition-all active:cursor-grabbing ${
+                className={`group relative flex h-7 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-sm border px-2 text-[11px] font-medium transition-all ${
                   isDragging ? 'opacity-40' : ''
                 } ${
                   isDragOver
@@ -393,64 +393,21 @@ export function DeveloperHub({
                 onClick={() => selectTab(tab.id)}
                 onKeyDown={(event) => handleTabKeyDown(event, tab.id)}
               >
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <Icon
-                    name={tab.id === 'deck' ? 'deck' : 'history'}
-                    size={13}
-                  />
-                  <span className="truncate">{tab.label}</span>
-                  <span
-                    className={`rounded px-1 py-0.5 font-mono text-[9px] ${
-                      isActive
-                        ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
-                        : 'bg-[var(--surface-2)] text-[var(--text-subtle)]'
-                    }`}
-                  >
-                    {tabCounts[tab.id]}
-                  </span>
-                </div>
-
-                {/* Hover / Pin & Close action icons */}
-                <div className="flex items-center gap-0.5">
-                  <button
-                    type="button"
-                    onClick={(e) => togglePinTab(tab.id, e)}
-                    className={`flex size-4 items-center justify-center rounded transition-colors ${
-                      isPinned
-                        ? 'text-[var(--accent)] opacity-100'
-                        : 'text-[var(--text-muted)] opacity-0 group-hover:opacity-100 hover:text-[var(--text-primary)]'
-                    }`}
-                    title={isPinned ? 'Unpin tab' : 'Pin tab'}
-                    aria-label={isPinned ? 'Unpin tab' : 'Pin tab'}
-                  >
-                    <Icon name="pin" size={11} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => closeTab(tab.id, e)}
-                    className="flex size-4 items-center justify-center rounded text-[var(--text-muted)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-[var(--danger)]"
-                    title="Close tab"
-                    aria-label="Close tab"
-                  >
-                    <Icon name="x" size={11} />
-                  </button>
-                </div>
-              </div>
+                <Icon name={tab.id === 'deck' ? 'deck' : 'history'} size={13} />
+                <span className="truncate">{tab.label}</span>
+                <span
+                  className={`rounded px-1 py-0.5 font-mono text-[9px] ${
+                    isActive
+                      ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                      : 'bg-[var(--surface-2)] text-[var(--text-subtle)]'
+                  }`}
+                >
+                  {tabCounts[tab.id]}
+                </span>
+              </button>
             );
           })}
         </div>
-
-        {closedTabs.length > 0 && (
-          <button
-            type="button"
-            className="cd-icon-button mr-1 size-7 shrink-0 border-transparent text-[var(--text-muted)] hover:text-[var(--accent)]"
-            aria-label="Restore closed tab"
-            title={`Restore closed tab (${closedTabs.join(', ')})`}
-            onClick={() => restoreTab(closedTabs[0])}
-          >
-            <Icon name="plus" size={15} />
-          </button>
-        )}
 
         {onCreateDeckItem && (
           <button

@@ -114,7 +114,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
   useRegisterCommandPaletteActions('app-navigation', navigationActions);
 
   return (
-    <header className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface-1)] px-3">
+    <header className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface-1)] pr-2 pl-3">
       <div className="flex min-w-0 flex-1 items-center" />
 
       <nav
@@ -136,7 +136,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
       <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
         <button
           type="button"
-          className="cd-button h-7 px-2.5 text-[11px]"
+          className="cd-button flex h-7 items-center gap-1.5 rounded-sm border border-[var(--border-soft)] bg-[var(--surface-2)] px-2.5 text-[11px] font-medium transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]"
           aria-label={`Open Command Palette (${shortcutLabel})`}
           title="Open Command Palette"
           onClick={openPalette}
@@ -147,7 +147,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         </button>
         <button
           type="button"
-          className="cd-icon-button h-7 w-7 shrink-0"
+          className="cd-icon-button flex size-7 shrink-0 items-center justify-center rounded-sm border border-[var(--border-soft)] bg-[var(--surface-2)] text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
           aria-label="Open Settings"
           title="Settings"
           onClick={openSettings}
