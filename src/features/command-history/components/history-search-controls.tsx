@@ -26,6 +26,12 @@ const STATUS_STYLES: Record<CommandHistoryStatus, string> = {
     'aria-pressed:border-[rgb(232_185_106_/_30%)] aria-pressed:bg-[var(--warning-soft)] aria-pressed:text-[var(--warning)]',
 };
 
+const SHORT_STATUS_LABELS: Record<CommandHistoryStatus, string> = {
+  success: 'Success',
+  failed: 'Failed',
+  interrupted: 'Cancel',
+};
+
 export const HistorySearchControls = memo(function HistorySearchControls({
   query,
   isSearching,
@@ -33,13 +39,13 @@ export const HistorySearchControls = memo(function HistorySearchControls({
   onToggleStatus,
 }: HistorySearchControlsProps) {
   return (
-    <div className="shrink-0 border-b border-[var(--border-soft)] p-3">
+    <div className="shrink-0 border-b border-[var(--border-soft)] p-2.5">
       <div className="relative">
         <span
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[var(--text-muted)]"
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[var(--text-muted)]"
           aria-hidden="true"
         >
-          <Icon name="search" size={14} />
+          <Icon name="search" size={13} />
         </span>
         <input
           type="search"
@@ -47,12 +53,12 @@ export const HistorySearchControls = memo(function HistorySearchControls({
           maxLength={200}
           placeholder="Search command or directory…"
           aria-label="Search Command History"
-          className="cd-input h-9 pr-8 pl-8 font-mono text-[11px]"
+          className="cd-input h-8 pr-7 pl-7 font-mono text-[11px]"
           onChange={(event) => onSearchTermChange(event.currentTarget.value)}
         />
         {isSearching && (
           <span
-            className="absolute top-1/2 right-3 size-3 -translate-y-1/2 animate-spin rounded-full border border-[var(--text-subtle)] border-t-[var(--accent)] motion-reduce:animate-none"
+            className="absolute top-1/2 right-2.5 size-3 -translate-y-1/2 animate-spin rounded-full border border-[var(--text-subtle)] border-t-[var(--accent)] motion-reduce:animate-none"
             aria-label="Updating History results"
             role="status"
           />
@@ -60,7 +66,7 @@ export const HistorySearchControls = memo(function HistorySearchControls({
       </div>
 
       <div
-        className="mt-2.5 grid grid-cols-3 gap-1.5"
+        className="mt-2 grid grid-cols-3 gap-1"
         aria-label="Filter History by status"
       >
         {COMMAND_HISTORY_STATUSES.map((status) => (
@@ -68,11 +74,12 @@ export const HistorySearchControls = memo(function HistorySearchControls({
             key={status}
             type="button"
             aria-pressed={query.statuses.includes(status)}
-            className={`flex h-7 items-center justify-center gap-1.5 rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] px-1 text-[10px] font-medium text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)] ${STATUS_STYLES[status]}`}
+            title={`Filter by ${STATUS_LABELS[status]}`}
+            className={`flex h-6.5 min-w-0 items-center justify-center gap-1 overflow-hidden rounded-sm border border-[var(--border-soft)] bg-[var(--canvas-raised)] px-1 text-[10px] font-medium text-[var(--text-muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)] ${STATUS_STYLES[status]}`}
             onClick={() => onToggleStatus(status)}
           >
             <span
-              className={`size-1.5 rounded-full ${
+              className={`size-1.5 shrink-0 rounded-full ${
                 status === 'success'
                   ? 'bg-[var(--accent)]'
                   : status === 'failed'
@@ -81,7 +88,7 @@ export const HistorySearchControls = memo(function HistorySearchControls({
               }`}
               aria-hidden="true"
             />
-            {STATUS_LABELS[status]}
+            <span className="truncate">{SHORT_STATUS_LABELS[status]}</span>
           </button>
         ))}
       </div>
