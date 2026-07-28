@@ -107,6 +107,10 @@ export function CommandDeckSection({
     setDragOverItemId(null);
   };
 
+  const handleToggleSelect = (deckItemId: string) => {
+    setSelectedItemId((prev) => (prev === deckItemId ? null : deckItemId));
+  };
+
   return (
     <section
       className="flex min-h-0 flex-1 flex-col"
@@ -176,7 +180,7 @@ export function CommandDeckSection({
                       item.deckItemId === visibleSelectedId ||
                       (!visibleSelectedId && index === 0)
                     }
-                    onSelect={setSelectedItemId}
+                    onSelect={handleToggleSelect}
                     onRun={onRun}
                     onUpdate={onUpdate}
                     onRemove={onRemove}
