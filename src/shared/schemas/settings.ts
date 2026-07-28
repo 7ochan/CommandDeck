@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   APPLICATION_THEMES,
+  DECK_SCOPES,
   DEVELOPER_HUB_TAB_IDS,
   TERMINAL_FONT_SIZE_RANGE,
   TERMINAL_CURSOR_STYLES,
@@ -23,6 +24,7 @@ export const terminalScrollbackSizeSchema = z
 export const applicationThemeSchema = z.enum(APPLICATION_THEMES);
 export const terminalCursorStyleSchema = z.enum(TERMINAL_CURSOR_STYLES);
 export const developerHubTabIdSchema = z.enum(DEVELOPER_HUB_TAB_IDS);
+export const deckScopeSchema = z.enum(DECK_SCOPES);
 
 const generalSettingsSchema = z.object({
   restorePreviousWorkspace: z.boolean(),
@@ -42,6 +44,7 @@ const appearanceSettingsSchema = z.object({ theme: applicationThemeSchema });
 const developerHubSettingsSchema = z.object({
   rememberLastSelectedTab: z.boolean(),
   showHistoryTab: z.boolean().default(true),
+  deckScope: deckScopeSchema.default('workspace'),
 });
 const keybindingsSchema = z.record(z.string(), z.string());
 

@@ -13,6 +13,9 @@ export const TERMINAL_SCROLLBACK_RANGE = {
 export const DEVELOPER_HUB_TAB_IDS = ['deck', 'history'] as const;
 export type DeveloperHubTabId = (typeof DEVELOPER_HUB_TAB_IDS)[number];
 
+export const DECK_SCOPES = ['workspace', 'global'] as const;
+export type DeckScope = (typeof DECK_SCOPES)[number];
+
 export type AppSettings = {
   general: {
     restorePreviousWorkspace: boolean;
@@ -34,6 +37,7 @@ export type AppSettings = {
   developerHub: {
     rememberLastSelectedTab: boolean;
     showHistoryTab: boolean;
+    deckScope: DeckScope;
   };
   keybindings: Record<string, string>;
 };
@@ -80,6 +84,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   developerHub: {
     rememberLastSelectedTab: false,
     showHistoryTab: true,
+    deckScope: 'workspace',
   },
   keybindings: {},
 };

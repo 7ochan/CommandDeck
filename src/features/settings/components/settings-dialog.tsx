@@ -9,6 +9,7 @@ import type {
   AppSettings,
   AppSettingsUpdate,
   ApplicationTheme,
+  DeckScope,
   TerminalCursorStyle,
 } from '@/shared/types';
 import { DEFAULT_APP_SETTINGS } from '@/shared/types';
@@ -391,9 +392,26 @@ export function SettingsDialog({
 
                 {activeSection === 'developerHub' && (
                   <SettingsGroup
-                    title="Developer Hub"
-                    description="Keep the side panel predictable between working sessions."
+                    title="Developer Hub & Command Deck"
+                    description="Configure shortcut scope and panel persistence between sessions."
                   >
+                    <SelectSetting
+                      label="Saved Deck shortcuts scope"
+                      description="Choose whether saved Deck shortcuts are available across all workspace tabs or isolated to the tab where created."
+                      value={draftSettings.developerHub.deckScope}
+                      onChange={(value) =>
+                        updateDraft({
+                          developerHub: { deckScope: value as DeckScope },
+                        })
+                      }
+                    >
+                      <option value="workspace">
+                        Current tab only (Per Workspace)
+                      </option>
+                      <option value="global">
+                        All tabs (Global across Workspaces)
+                      </option>
+                    </SelectSetting>
                     <ToggleSetting
                       label="Remember last selected tab"
                       description="Restore Deck or History the next time CommandDeck opens."

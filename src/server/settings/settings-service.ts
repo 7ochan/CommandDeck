@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   APPLICATION_THEMES,
+  DECK_SCOPES,
   DEFAULT_APP_SETTINGS,
   DEFAULT_APP_SETTINGS_STATE,
   DEVELOPER_HUB_TAB_IDS,
@@ -31,6 +32,7 @@ const KEYS = {
   theme: 'appearance.theme',
   rememberLastSelectedTab: 'developerHub.rememberLastSelectedTab',
   showHistoryTab: 'developerHub.showHistoryTab',
+  deckScope: 'developerHub.deckScope',
   keybindings: 'keybindings.customizations',
   lastWorkspaceId: 'state.lastWorkspaceId',
   lastDeveloperHubTab: 'state.lastDeveloperHubTab',
@@ -134,6 +136,12 @@ export class SettingsService {
             booleanSchema,
             DEFAULT_APP_SETTINGS.developerHub.showHistoryTab,
           ),
+          deckScope: read(
+            values,
+            KEYS.deckScope,
+            deckScopeSchema,
+            DEFAULT_APP_SETTINGS.developerHub.deckScope,
+          ),
         },
         keybindings: read(
           values,
@@ -180,6 +188,7 @@ const booleanSchema = z.boolean();
 const nullableWorkspaceIdSchema = z.string().min(1).max(200).nullable();
 const applicationThemeSchema = z.enum(APPLICATION_THEMES);
 const developerHubTabIdSchema = z.enum(DEVELOPER_HUB_TAB_IDS);
+const deckScopeSchema = z.enum(DECK_SCOPES);
 const terminalCursorStyleSchema = z.enum(TERMINAL_CURSOR_STYLES);
 const terminalFontSizeSchema = z
   .number()
@@ -249,6 +258,7 @@ function addDefinedSettings(
     update?.developerHub?.rememberLastSelectedTab,
   );
   add(KEYS.showHistoryTab, update?.developerHub?.showHistoryTab);
+  add(KEYS.deckScope, update?.developerHub?.deckScope);
   add(KEYS.keybindings, update?.keybindings);
 }
 

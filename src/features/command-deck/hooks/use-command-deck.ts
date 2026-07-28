@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CommandDeckItem, CommandDeckItemUpdate } from '@/shared/types';
+import { useSettings } from '@/features/settings/settings-provider';
+import { loadWorkspaces } from '@/features/workspaces/api';
 
 import {
   addHistoryEntryToDeck,
@@ -30,6 +32,9 @@ type CommandDeckState = {
 };
 
 export function useCommandDeck(workspaceId: string): CommandDeckState {
+  const { settings } = useSettings();
+  const deckScope = settings.developerHub.deckScope;
+
   const [data, setData] = useState<{
     workspaceId: string;
     items: CommandDeckItem[];
@@ -45,31 +50,74 @@ export function useCommandDeck(workspaceId: string): CommandDeckState {
   useEffect(() => {
     const controller = new AbortController();
 
-    void loadCommandDeck(workspaceId, controller.signal)
-      .then((loadedItems) => {
-        setData({
-          workspaceId,
-          items: loadedItems,
-          isLoading: false,
-          loadError: null,
-        });
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          setData({
-            workspaceId,
-            items: [],
-            isLoading: false,
-            loadError:
-              error instanceof Error
-                ? error.message
-                : 'Unable to load Command Deck.',
+    if (deckScope === 'global') {
+      void (async () => {
+        try {
+          const workspaces = await loadWorkspaces(controller.signal);
+          const deckPromises = workspaces.map((ws) =>
+            loadCommandDeck(ws.workspaceId, controller.signal).catch(() => []),
+          );
+          const results = await Promise.all(deckPromises);
+          const allItems = results.flat();
+          const uniqueMap = new Map<string, CommandDeckItem>();
+          allItems.forEach((item) => {
+            const key = `${item.command}::${item.displayName}`;
+            if (!uniqueMap.has(key)) {
+              uniqueMap.set(key, item);
+            }
           });
+          const merged = Array.from(uniqueMap.values()).sort(compareDeckItems);
+          if (!controller.signal.aborted) {
+            setData({
+              workspaceId,
+              items: merged,
+              isLoading: false,
+              loadError: null,
+            });
+          }
+        } catch (error: unknown) {
+          if (!controller.signal.aborted) {
+            setData({
+              workspaceId,
+              items: [],
+              isLoading: false,
+              loadError:
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to load Command Deck.',
+            });
+          }
         }
-      });
+      })();
+    } else {
+      void loadCommandDeck(workspaceId, controller.signal)
+        .then((loadedItems) => {
+          if (!controller.signal.aborted) {
+            setData({
+              workspaceId,
+              items: loadedItems,
+              isLoading: false,
+              loadError: null,
+            });
+          }
+        })
+        .catch((error: unknown) => {
+          if (!controller.signal.aborted) {
+            setData({
+              workspaceId,
+              items: [],
+              isLoading: false,
+              loadError:
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to load Command Deck.',
+            });
+          }
+        });
+    }
 
     return () => controller.abort();
-  }, [workspaceId]);
+  }, [workspaceId, deckScope]);
 
   const addFromHistory = useCallback(async (historyId: string) => {
     const activeWorkspaceId = activeWorkspaceIdRef.current;
