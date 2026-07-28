@@ -300,7 +300,7 @@ export function WorkspaceSwitcher({
         </div>
 
         {/* Workspace Tab Cards List */}
-        <div className="cd-scrollbar flex min-h-0 flex-1 flex-col space-y-0.5 overflow-y-auto p-1.5">
+        <div className="cd-scrollbar flex min-h-0 flex-1 flex-col space-y-1.5 overflow-y-auto p-2 pt-2.5">
           {filteredWorkspaces.map((workspace) => {
             const isActive =
               workspace.workspaceId === activeWorkspace.workspaceId;
@@ -367,9 +367,9 @@ export function WorkspaceSwitcher({
                   </span>
                 </div>
 
-                {/* Top-Right Corner Actions (No Enclosing Box) */}
+                {/* Floating Top-Right Corner Action Pill (Overlapping corner edge matching reference image) */}
                 <div
-                  className={`absolute top-1 right-1 z-10 flex items-center gap-0.5 transition-opacity duration-150 ${
+                  className={`absolute -top-1.5 -right-1.5 z-10 flex items-center gap-1 rounded-md border border-[var(--border-soft)] bg-[var(--surface-3)] px-1.5 py-0.5 shadow-md transition-all duration-150 ${
                     isPinned
                       ? 'opacity-100'
                       : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
@@ -379,7 +379,7 @@ export function WorkspaceSwitcher({
                   <button
                     type="button"
                     onClick={(e) => togglePin(workspace.workspaceId, e)}
-                    className={`flex size-4.5 items-center justify-center transition-colors ${
+                    className={`flex size-4 items-center justify-center rounded-xs transition-colors ${
                       isPinned
                         ? 'text-[var(--accent)]'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -397,7 +397,7 @@ export function WorkspaceSwitcher({
                       e.stopPropagation();
                       void remove(workspace);
                     }}
-                    className="flex size-4.5 items-center justify-center text-[var(--text-muted)] transition-colors hover:text-[var(--danger)]"
+                    className="flex size-4 items-center justify-center rounded-xs text-[var(--text-muted)] transition-colors hover:text-[var(--danger)]"
                     title="Close tab"
                     aria-label="Close tab"
                   >
