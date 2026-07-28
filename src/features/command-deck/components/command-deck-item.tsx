@@ -110,9 +110,8 @@ export const CommandDeckItem = memo(function CommandDeckItem({
           aria-pressed={isSelected}
           aria-keyshortcuts="Enter"
           tabIndex={isTabStop ? 0 : -1}
-          title="Select · Double-click or press Enter to run"
+          title="Select command shortcut"
           onClick={() => onSelect(item.deckItemId)}
-          onDoubleClick={run}
           onKeyDown={handleKeyDown}
         >
           <h3 className="truncate text-[12px] font-semibold text-[var(--text-primary)]">
