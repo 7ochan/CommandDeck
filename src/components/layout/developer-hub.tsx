@@ -97,7 +97,7 @@ export function DeveloperHub({
       : 'deck',
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const tabRefs = useRef(new Map<DeveloperHubTab, HTMLButtonElement>());
+  const tabRefs = useRef(new Map<DeveloperHubTab, HTMLElement>());
 
   const [tabOrder, setTabOrder] = useState<DeveloperHubTab[]>(() => {
     if (typeof window === 'undefined')
@@ -334,7 +334,7 @@ export function DeveloperHub({
   }, [selectTab]);
 
   const handleTabKeyDown = (
-    event: KeyboardEvent<HTMLButtonElement>,
+    event: KeyboardEvent<HTMLElement>,
     currentTab: DeveloperHubTab,
   ) => {
     const targetTab = getDeveloperHubTabForKey(currentTab, event.key);
@@ -366,17 +366,16 @@ export function DeveloperHub({
             const isDragOver = dragOverDevTab === tab.id;
 
             return (
-              <button
+              <div
                 key={tab.id}
-                ref={(button) => {
-                  if (button) {
-                    tabRefs.current.set(tab.id, button);
+                ref={(element) => {
+                  if (element) {
+                    tabRefs.current.set(tab.id, element);
                   } else {
                     tabRefs.current.delete(tab.id);
                   }
                 }}
                 id={`developer-hub-tab-${tab.id}`}
-                type="button"
                 role="tab"
                 draggable
                 onDragStart={(e) => handleDevTabDragStart(e, tab.id)}
@@ -444,7 +443,7 @@ export function DeveloperHub({
                     <Icon name="x" size={11} />
                   </button>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

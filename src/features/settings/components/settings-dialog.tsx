@@ -613,6 +613,7 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
     left.developerHub.rememberLastSelectedTab ===
       right.developerHub.rememberLastSelectedTab &&
     left.developerHub.showHistoryTab === right.developerHub.showHistoryTab &&
+    left.developerHub.deckScope === right.developerHub.deckScope &&
     JSON.stringify(left.keybindings ?? {}) ===
       JSON.stringify(right.keybindings ?? {})
   );
