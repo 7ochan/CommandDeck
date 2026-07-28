@@ -207,7 +207,10 @@ function TerminalView(
 
   useEffect(() => {
     if (active) {
-      triggerFitAndFocusRef.current?.(autoFocusRef.current);
+      const timer = setTimeout(() => {
+        triggerFitAndFocusRef.current?.(autoFocusRef.current);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [active]);
 

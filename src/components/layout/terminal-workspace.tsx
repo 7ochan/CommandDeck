@@ -165,8 +165,25 @@ function ActiveWorkspaceLayout({
     [activeWorkspace.workspaceId],
   );
 
+  const handleSelectWorkspace = useCallback(
+    (workspaceId: string) => {
+      onSelectWorkspace(workspaceId);
+      setTimeout(() => {
+        terminalRefs.current.get(workspaceId)?.focus();
+      }, 0);
+    },
+    [onSelectWorkspace],
+  );
+
   const runCommandAgain = useCallback(
-    (command: string) => activeTerminal()?.runCommand(command) ?? false,
+    (command: string) => {
+      const term = activeTerminal();
+      const result = term?.runCommand(command) ?? false;
+      setTimeout(() => {
+        term?.focus();
+      }, 0);
+      return result;
+    },
     [activeTerminal],
   );
 
@@ -464,7 +481,7 @@ function ActiveWorkspaceLayout({
             connectionStatus={
               CONNECTION_STATUS_PRESENTATION[terminalConnectionStatus]
             }
-            onSelect={onSelectWorkspace}
+            onSelect={handleSelectWorkspace}
             onCreate={onCreateWorkspace}
             onRename={onRenameWorkspace}
             onDelete={handleDeleteWorkspace}
@@ -474,7 +491,12 @@ function ActiveWorkspaceLayout({
 
       <div className="flex min-h-0 flex-1 gap-2.5 overflow-hidden">
         {/* Main Terminal Shell + Status Bar Container */}
-        <div className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)]">
+        <div
+          className="cd-terminal-shell relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[15px] border border-[var(--border-soft)] bg-[var(--terminal)] cursor-text"
+          onClick={() => {
+            activeTerminal()?.focus();
+          }}
+        >
           {/*
            * Terminal stack: one <Terminal> per activated workspace.
            */}
