@@ -485,6 +485,17 @@ textarea:focus-visible {
     0 3px 9px rgb(0 0 0 / 16%);
 }
 
+.cd-no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.cd-no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .cd-scrollbar,
 .command-history-scrollbar,
 .command-deck-scrollbar,
