@@ -856,7 +856,7 @@ function createWindow(): void {
   const state = loadWindowState();
 
   mainWindow = new BrowserWindow({
-    title: 'CommandDeck',
+    title: `CommandDeck v${app.getVersion()}`,
     x: state.x,
     y: state.y,
     width: state.width,
