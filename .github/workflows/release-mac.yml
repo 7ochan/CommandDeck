@@ -1,0 +1,65 @@
+name: Release macOS App
+
+# ─── Trigger Configuration ───────────────────────────────────────────────────
+# Triggers automatically whenever a version tag matching `v*` is pushed to GitHub.
+# Examples: v0.1.2, v0.1.3, v1.0.0
+on:
+  push:
+    tags:
+      - 'v*'
+
+# ─── Permissions ──────────────────────────────────────────────────────────────
+# Grants write permissions to GITHUB_TOKEN so electron-builder can create/update
+# GitHub Releases and upload binary assets (DMG, ZIP, blockmaps, latest-mac.yml).
+permissions:
+  contents: write
+
+jobs:
+  release-mac:
+    name: Build & Release macOS Packages
+    runs-on: macos-latest
+
+    steps:
+      # Step 1: Checkout repository code (full history for accurate build info)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Step 2: Set up Node.js runtime (Node 22 LTS matching engine requirement)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      # Step 3: Install clean dependencies from package-lock.json
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Run full verification suite (format check, linting, typechecking, tests)
+      - name: Run code verification
+        run: npm run check
+
+      # Step 5: Build Next.js app, compile server & Electron main, and package/publish via electron-builder
+      #
+      # Pipelines executed:
+      # 1. npm run electron:publish:mac
+      #    ├── npm run build (Next.js static + server build)
+      #    ├── npm run electron:compile (TypeScript build for main & preload)
+      #    └── npx electron-builder --mac --publish always
+      #
+      # Assets generated & published:
+      # - CommandDeck-<version>-arm64.dmg & blockmap
+      # - CommandDeck-<version>-arm64-mac.zip & blockmap
+      # - CommandDeck-<version>.dmg (x64) & blockmap
+      # - CommandDeck-<version>-mac.zip (x64) & blockmap
+      # - latest-mac.yml (required for auto-updater)
+      #
+      # Signing pipeline:
+      # Uses scripts/after-pack.js to perform deep ad-hoc signing with entitlements.
+      # Requires no Apple Developer certificate secrets.
+      - name: Build & Publish macOS release to GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:publish:mac

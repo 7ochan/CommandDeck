@@ -35,7 +35,9 @@ export default async function afterPack(context) {
       encoding: 'utf8',
     });
 
-    const isDeveloperID = details.includes('Authority=Developer ID Application');
+    const isDeveloperID = details.includes(
+      'Authority=Developer ID Application',
+    );
     const isSealed =
       details.includes('Sealed Resources') &&
       !details.includes('Sealed Resources=none');
@@ -60,11 +62,7 @@ export default async function afterPack(context) {
     );
 
     const projectDir = context.packager.info.projectDir;
-    const entitlements = join(
-      projectDir,
-      'electron',
-      'entitlements.mac.plist',
-    );
+    const entitlements = join(projectDir, 'electron', 'entitlements.mac.plist');
 
     // Deep sign all binaries, frameworks, and app bundle
     const signCmd = `codesign --force --deep --options runtime ${
