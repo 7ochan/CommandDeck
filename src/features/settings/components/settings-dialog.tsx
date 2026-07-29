@@ -576,12 +576,12 @@ function ToggleSetting({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="cd-settings-row grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-6 px-1 py-3.5 sm:gap-8">
+    <label className="cd-settings-row grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2 py-3 transition-colors hover:bg-[var(--surface-2)] sm:gap-8">
       <span className="max-w-[28rem] min-w-0">
-        <span className="block text-[12px] leading-4 font-medium text-[var(--text-primary)]">
+        <span className="block text-[12.5px] leading-4 font-medium text-[var(--text-primary)]">
           {label}
         </span>
-        <span className="mt-0.5 block text-[10px] leading-4 text-[var(--text-muted)]">
+        <span className="mt-1 block text-[11px] leading-4 text-[var(--text-muted)]">
           {description}
         </span>
       </span>
@@ -593,7 +593,7 @@ function ToggleSetting({
       />
       <span
         aria-hidden="true"
-        className="relative h-5 w-9 shrink-0 rounded-full border border-[#374151] bg-[#1f2937] transition-colors duration-200 peer-checked:border-[var(--accent)] peer-checked:bg-[var(--accent)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--accent)] after:absolute after:top-[2px] after:left-[2px] after:size-4 after:rounded-full after:bg-[#9ca3af] after:shadow-sm after:transition-transform after:duration-200 peer-checked:after:translate-x-4 peer-checked:after:bg-white"
+        className="relative h-5 w-9 shrink-0 rounded-full border border-[var(--border-strong)] bg-[var(--surface-1)] shadow-inner transition-[background-color,border-color,box-shadow] duration-150 ease-in-out peer-checked:border-[var(--accent-border)] peer-checked:bg-[var(--accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--canvas-raised)] after:absolute after:top-[2px] after:left-[2px] after:size-4 after:rounded-full after:bg-[var(--text-muted)] after:shadow-sm after:transition-transform after:duration-150 peer-checked:after:translate-x-4 peer-checked:after:bg-[var(--canvas)]"
       />
     </label>
   );
