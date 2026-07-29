@@ -53,6 +53,7 @@ const developerHubSettingsSchema = z.object({
   deckScope: deckScopeSchema.default('workspace'),
 });
 const aiSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
   provider: aiProviderSchema.default('gemini'),
   model: z.string().default('gemini-2.5-flash'),
   hasApiKey: z.boolean().default(false),

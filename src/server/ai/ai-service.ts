@@ -64,7 +64,7 @@ class AIService {
     }
 
     const provider = AIProviderRegistry.getInstance().get(providerId);
-    return provider.generateCommitMessage(diff, apiKey);
+    return provider.generateCommit(diff, apiKey);
   }
 }
 

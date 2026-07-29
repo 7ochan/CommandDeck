@@ -59,6 +59,7 @@ export type AppSettings = {
     deckScope: DeckScope;
   };
   ai: {
+    enabled: boolean;
     provider: AIProviderId;
     model: string;
     hasApiKey: boolean;
@@ -113,6 +114,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     deckScope: 'workspace',
   },
   ai: {
+    enabled: false,
     provider: 'gemini',
     model: 'gemini-2.5-flash',
     hasApiKey: false,

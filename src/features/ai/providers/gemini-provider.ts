@@ -8,10 +8,12 @@ export class GeminiProvider implements AIProvider {
   readonly id = 'gemini';
   readonly name = 'Google Gemini AI';
 
-  async generateCommitMessage(
+  async generateCommit(
     diff: string,
     apiKey: string,
+    model?: string,
   ): Promise<AICommitResult> {
+    void model;
     if (!apiKey || apiKey.trim().length === 0) {
       throw new Error('Gemini API key is required.');
     }
