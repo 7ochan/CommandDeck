@@ -22,6 +22,7 @@ import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/comman
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
 import { useKeybindings } from '@/features/keybindings/keybindings-provider';
 import { useSettings } from '@/features/settings/settings-provider';
+import { AICommitReviewDialog } from '@/features/ai/components/ai-commit-review-dialog';
 import type { CommandCompletedPayload, WorkspaceSummary } from '@/shared/types';
 
 import { DeveloperHub } from './developer-hub';
@@ -228,11 +229,14 @@ function ActiveWorkspaceLayout({
     window.dispatchEvent(new Event('resize'));
   }, []);
 
+  const { openSettings } = useSettings();
   const [terminalConnectionStatus, setTerminalConnectionStatus] =
     useState<TerminalConnectionStatus>('connecting');
 
   const [renamingWorkspace, setRenamingWorkspace] =
     useState<WorkspaceSummary | null>(null);
+
+  const [isAICommitOpen, setIsAICommitOpen] = useState(false);
 
   const {
     entries,
@@ -285,6 +289,16 @@ function ActiveWorkspaceLayout({
 
   const runCommandAgain = useCallback(
     (command: string) => {
+      const normalized = command.trim().toLowerCase();
+      if (
+        normalized === 'git commit' ||
+        normalized.startsWith('git commit ') ||
+        normalized === 'ai:commit'
+      ) {
+        setIsAICommitOpen(true);
+        return true;
+      }
+
       const term = activeTerminal();
       const result = term?.runCommand(command) ?? false;
       setTimeout(() => {
@@ -732,6 +746,12 @@ function ActiveWorkspaceLayout({
         isOpen={Boolean(renamingWorkspace)}
         onRename={onRenameWorkspace}
         onClose={() => setRenamingWorkspace(null)}
+      />
+
+      <AICommitReviewDialog
+        isOpen={isAICommitOpen}
+        onClose={() => setIsAICommitOpen(false)}
+        onOpenSettingsToAI={() => openSettings('ai')}
       />
     </div>
   );

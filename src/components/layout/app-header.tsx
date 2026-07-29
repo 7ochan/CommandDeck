@@ -60,6 +60,16 @@ export function AppHeader({ activeView }: AppHeaderProps) {
         execute: openSettings,
       },
       {
+        id: 'open-ai-settings',
+        label: 'Open AI Settings',
+        description: 'Configure Gemini API key and AI Commit Assistant',
+        group: 'Navigation',
+        icon: '✨',
+        keywords: ['ai', 'gemini', 'api key', 'commit assistant'],
+        priority: 110,
+        execute: () => openSettings('ai'),
+      },
+      {
         id: 'open-terminal',
         label: 'Open Terminal',
         description: 'Return to the active terminal workspace',
@@ -150,7 +160,7 @@ export function AppHeader({ activeView }: AppHeaderProps) {
           className="cd-icon-button flex size-7 shrink-0 items-center justify-center rounded-sm border border-[var(--border-soft)] bg-[var(--surface-2)] text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
           aria-label="Open Settings"
           title="Settings"
-          onClick={openSettings}
+          onClick={() => openSettings()}
         >
           <Icon name="settings" size={14} />
         </button>

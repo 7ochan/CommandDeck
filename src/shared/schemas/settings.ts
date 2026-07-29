@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  AI_PROVIDERS,
   APPLICATION_THEMES,
   DECK_SCOPES,
   DEVELOPER_HUB_TAB_IDS,
@@ -28,6 +29,8 @@ export const developerHubTabIdSchema = z.enum(DEVELOPER_HUB_TAB_IDS);
 export const deckScopeSchema = z.enum(DECK_SCOPES);
 export const dirColorSchema = z.enum(DIR_COLORS);
 
+export const aiProviderSchema = z.enum(AI_PROVIDERS);
+
 const generalSettingsSchema = z.object({
   restorePreviousWorkspace: z.boolean(),
   confirmBeforeDeletingWorkspace: z.boolean(),
@@ -49,6 +52,11 @@ const developerHubSettingsSchema = z.object({
   showHistoryTab: z.boolean().default(true),
   deckScope: deckScopeSchema.default('workspace'),
 });
+const aiSettingsSchema = z.object({
+  provider: aiProviderSchema.default('gemini'),
+  model: z.string().default('gemini-2.5-flash'),
+  hasApiKey: z.boolean().default(false),
+});
 const keybindingsSchema = z.record(z.string(), z.string());
 
 export const appSettingsSchema: z.ZodType<AppSettings> = z.object({
@@ -56,6 +64,7 @@ export const appSettingsSchema: z.ZodType<AppSettings> = z.object({
   terminal: terminalSettingsSchema,
   appearance: appearanceSettingsSchema,
   developerHub: developerHubSettingsSchema,
+  ai: aiSettingsSchema,
   keybindings: keybindingsSchema,
 });
 
@@ -65,6 +74,7 @@ export const appSettingsUpdateSchema = z
     terminal: terminalSettingsSchema.partial().optional(),
     appearance: appearanceSettingsSchema.partial().optional(),
     developerHub: developerHubSettingsSchema.partial().optional(),
+    ai: aiSettingsSchema.partial().optional(),
     keybindings: keybindingsSchema.optional(),
   })
   .strict();

@@ -14,6 +14,8 @@ import {
   type AppSettingsUpdate,
   type SettingsSnapshot,
 } from '../../shared/types/settings.js';
+import { aiService } from '../ai/ai-service';
+import { aiProviderSchema } from '../../shared/schemas/settings.js';
 import type {
   SettingsRepository,
   StoredSetting,
@@ -35,6 +37,8 @@ const KEYS = {
   rememberLastSelectedTab: 'developerHub.rememberLastSelectedTab',
   showHistoryTab: 'developerHub.showHistoryTab',
   deckScope: 'developerHub.deckScope',
+  aiProvider: 'ai.provider',
+  aiModel: 'ai.model',
   keybindings: 'keybindings.customizations',
   lastWorkspaceId: 'state.lastWorkspaceId',
   lastDeveloperHubTab: 'state.lastDeveloperHubTab',
@@ -151,6 +155,28 @@ export class SettingsService {
             DEFAULT_APP_SETTINGS.developerHub.deckScope,
           ),
         },
+        ai: {
+          provider: read(
+            values,
+            KEYS.aiProvider,
+            aiProviderSchema,
+            DEFAULT_APP_SETTINGS.ai.provider,
+          ),
+          model: read(
+            values,
+            KEYS.aiModel,
+            stringSchema,
+            DEFAULT_APP_SETTINGS.ai.model,
+          ),
+          hasApiKey: aiService.hasApiKey(
+            read(
+              values,
+              KEYS.aiProvider,
+              aiProviderSchema,
+              DEFAULT_APP_SETTINGS.ai.provider,
+            ),
+          ),
+        },
         keybindings: read(
           values,
           KEYS.keybindings,
@@ -193,6 +219,7 @@ export class SettingsService {
 }
 
 const booleanSchema = z.boolean();
+const stringSchema = z.string();
 const nullableWorkspaceIdSchema = z.string().min(1).max(200).nullable();
 const applicationThemeSchema = z.enum(APPLICATION_THEMES);
 const developerHubTabIdSchema = z.enum(DEVELOPER_HUB_TAB_IDS);
@@ -269,6 +296,8 @@ function addDefinedSettings(
   );
   add(KEYS.showHistoryTab, update?.developerHub?.showHistoryTab);
   add(KEYS.deckScope, update?.developerHub?.deckScope);
+  add(KEYS.aiProvider, update?.ai?.provider);
+  add(KEYS.aiModel, update?.ai?.model);
   add(KEYS.keybindings, update?.keybindings);
 }
 

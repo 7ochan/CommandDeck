@@ -12,9 +12,12 @@ export type IconName =
   | 'copy'
   | 'deck'
   | 'edit'
+  | 'eye'
+  | 'eye-off'
   | 'filter'
   | 'grip-vertical'
   | 'history'
+  | 'key'
   | 'keyboard'
   | 'minus'
   | 'more'
@@ -22,8 +25,10 @@ export type IconName =
   | 'pin'
   | 'play'
   | 'plus'
+  | 'refresh'
   | 'search'
   | 'settings'
+  | 'sparkles'
   | 'stop'
   | 'system'
   | 'terminal'
@@ -114,6 +119,20 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
     </>
   ),
+  eye: (
+    <>
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  'eye-off': (
+    <>
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+      <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </>
+  ),
   filter: (
     <>
       <line x1="4" y1="6" x2="20" y2="6" />
@@ -136,6 +155,13 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
       <path d="M3 3v5h5M12 7v5l3 2" />
+    </>
+  ),
+  key: (
+    <>
+      <path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4.1" />
+      <path d="m21 2-9.6 9.6" />
+      <circle cx="7.5" cy="16.5" r="4.5" />
     </>
   ),
   keyboard: (
@@ -167,6 +193,12 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
   ),
   play: <path d="m8 5 11 7-11 7Z" />,
   plus: <path d="M12 5v14M5 12h14" />,
+  refresh: (
+    <>
+      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.57 2.57L21 8" />
+      <path d="M21 3v5h-5" />
+    </>
+  ),
   search: (
     <>
       <circle cx="11" cy="11" r="7" />
@@ -177,6 +209,12 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" />
+    </>
+  ),
+  sparkles: (
+    <>
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3v4M3 5h4M19 17v4M17 19h4" />
     </>
   ),
   stop: <rect x="7" y="7" width="10" height="10" rx="1" />,

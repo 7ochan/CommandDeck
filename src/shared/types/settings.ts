@@ -26,6 +26,13 @@ export type DeveloperHubTabId = (typeof DEVELOPER_HUB_TAB_IDS)[number];
 
 export const DECK_SCOPES = ['workspace', 'global'] as const;
 export type DeckScope = (typeof DECK_SCOPES)[number];
+export const AI_PROVIDERS = [
+  'gemini',
+  'openai',
+  'anthropic',
+  'ollama',
+] as const;
+export type AIProviderId = (typeof AI_PROVIDERS)[number];
 
 export type AppSettings = {
   general: {
@@ -51,6 +58,11 @@ export type AppSettings = {
     showHistoryTab: boolean;
     deckScope: DeckScope;
   };
+  ai: {
+    provider: AIProviderId;
+    model: string;
+    hasApiKey: boolean;
+  };
   keybindings: Record<string, string>;
 };
 
@@ -59,6 +71,7 @@ export type AppSettingsUpdate = {
   terminal?: Partial<AppSettings['terminal']>;
   appearance?: Partial<AppSettings['appearance']>;
   developerHub?: Partial<AppSettings['developerHub']>;
+  ai?: Partial<AppSettings['ai']>;
   keybindings?: Record<string, string>;
 };
 
@@ -98,6 +111,11 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     rememberLastSelectedTab: false,
     showHistoryTab: true,
     deckScope: 'workspace',
+  },
+  ai: {
+    provider: 'gemini',
+    model: 'gemini-2.5-flash',
+    hasApiKey: false,
   },
   keybindings: {},
 };

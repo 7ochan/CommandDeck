@@ -5,10 +5,12 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { KeyboardShortcutsSection } from '@/features/keybindings/components/keyboard-shortcuts-section';
 import { mergeAppSettings } from '@/features/settings/settings-state';
+import { setAIProviderApiKey, testAIConnection } from '@/features/ai/api';
 import type {
   AppSettings,
   AppSettingsUpdate,
   ApplicationTheme,
+  AIProviderId,
   DeckScope,
   DirColor,
   TerminalCursorStyle,
@@ -45,6 +47,13 @@ const SECTIONS = [
     description: 'Control how the tool panel restores its context.',
   },
   {
+    id: 'ai',
+    label: 'AI Assistant',
+    icon: 'sparkles',
+    description:
+      'Configure Gemini API keys and AI commit assistant preferences.',
+  },
+  {
     id: 'keybindings',
     label: 'Keyboard Shortcuts',
     icon: 'keyboard',
@@ -64,6 +73,7 @@ type SettingsDialogProps = {
   settings: AppSettings;
   isLoading: boolean;
   persistenceError: string | null;
+  initialSection?: SettingsSection;
   onSave: (settings: AppSettings) => void;
   onClose: () => void;
 };
@@ -73,14 +83,17 @@ export function SettingsDialog({
   settings,
   isLoading,
   persistenceError,
+  initialSection,
   onSave,
   onClose,
 }: SettingsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const [draftSettings, setDraftSettings] = useState(settings);
-  const [activeSection, setActiveSection] =
-    useState<SettingsSection>('general');
+  const [selectedSection, setSelectedSection] =
+    useState<SettingsSection | null>(null);
+  const activeSection =
+    selectedSection ?? (isOpen && initialSection ? initialSection : 'general');
   const activeSectionDetails = SECTIONS.find(({ id }) => id === activeSection);
   const hasChanges = !areSettingsEqual(draftSettings, settings);
   const isDefaultDraft = areSettingsEqual(draftSettings, DEFAULT_APP_SETTINGS);
@@ -94,17 +107,19 @@ export function SettingsDialog({
 
     if (isOpen && !dialog.open) {
       setDraftSettings(settings);
+      setSelectedSection(null);
       dialog.showModal();
     } else if (!isOpen && dialog.open) {
       dialog.close();
     }
   }, [isOpen, settings]);
 
+  const dirColor = draftSettings.terminal.dirColor;
   useEffect(() => {
     if (isOpen) {
-      applyAccentTheme(draftSettings.terminal.dirColor);
+      applyAccentTheme(dirColor);
     }
-  }, [isOpen, draftSettings.terminal.dirColor]);
+  }, [isOpen, dirColor]);
 
   const handleClose = () => {
     applyAccentTheme(settings.terminal.dirColor);
@@ -112,7 +127,9 @@ export function SettingsDialog({
   };
 
   const updateDraft = (update: AppSettingsUpdate) => {
-    setDraftSettings((current) => mergeAppSettings(current, update));
+    setDraftSettings((current: AppSettings) =>
+      mergeAppSettings(current, update),
+    );
   };
 
   const save = () => {
@@ -209,7 +226,7 @@ export function SettingsDialog({
                     type="button"
                     aria-current={isActive ? 'page' : undefined}
                     className="cd-settings-nav-item flex h-9.5 min-w-0 items-center gap-2.5 rounded-sm px-2.5 text-left text-[11px] font-medium"
-                    onClick={() => setActiveSection(section.id)}
+                    onClick={() => setSelectedSection(section.id)}
                   >
                     <Icon name={section.icon} size={14} />
                     <span className="truncate">{section.label}</span>
@@ -502,6 +519,13 @@ export function SettingsDialog({
                   </SettingsGroup>
                 )}
 
+                {activeSection === 'ai' && (
+                  <AISettingsPanel
+                    draftSettings={draftSettings}
+                    updateDraft={updateDraft}
+                  />
+                )}
+
                 {activeSection === 'keybindings' && (
                   <KeyboardShortcutsSection />
                 )}
@@ -693,7 +717,157 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
       right.developerHub.rememberLastSelectedTab &&
     left.developerHub.showHistoryTab === right.developerHub.showHistoryTab &&
     left.developerHub.deckScope === right.developerHub.deckScope &&
+    left.ai?.provider === right.ai?.provider &&
+    left.ai?.model === right.ai?.model &&
+    left.ai?.hasApiKey === right.ai?.hasApiKey &&
     JSON.stringify(left.keybindings ?? {}) ===
       JSON.stringify(right.keybindings ?? {})
+  );
+}
+
+function AISettingsPanel({
+  draftSettings,
+  updateDraft,
+}: {
+  draftSettings: AppSettings;
+  updateDraft: (update: AppSettingsUpdate) => void;
+}) {
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [testStatus, setTestStatus] = useState<{
+    type: 'idle' | 'testing' | 'success' | 'error';
+    message?: string;
+  }>({ type: 'idle' });
+
+  const handleApiKeyChange = (val: string) => {
+    setApiKeyInput(val);
+    const hasApiKey = val.trim().length > 0;
+    updateDraft({ ai: { hasApiKey } });
+    void setAIProviderApiKey(draftSettings.ai.provider, val);
+  };
+
+  const handleTestConnection = async () => {
+    setTestStatus({ type: 'testing' });
+    try {
+      const result = await testAIConnection(
+        draftSettings.ai.provider,
+        apiKeyInput || undefined,
+      );
+      if (result.success) {
+        setTestStatus({ type: 'success', message: result.message });
+      } else {
+        setTestStatus({ type: 'error', message: result.message });
+      }
+    } catch (err) {
+      setTestStatus({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Connection test failed',
+      });
+    }
+  };
+
+  return (
+    <SettingsGroup
+      title="AI Provider & API Configuration"
+      description="Configure Google Gemini API credentials for the AI Commit Assistant."
+    >
+      <SelectSetting
+        label="AI Provider"
+        description="Choose the AI service used for commit message generation."
+        value={draftSettings.ai.provider}
+        onChange={(val) =>
+          updateDraft({ ai: { provider: val as AIProviderId } })
+        }
+      >
+        <option value="gemini">Google Gemini AI</option>
+        <option value="openai" disabled>
+          OpenAI (Coming Soon)
+        </option>
+        <option value="anthropic" disabled>
+          Anthropic Claude (Coming Soon)
+        </option>
+        <option value="ollama" disabled>
+          Ollama Local (Coming Soon)
+        </option>
+      </SelectSetting>
+
+      <SelectSetting
+        label="AI Model"
+        description="Select the default model for generating commit messages."
+        value={draftSettings.ai.model}
+        onChange={(val) => updateDraft({ ai: { model: val } })}
+      >
+        <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
+        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+      </SelectSetting>
+
+      <div className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-3 sm:gap-8">
+        <span className="max-w-[24rem] min-w-0">
+          <span className="block text-[12.5px] font-medium text-[var(--text-primary)]">
+            Gemini API Key
+          </span>
+          <span className="mt-0.5 block text-[11px] leading-4 text-[var(--text-muted)]">
+            Stored securely using local operating system credential storage.
+          </span>
+        </span>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="relative flex items-center">
+            <input
+              type={showApiKey ? 'text' : 'password'}
+              placeholder={
+                draftSettings.ai.hasApiKey
+                  ? '••••••••••••••••'
+                  : 'Enter Gemini API Key'
+              }
+              value={apiKeyInput}
+              onChange={(e) => handleApiKeyChange(e.target.value)}
+              className="cd-input h-8.5 w-52 px-2.5 pr-8 font-mono text-[11px]"
+            />
+            <button
+              type="button"
+              className="absolute right-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              title={showApiKey ? 'Hide API key' : 'Show API key'}
+              onClick={() => setShowApiKey((v) => !v)}
+            >
+              <Icon name={showApiKey ? 'eye-off' : 'eye'} size={14} />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="cd-button h-8.5 text-[11px] whitespace-nowrap"
+            disabled={testStatus.type === 'testing'}
+            onClick={handleTestConnection}
+          >
+            {testStatus.type === 'testing' ? (
+              <>
+                <span className="animate-spin">
+                  <Icon name="refresh" size={13} />
+                </span>
+                Testing…
+              </>
+            ) : (
+              <>
+                <Icon name="sparkles" size={13} />
+                Test Connection
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {testStatus.message && (
+        <div
+          className={`mx-2.5 my-2 rounded-md p-2.5 text-[11px] ${
+            testStatus.type === 'success'
+              ? 'border border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
+              : 'border border-[var(--danger)]/30 bg-[var(--danger-soft)] text-[var(--danger)]'
+          }`}
+        >
+          {testStatus.message}
+        </div>
+      )}
+    </SettingsGroup>
   );
 }

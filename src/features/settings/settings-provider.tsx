@@ -38,7 +38,15 @@ type SettingsContextValue = {
   persistenceError: string | null;
   updateSettings: (update: AppSettingsUpdate) => void;
   updateState: (update: AppSettingsStateUpdate) => void;
-  openSettings: () => void;
+  openSettings: (
+    section?:
+      | 'general'
+      | 'terminal'
+      | 'appearance'
+      | 'developerHub'
+      | 'ai'
+      | 'keybindings',
+  ) => void;
 };
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -51,6 +59,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogSection, setDialogSection] = useState<
+    | 'general'
+    | 'terminal'
+    | 'appearance'
+    | 'developerHub'
+    | 'ai'
+    | 'keybindings'
+    | undefined
+  >(undefined);
   const [systemPrefersDark, setSystemPrefersDark] = useState(true);
   const saveQueueRef = useRef(Promise.resolve());
 
@@ -128,7 +145,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     },
     [queueSave],
   );
-  const openSettings = useCallback(() => setIsDialogOpen(true), []);
+  const openSettings = useCallback(
+    (
+      section?:
+        | 'general'
+        | 'terminal'
+        | 'appearance'
+        | 'developerHub'
+        | 'ai'
+        | 'keybindings',
+    ) => {
+      setDialogSection(section);
+      setIsDialogOpen(true);
+    },
+    [],
+  );
 
   const value = useMemo<SettingsContextValue>(
     () => ({
@@ -162,6 +193,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           settings={settings}
           isLoading={isLoading}
           persistenceError={persistenceError}
+          initialSection={dialogSection}
           onSave={updateSettings}
           onClose={() => setIsDialogOpen(false)}
         />
