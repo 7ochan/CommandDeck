@@ -731,6 +731,20 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
   );
 }
 
+function formatLastVerified(timestamp?: number): string {
+  if (!timestamp) return 'Not verified yet';
+  const diffMs = Date.now() - timestamp;
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return 'Just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60)
+    return `${diffMin} ${diffMin === 1 ? 'minute' : 'minutes'} ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24)
+    return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+  return `${Math.floor(diffHours / 24)} days ago`;
+}
+
 function AISettingsPanel({
   draftSettings,
   updateDraft,
@@ -745,29 +759,106 @@ function AISettingsPanel({
     message?: string;
   }>({ type: 'idle' });
 
+  const activeProvider = draftSettings.ai.provider;
+  const activeModel = draftSettings.ai.model;
+  const providerStatus = draftSettings.ai.providerStatus?.[activeProvider];
+
   const handleApiKeyChange = (val: string) => {
     setApiKeyInput(val);
-    const hasApiKey = val.trim().length > 0;
-    updateDraft({ ai: { hasApiKey } });
-    void setAIProviderApiKey(draftSettings.ai.provider, val);
+    if (val.trim().length > 0) {
+      updateDraft({
+        ai: {
+          hasApiKey: true,
+        },
+      });
+      void setAIProviderApiKey(activeProvider, val.trim());
+    }
+  };
+
+  const handleProviderChange = (val: string) => {
+    const provider = val as AIProviderId;
+    const providerModels = draftSettings.ai.providerModels ?? {};
+    const savedModel =
+      providerModels[provider] || getDefaultModelForProvider(provider);
+
+    updateDraft({
+      ai: {
+        provider,
+        model: savedModel,
+        providerModels: {
+          ...providerModels,
+          [activeProvider]: activeModel,
+        },
+      },
+    });
+
+    setApiKeyInput('');
+    setTestStatus({ type: 'idle' });
+  };
+
+  const handleModelChange = (val: string) => {
+    const providerModels = draftSettings.ai.providerModels ?? {};
+    updateDraft({
+      ai: {
+        model: val,
+        providerModels: {
+          ...providerModels,
+          [activeProvider]: val,
+        },
+      },
+    });
   };
 
   const handleTestConnection = async () => {
     setTestStatus({ type: 'testing' });
     try {
       const result = await testAIConnection(
-        draftSettings.ai.provider,
+        activeProvider,
         apiKeyInput || undefined,
       );
+      const timestamp = Date.now();
+
+      const currentStatusMap = draftSettings.ai.providerStatus ?? {};
+      const updatedStatusMap = {
+        ...currentStatusMap,
+        [activeProvider]: {
+          connected: result.success,
+          lastVerifiedAt: timestamp,
+          error: result.success ? undefined : result.message,
+        },
+      };
+
+      updateDraft({
+        ai: {
+          providerStatus: updatedStatusMap,
+        },
+      });
+
       if (result.success) {
         setTestStatus({ type: 'success', message: result.message });
       } else {
         setTestStatus({ type: 'error', message: result.message });
       }
     } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Connection test failed';
       setTestStatus({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Connection test failed',
+        message,
+      });
+
+      const currentStatusMap = draftSettings.ai.providerStatus ?? {};
+      updateDraft({
+        ai: {
+          providerStatus: {
+            ...currentStatusMap,
+            [activeProvider]: {
+              connected: false,
+              lastVerifiedAt: Date.now(),
+              error: message,
+            },
+          },
+        },
       });
     }
   };
@@ -775,7 +866,7 @@ function AISettingsPanel({
   return (
     <SettingsGroup
       title="AI Provider & API Configuration"
-      description="Configure Google Gemini API credentials for the AI Commit Assistant."
+      description="Configure AI provider credentials and options for the AI Commit Assistant."
     >
       <ToggleSetting
         label="Enable AI Commit Assistant"
@@ -783,116 +874,145 @@ function AISettingsPanel({
         checked={draftSettings.ai.enabled}
         onChange={(enabled) => updateDraft({ ai: { enabled } })}
       />
-      <SelectSetting
-        label="AI Provider"
-        description="Choose the AI service used for commit message generation."
-        value={draftSettings.ai.provider}
-        onChange={(val) => {
-          const provider = val as AIProviderId;
-          const defaultModel = getDefaultModelForProvider(provider);
-          updateDraft({ ai: { provider, model: defaultModel } });
-          setApiKeyInput('');
-          setTestStatus({ type: 'idle' });
-        }}
-      >
-        <option value="gemini">Google Gemini AI</option>
-        <option value="openai">OpenAI</option>
-        <option value="anthropic" disabled>
-          Anthropic Claude (Coming Soon)
-        </option>
-        <option value="ollama" disabled>
-          Ollama Local (Coming Soon)
-        </option>
-      </SelectSetting>
 
-      <SelectSetting
-        label="AI Model"
-        description={`Select the ${
-          draftSettings.ai.provider === 'openai' ? 'OpenAI' : 'Google Gemini'
-        } model for generating commit messages.`}
-        value={draftSettings.ai.model}
-        onChange={(val) => updateDraft({ ai: { model: val } })}
-      >
-        {(draftSettings.ai.provider === 'openai'
-          ? OPENAI_MODELS
-          : GEMINI_MODELS
-        ).map((m) => (
-          <option key={m.id} value={m.id}>
-            {m.name} {m.isRecommended ? '(Recommended)' : ''}
-          </option>
-        ))}
-      </SelectSetting>
+      {draftSettings.ai.enabled && (
+        <>
+          <SelectSetting
+            label="AI Provider"
+            description="Choose the AI service used for commit message generation."
+            value={activeProvider}
+            onChange={handleProviderChange}
+          >
+            <option value="gemini">Google Gemini AI</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic" disabled>
+              Anthropic Claude (Coming Soon)
+            </option>
+            <option value="ollama" disabled>
+              Ollama Local (Coming Soon)
+            </option>
+          </SelectSetting>
 
-      <div className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-3 sm:gap-8">
-        <span className="max-w-[24rem] min-w-0">
-          <span className="block text-[12.5px] font-medium text-[var(--text-primary)]">
-            {draftSettings.ai.provider === 'openai'
-              ? 'OpenAI API Key'
-              : 'Gemini API Key'}
-          </span>
-          <span className="mt-0.5 block text-[11px] leading-4 text-[var(--text-muted)]">
-            Stored securely using local operating system credential storage.
-          </span>
-        </span>
+          <SelectSetting
+            label="AI Model"
+            description={`Select the ${
+              activeProvider === 'openai' ? 'OpenAI' : 'Google Gemini'
+            } model for generating commit messages.`}
+            value={activeModel}
+            onChange={handleModelChange}
+          >
+            {(activeProvider === 'openai' ? OPENAI_MODELS : GEMINI_MODELS).map(
+              (m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name} {m.isRecommended ? '(Recommended)' : ''}
+                </option>
+              ),
+            )}
+          </SelectSetting>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="relative flex items-center">
-            <input
-              type={showApiKey ? 'text' : 'password'}
-              placeholder={
-                draftSettings.ai.hasApiKey
-                  ? '••••••••••••••••'
-                  : draftSettings.ai.provider === 'openai'
-                    ? 'sk-...'
-                    : 'Enter Gemini API Key'
-              }
-              value={apiKeyInput}
-              onChange={(e) => handleApiKeyChange(e.target.value)}
-              className="cd-input h-8.5 w-52 px-2.5 pr-8 font-mono text-[11px]"
-            />
-            <button
-              type="button"
-              className="absolute right-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-              title={showApiKey ? 'Hide API key' : 'Show API key'}
-              onClick={() => setShowApiKey((v) => !v)}
-            >
-              <Icon name={showApiKey ? 'eye-off' : 'eye'} size={14} />
-            </button>
+          <div className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-3 sm:gap-8">
+            <span className="max-w-[24rem] min-w-0">
+              <span className="block text-[12.5px] font-medium text-[var(--text-primary)]">
+                {activeProvider === 'openai'
+                  ? 'OpenAI API Key'
+                  : 'Gemini API Key'}
+              </span>
+              <span className="mt-0.5 block text-[11px] leading-4 text-[var(--text-muted)]">
+                Stored securely using local operating system credential storage.
+              </span>
+            </span>
+
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="relative flex items-center">
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  placeholder={
+                    draftSettings.ai.hasApiKey
+                      ? '••••••••••••••••'
+                      : activeProvider === 'openai'
+                        ? 'sk-...'
+                        : 'Enter Gemini API Key'
+                  }
+                  value={apiKeyInput}
+                  onChange={(e) => handleApiKeyChange(e.target.value)}
+                  className="cd-input h-8.5 w-52 px-2.5 pr-8 font-mono text-[11px]"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  title={showApiKey ? 'Hide API key' : 'Show API key'}
+                  onClick={() => setShowApiKey((v) => !v)}
+                >
+                  <Icon name={showApiKey ? 'eye-off' : 'eye'} size={14} />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="cd-button h-8.5 text-[11px] whitespace-nowrap"
+                disabled={testStatus.type === 'testing'}
+                onClick={handleTestConnection}
+              >
+                {testStatus.type === 'testing' ? (
+                  <>
+                    <span className="animate-spin">
+                      <Icon name="refresh" size={13} />
+                    </span>
+                    Testing…
+                  </>
+                ) : (
+                  <>
+                    <Icon name="sparkles" size={13} />
+                    Test Connection
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          <button
-            type="button"
-            className="cd-button h-8.5 text-[11px] whitespace-nowrap"
-            disabled={testStatus.type === 'testing'}
-            onClick={handleTestConnection}
-          >
-            {testStatus.type === 'testing' ? (
-              <>
-                <span className="animate-spin">
-                  <Icon name="refresh" size={13} />
+          <div className="mx-2.5 my-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-3 text-[11.5px]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-[var(--text-primary)]">
+                  Status (
+                  {activeProvider === 'openai' ? 'OpenAI' : 'Google Gemini'}):
                 </span>
-                Testing…
-              </>
-            ) : (
-              <>
-                <Icon name="sparkles" size={13} />
-                Test Connection
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ${
+                    providerStatus?.connected
+                      ? 'bg-[var(--success-soft)] text-[var(--success)]'
+                      : 'bg-[var(--danger-soft)] text-[var(--danger)]'
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      providerStatus?.connected
+                        ? 'bg-[var(--success)]'
+                        : 'bg-[var(--danger)]'
+                    }`}
+                  />
+                  {providerStatus?.connected ? 'Connected' : 'Not Connected'}
+                </span>
+              </div>
+              <span className="text-[10.5px] text-[var(--text-muted)]">
+                Last Verified:{' '}
+                {formatLastVerified(providerStatus?.lastVerifiedAt)}
+              </span>
+            </div>
 
-      {testStatus.message && (
-        <div
-          className={`mx-2.5 my-2 rounded-md p-2.5 text-[11px] ${
-            testStatus.type === 'success'
-              ? 'border border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-              : 'border border-[var(--danger)]/30 bg-[var(--danger-soft)] text-[var(--danger)]'
-          }`}
-        >
-          {testStatus.message}
-        </div>
+            {testStatus.message && (
+              <div
+                className={`mt-2.5 rounded-md p-2 text-[11px] ${
+                  testStatus.type === 'success'
+                    ? 'border border-[var(--accent-border)] bg-[var(--accent-soft)] text-[var(--accent-strong)]'
+                    : 'border border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)]'
+                }`}
+              >
+                {testStatus.message}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </SettingsGroup>
   );

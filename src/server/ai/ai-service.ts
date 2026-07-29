@@ -5,10 +5,10 @@ import type {
 } from '../../features/ai/types';
 import type { AIProviderId } from '../../shared/types';
 import { getServerContainerIfInitialized } from '../runtime/server-container-registry';
+import { credentialStore } from './credential-store';
 
 class AIService {
   private static instance: AIService;
-  private apiKeys = new Map<AIProviderId, string>();
 
   private constructor() {}
 
@@ -21,19 +21,21 @@ class AIService {
 
   setApiKey(provider: AIProviderId, key: string): void {
     if (!key || key.trim().length === 0) {
-      this.apiKeys.delete(provider);
-    } else {
-      this.apiKeys.set(provider, key.trim());
+      return;
     }
+    credentialStore.set(provider, key);
   }
 
   getApiKey(provider: AIProviderId): string | undefined {
-    return this.apiKeys.get(provider);
+    return credentialStore.get(provider);
   }
 
   hasApiKey(provider: AIProviderId): boolean {
-    const key = this.getApiKey(provider);
-    return key !== undefined && key.trim().length > 0;
+    return credentialStore.has(provider);
+  }
+
+  deleteApiKey(provider: AIProviderId): void {
+    credentialStore.delete(provider);
   }
 
   async testConnection(
@@ -41,15 +43,15 @@ class AIService {
     apiKeyOverride?: string,
   ): Promise<AITestConnectionResult> {
     const keyToTest = apiKeyOverride ?? this.getApiKey(providerId);
-    if (!keyToTest) {
+    if (!keyToTest && providerId !== 'ollama') {
       return {
         success: false,
-        message: 'No API key provided or configured.',
+        message: `No API key provided or configured for ${providerId}.`,
       };
     }
 
     const provider = AIProviderRegistry.getInstance().get(providerId);
-    return provider.testConnection(keyToTest);
+    return provider.testConnection(keyToTest || '');
   }
 
   async generateCommitMessage(
@@ -59,7 +61,7 @@ class AIService {
     modelOverride?: string,
   ): Promise<AICommitResult> {
     const apiKey = apiKeyOverride ?? this.getApiKey(providerId);
-    if (!apiKey) {
+    if (!apiKey && providerId !== 'ollama') {
       throw new Error(
         `API key for ${providerId} is missing. Please configure it in Settings -> AI Assistant.`,
       );
@@ -71,7 +73,7 @@ class AIService {
     const model = modelOverride ?? snapshotModel ?? 'gemini-2.0-flash';
 
     const provider = AIProviderRegistry.getInstance().get(providerId);
-    return provider.generateCommit(diff, apiKey, model);
+    return provider.generateCommit(diff, apiKey || '', model);
   }
 }
 

@@ -17,7 +17,9 @@ import {
 import { aiService } from '../ai/ai-service';
 import {
   aiModelSchema,
+  aiProviderModelsSchema,
   aiProviderSchema,
+  aiProviderStatusSchema,
 } from '../../shared/schemas/settings.js';
 import type {
   SettingsRepository,
@@ -43,6 +45,8 @@ const KEYS = {
   aiEnabled: 'ai.enabled',
   aiProvider: 'ai.provider',
   aiModel: 'ai.model',
+  aiProviderStatus: 'ai.providerStatus',
+  aiProviderModels: 'ai.providerModels',
   keybindings: 'keybindings.customizations',
   lastWorkspaceId: 'state.lastWorkspaceId',
   lastDeveloperHubTab: 'state.lastDeveloperHubTab',
@@ -186,6 +190,18 @@ export class SettingsService {
               DEFAULT_APP_SETTINGS.ai.provider,
             ),
           ),
+          providerStatus: read(
+            values,
+            KEYS.aiProviderStatus,
+            aiProviderStatusSchema,
+            DEFAULT_APP_SETTINGS.ai.providerStatus ?? {},
+          ),
+          providerModels: read(
+            values,
+            KEYS.aiProviderModels,
+            aiProviderModelsSchema,
+            DEFAULT_APP_SETTINGS.ai.providerModels ?? {},
+          ),
         },
         keybindings: read(
           values,
@@ -308,6 +324,8 @@ function addDefinedSettings(
   add(KEYS.aiEnabled, update?.ai?.enabled);
   add(KEYS.aiProvider, update?.ai?.provider);
   add(KEYS.aiModel, update?.ai?.model);
+  add(KEYS.aiProviderStatus, update?.ai?.providerStatus);
+  add(KEYS.aiProviderModels, update?.ai?.providerModels);
   add(KEYS.keybindings, update?.keybindings);
 }
 

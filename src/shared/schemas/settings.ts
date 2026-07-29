@@ -58,11 +58,27 @@ export const aiModelSchema = z
   .enum(SUPPORTED_AI_MODEL_IDS)
   .catch(DEFAULT_GEMINI_MODEL);
 
+const aiProviderStatusItemSchema = z.object({
+  connected: z.boolean(),
+  lastVerifiedAt: z.number().optional(),
+  error: z.string().optional(),
+});
+
+export const aiProviderStatusSchema = z
+  .record(z.string(), aiProviderStatusItemSchema)
+  .default({});
+
+export const aiProviderModelsSchema = z
+  .record(z.string(), z.string())
+  .default({ gemini: 'gemini-2.0-flash', openai: 'gpt-4o-mini' });
+
 const aiSettingsSchema = z.object({
   enabled: z.boolean().default(false),
   provider: aiProviderSchema.default('gemini'),
   model: aiModelSchema,
   hasApiKey: z.boolean().default(false),
+  providerStatus: aiProviderStatusSchema,
+  providerModels: aiProviderModelsSchema,
 });
 const keybindingsSchema = z.record(z.string(), z.string());
 

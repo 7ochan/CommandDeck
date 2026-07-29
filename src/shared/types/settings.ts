@@ -34,6 +34,21 @@ export const AI_PROVIDERS = [
 ] as const;
 export type AIProviderId = (typeof AI_PROVIDERS)[number];
 
+export type AIProviderStatus = {
+  connected: boolean;
+  lastVerifiedAt?: number;
+  error?: string;
+};
+
+export type AISettings = {
+  enabled: boolean;
+  provider: AIProviderId;
+  model: string;
+  hasApiKey: boolean;
+  providerStatus?: Record<string, AIProviderStatus>;
+  providerModels?: Record<string, string>;
+};
+
 export type AppSettings = {
   general: {
     restorePreviousWorkspace: boolean;
@@ -58,12 +73,7 @@ export type AppSettings = {
     showHistoryTab: boolean;
     deckScope: DeckScope;
   };
-  ai: {
-    enabled: boolean;
-    provider: AIProviderId;
-    model: string;
-    hasApiKey: boolean;
-  };
+  ai: AISettings;
   keybindings: Record<string, string>;
 };
 
@@ -73,7 +83,7 @@ export type AppSettingsUpdate = {
   appearance?: Partial<AppSettings['appearance']>;
   developerHub?: Partial<AppSettings['developerHub']>;
   ai?: Partial<AppSettings['ai']>;
-  keybindings?: Record<string, string>;
+  keybindings?: AppSettings['keybindings'];
 };
 
 /** Durable UI context controlled by settings, but not directly editable. */
@@ -118,6 +128,11 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     provider: 'gemini',
     model: 'gemini-2.0-flash',
     hasApiKey: false,
+    providerStatus: {},
+    providerModels: {
+      gemini: 'gemini-2.0-flash',
+      openai: 'gpt-4o-mini',
+    },
   },
   keybindings: {},
 };
