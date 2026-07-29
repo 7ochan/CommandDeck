@@ -24,6 +24,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (err) {
+    console.error('[API /api/ai/generate-commit Error]:', err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : String(err) },
       { status: 400 },

@@ -57,9 +57,14 @@ ${prepared.preparedDiff}`;
     let actualModelUsed = model;
 
     for (const currentModel of targetModels) {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        currentModel,
-      )}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+      const sanitizedKey = apiKey.trim();
+      const maskedKey = sanitizedKey.length > 8 ? `${sanitizedKey.slice(0, 4)}...${sanitizedKey.slice(-4)}` : 'HIDDEN';
+
+      console.log(`[GeminiProvider] Dispatching request:
+- Model: ${currentModel}
+- Endpoint: https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(currentModel)}:generateContent?key=${maskedKey}
+- Target Models Array: ${JSON.stringify(targetModels)}
+- Prompt Length: ${promptText.length} chars`);
 
       try {
         const response = await fetch(endpoint, {
@@ -81,8 +86,32 @@ ${prepared.preparedDiff}`;
           }),
         });
 
+        const headersObj: Record<string, string> = {};
+        response.headers.forEach((val, key) => {
+          headersObj[key] = val;
+        });
+
+        const rawTextBody = await response.text();
+        let errorData: any = null;
+        try {
+          errorData = JSON.parse(rawTextBody);
+        } catch {
+          errorData = null;
+        }
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
+          console.error(`[GeminiProvider] RAW API FAILURE RESPONSE:
+==================================================
+HTTP Status: ${response.status} ${response.statusText}
+Endpoint Model: ${currentModel}
+Headers: ${JSON.stringify(headersObj, null, 2)}
+Raw Response Body: ${rawTextBody}
+Gemini Error Object: ${JSON.stringify(errorData?.error, null, 2)}
+error.code: ${errorData?.error?.code}
+error.status: ${errorData?.error?.status}
+error.message: ${errorData?.error?.message}
+==================================================`);
+
           const status = response.status;
           const msg = errorData?.error?.message || response.statusText;
 
@@ -99,38 +128,45 @@ ${prepared.preparedDiff}`;
 
           if (status === 400 || status === 403 || msg.includes('API_KEY')) {
             throw new Error(
-              'Invalid Google Gemini API key. Please check your key in Settings -> AI Assistant.',
+              `Google Gemini API Error (${status}): ${msg}`,
             );
           }
 
           if (status === 429) {
             throw new Error(
-              'Google Gemini API rate limit reached. Please wait a moment and try again.',
+              `Google Gemini API Rate Limit Reached (${status}): ${msg}`,
             );
           }
 
           throw new Error(
-            `Google Gemini API error (${status}): ${msg || 'Service temporarily unavailable'}`,
+            `Google Gemini API Error (${status}): ${msg || 'Service temporarily unavailable'}`,
           );
         }
 
-        const data = await response.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(rawTextBody);
+        } catch (jsonErr) {
+          console.error(`[GeminiProvider] Failed to parse JSON response body: ${rawTextBody}`, jsonErr);
+          throw new Error('Gemini API returned invalid JSON.');
+        }
+
+        const rawText = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!rawText) {
           throw new Error('Gemini API returned an empty response.');
         }
 
-        const parsed = JSON.parse(rawText);
+        const parsedCommit = JSON.parse(rawText);
 
-        const summary = Array.isArray(parsed.summary)
-          ? parsed.summary.map(String)
+        const summary = Array.isArray(parsedCommit.summary)
+          ? parsedCommit.summary.map(String)
           : ['Updated workspace files and code implementation'];
 
         const commitMessage =
-          typeof parsed.commitMessage === 'string' &&
-          parsed.commitMessage.trim()
-            ? parsed.commitMessage.trim()
+          typeof parsedCommit.commitMessage === 'string' &&
+          parsedCommit.commitMessage.trim()
+            ? parsedCommit.commitMessage.trim()
             : 'chore: update codebase changes';
 
         actualModelUsed = currentModel;
