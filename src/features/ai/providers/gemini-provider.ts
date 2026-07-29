@@ -1,3 +1,4 @@
+import { prepareDiffForAI } from '../diff-preparation';
 import type {
   AICommitResult,
   AIProvider,
@@ -23,18 +24,25 @@ export class GeminiProvider implements AIProvider {
       model,
     )}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
 
-    const promptText = `You are a senior software engineer and Git Commit assistant. Analyze the provided git diff and generate:
-1. A concise summary (3 to 6 bullet points) explaining the intent and key changes.
-2. A professional Conventional Commit message (e.g. feat(scope): title or fix(scope): title).
+    const prepared = prepareDiffForAI(diff);
 
-Return strictly valid JSON matching this schema:
+    const promptText = `You are a principal software engineer and Git Commit Assistant. Analyze the provided codebase changes and determine the high-level intent, feature domain, and architectural impact of the change.
+
+Guidelines:
+1. Understand INTENT: Explain WHY and WHAT was achieved, rather than listing mechanical code edits (e.g. "added line 5").
+2. CONVENTIONAL COMMITS: Generate a clear, professional Conventional Commit title formatted as \`<type>(<scope>): <short description>\` (e.g. \`feat(settings): add AI provider configuration section\` or \`fix(terminal): resolve cursor blinking regression\`).
+3. FORBID VAGUE MESSAGES: NEVER output generic or unhelpful titles like "update files", "misc changes", "fix bug", "changes made", or "update code".
+4. SUMMARY: Provide 3 to 6 concise, high-value bullet points summarizing the purpose and key modifications.
+${prepared.isTruncated ? '5. NOTE: The git diff was very large, so repository change statistics, changed file list, and representative diff samples have been provided below.' : ''}
+
+Return strictly valid JSON matching this exact schema:
 {
   "summary": ["bullet point 1", "bullet point 2"],
   "commitMessage": "feat(scope): concise title"
 }
 
-Git Diff:
-${diff.slice(0, 20_000)}`;
+Code Base Changes (${prepared.isTruncated ? 'Intelligently Summarized' : 'Complete Diff'}):
+${prepared.preparedDiff}`;
 
     try {
       const response = await fetch(endpoint, {
