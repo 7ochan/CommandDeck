@@ -28,7 +28,7 @@ export function AICommitReviewDialog({
 }: AICommitReviewDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
 
   const [stage, setStage] = useState<
     | 'checking'
@@ -288,7 +288,23 @@ export function AICommitReviewDialog({
               <p className="mt-1 max-w-[26rem] text-[11px] leading-4 text-[var(--text-muted)]">
                 {errorMessage}
               </p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {errorMessage?.includes('no longer available') && (
+                  <button
+                    type="button"
+                    className="cd-button cd-button--primary text-[11px]"
+                    onClick={() => {
+                      void updateSettings({
+                        ai: { model: 'gemini-2.0-flash' },
+                      });
+                      setErrorMessage(
+                        'Model setting updated to Gemini 2.0 Flash (Recommended). Click Retry to generate your commit message.',
+                      );
+                    }}
+                  >
+                    Switch to Recommended Model
+                  </button>
+                )}
                 <button type="button" className="cd-button" onClick={onClose}>
                   Cancel
                 </button>

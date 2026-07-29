@@ -5,12 +5,6 @@ import type {
   AITestConnectionResult,
 } from '../types';
 
-const RECOMMENDED_FALLBACK_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-];
-
 export class GeminiProvider implements AIProvider {
   readonly id = 'gemini';
   readonly name = 'Google Gemini AI';
@@ -46,64 +40,62 @@ Return strictly valid JSON matching this exact schema:
 Code Base Changes (${prepared.isTruncated ? 'Intelligently Summarized' : 'Complete Diff'}):
 ${prepared.preparedDiff}`;
 
-    // Try requested model first, then fallback models if 404 occurs
-    const targetModels = [
+    const sanitizedKey = apiKey.trim();
+    const maskedKey =
+      sanitizedKey.length > 8
+        ? `${sanitizedKey.slice(0, 4)}...${sanitizedKey.slice(-4)}`
+        : 'HIDDEN';
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
       model,
-      ...RECOMMENDED_FALLBACK_MODELS.filter((m) => m !== model),
-    ];
+    )}:generateContent?key=${encodeURIComponent(sanitizedKey)}`;
 
-    let lastErrorMsg = '';
-    let usedFallback = false;
-    let actualModelUsed = model;
-
-    for (const currentModel of targetModels) {
-      const sanitizedKey = apiKey.trim();
-      const maskedKey = sanitizedKey.length > 8 ? `${sanitizedKey.slice(0, 4)}...${sanitizedKey.slice(-4)}` : 'HIDDEN';
-
-      console.log(`[GeminiProvider] Dispatching request:
-- Model: ${currentModel}
-- Endpoint: https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(currentModel)}:generateContent?key=${maskedKey}
-- Target Models Array: ${JSON.stringify(targetModels)}
+    console.log(`[GeminiProvider] Dispatching EXACTLY ONE generateContent request:
+- Model: ${model}
+- Endpoint: https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${maskedKey}
 - Prompt Length: ${promptText.length} chars`);
 
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: promptText }],
           },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: promptText }],
-              },
-            ],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.2,
-            },
-          }),
-        });
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.2,
+        },
+      }),
+    });
 
-        const headersObj: Record<string, string> = {};
-        response.headers.forEach((val, key) => {
-          headersObj[key] = val;
-        });
+    const headersObj: Record<string, string> = {};
+    response.headers.forEach((val, key) => {
+      headersObj[key] = val;
+    });
 
-        const rawTextBody = await response.text();
-        let errorData: any = null;
-        try {
-          errorData = JSON.parse(rawTextBody);
-        } catch {
-          errorData = null;
-        }
+    const rawTextBody = await response.text();
+    let errorData: {
+      error?: { code?: number; status?: string; message?: string };
+    } | null = null;
+    try {
+      errorData = JSON.parse(rawTextBody) as {
+        error?: { code?: number; status?: string; message?: string };
+      };
+    } catch {
+      errorData = null;
+    }
 
-        if (!response.ok) {
-          console.error(`[GeminiProvider] RAW API FAILURE RESPONSE:
+    if (!response.ok) {
+      console.error(`[GeminiProvider] RAW API FAILURE RESPONSE:
 ==================================================
 HTTP Status: ${response.status} ${response.statusText}
-Endpoint Model: ${currentModel}
+Endpoint Model: ${model}
 Headers: ${JSON.stringify(headersObj, null, 2)}
 Raw Response Body: ${rawTextBody}
 Gemini Error Object: ${JSON.stringify(errorData?.error, null, 2)}
@@ -112,88 +104,73 @@ error.status: ${errorData?.error?.status}
 error.message: ${errorData?.error?.message}
 ==================================================`);
 
-          const status = response.status;
-          const msg = errorData?.error?.message || response.statusText;
+      const status = response.status;
+      const msg = errorData?.error?.message || response.statusText;
 
-          // If model not found or no longer available, attempt fallback model
-          if (
-            status === 404 ||
-            msg.toLowerCase().includes('not found') ||
-            msg.toLowerCase().includes('no longer available')
-          ) {
-            lastErrorMsg = `The selected Gemini model (${currentModel}) is no longer available. Please choose another model in AI Settings.`;
-            usedFallback = true;
-            continue; // try next fallback model in loop
-          }
-
-          if (status === 400 || status === 403 || msg.includes('API_KEY')) {
-            throw new Error(
-              `Google Gemini API Error (${status}): ${msg}`,
-            );
-          }
-
-          if (status === 429) {
-            throw new Error(
-              `Google Gemini API Rate Limit Reached (${status}): ${msg}`,
-            );
-          }
-
-          throw new Error(
-            `Google Gemini API Error (${status}): ${msg || 'Service temporarily unavailable'}`,
-          );
-        }
-
-        let parsed: any = null;
-        try {
-          parsed = JSON.parse(rawTextBody);
-        } catch (jsonErr) {
-          console.error(`[GeminiProvider] Failed to parse JSON response body: ${rawTextBody}`, jsonErr);
-          throw new Error('Gemini API returned invalid JSON.');
-        }
-
-        const rawText = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!rawText) {
-          throw new Error('Gemini API returned an empty response.');
-        }
-
-        const parsedCommit = JSON.parse(rawText);
-
-        const summary = Array.isArray(parsedCommit.summary)
-          ? parsedCommit.summary.map(String)
-          : ['Updated workspace files and code implementation'];
-
-        const commitMessage =
-          typeof parsedCommit.commitMessage === 'string' &&
-          parsedCommit.commitMessage.trim()
-            ? parsedCommit.commitMessage.trim()
-            : 'chore: update codebase changes';
-
-        actualModelUsed = currentModel;
-
-        return {
-          summary,
-          commitMessage,
-          provider: 'gemini',
-          modelUsed: actualModelUsed,
-          fallbackNotice: usedFallback
-            ? `Selected model (${model}) was unavailable. Automatically generated using ${actualModelUsed}.`
-            : undefined,
-        };
-      } catch (err) {
-        if (
-          err instanceof Error &&
-          !err.message.includes('no longer available')
-        ) {
-          throw err;
-        }
+      if (
+        status === 404 ||
+        msg.toLowerCase().includes('not found') ||
+        msg.toLowerCase().includes('no longer available')
+      ) {
+        throw new Error(
+          `The selected Gemini model (${model}) is no longer available. Please select a supported model in AI Settings or click 'Switch to Recommended Model'.`,
+        );
       }
+
+      if (status === 400 || status === 403 || msg.includes('API_KEY')) {
+        throw new Error(
+          'Invalid Google Gemini API key. Please check your key in Settings -> AI Assistant.',
+        );
+      }
+
+      if (status === 429) {
+        throw new Error(
+          'Google Gemini API rate limit reached. Please wait a moment and try again.',
+        );
+      }
+
+      throw new Error(`Google Gemini API error (${status}): ${msg}`);
     }
 
-    throw new Error(
-      lastErrorMsg ||
-        `The selected Gemini model (${model}) is no longer available. Please choose another model in AI Settings.`,
-    );
+    let parsed: {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    } | null = null;
+    try {
+      parsed = JSON.parse(rawTextBody) as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      };
+    } catch (jsonErr) {
+      console.error(
+        `[GeminiProvider] Failed to parse JSON response body: ${rawTextBody}`,
+        jsonErr,
+      );
+      throw new Error('Gemini API returned invalid JSON.');
+    }
+
+    const rawText = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!rawText) {
+      throw new Error('Gemini API returned an empty response.');
+    }
+
+    const parsedCommit = JSON.parse(rawText);
+
+    const summary = Array.isArray(parsedCommit.summary)
+      ? parsedCommit.summary.map(String)
+      : ['Updated workspace files and code implementation'];
+
+    const commitMessage =
+      typeof parsedCommit.commitMessage === 'string' &&
+      parsedCommit.commitMessage.trim()
+        ? parsedCommit.commitMessage.trim()
+        : 'chore: update codebase changes';
+
+    return {
+      summary,
+      commitMessage,
+      provider: 'gemini',
+      modelUsed: model,
+    };
   }
 
   async testConnection(apiKey: string): Promise<AITestConnectionResult> {
@@ -204,48 +181,46 @@ error.message: ${errorData?.error?.message}
       };
     }
 
-    for (const testModel of RECOMMENDED_FALLBACK_MODELS) {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(testModel)}?key=${encodeURIComponent(
-        apiKey.trim(),
-      )}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash?key=${encodeURIComponent(
+      apiKey.trim(),
+    )}`;
 
-      try {
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-        if (response.ok) {
-          return {
-            success: true,
-            message: `Connected successfully to Google Gemini API (using ${testModel}).`,
-          };
-        }
+      if (response.ok) {
+        return {
+          success: true,
+          message:
+            'Connected successfully to Google Gemini API (gemini-2.0-flash).',
+        };
+      }
 
-        void response.json().catch(() => null);
-        const status = response.status;
-        if (status === 400 || status === 403) {
-          return {
-            success: false,
-            message:
-              'Invalid Google Gemini API key. Please check your key in Settings -> AI Assistant.',
-          };
-        }
-      } catch (err) {
+      const data = await response.json().catch(() => null);
+      const status = response.status;
+      if (status === 400 || status === 403) {
         return {
           success: false,
           message:
-            err instanceof Error
-              ? err.message
-              : 'Failed to reach Google Gemini API.',
+            'Invalid Google Gemini API key. Please check your key in Settings -> AI Assistant.',
         };
       }
-    }
 
-    return {
-      success: false,
-      message:
-        'Unable to reach Google Gemini API. Please check your network connection.',
-    };
+      return {
+        success: false,
+        message: data?.error?.message || `Connection test failed (${status}).`,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message:
+          err instanceof Error
+            ? err.message
+            : 'Failed to reach Google Gemini API.',
+      };
+    }
   }
 }
