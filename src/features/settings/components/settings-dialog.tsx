@@ -576,12 +576,12 @@ function ToggleSetting({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="cd-settings-row grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2 py-3 transition-colors hover:bg-[var(--surface-2)] sm:gap-8">
+    <label className="cd-settings-row group grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-2.5 transition-colors hover:bg-[var(--surface-2)] sm:gap-8">
       <span className="max-w-[28rem] min-w-0">
         <span className="block text-[12.5px] leading-4 font-medium text-[var(--text-primary)]">
           {label}
         </span>
-        <span className="mt-1 block text-[11px] leading-4 text-[var(--text-muted)]">
+        <span className="mt-0.5 block text-[11px] leading-4 text-[var(--text-muted)]">
           {description}
         </span>
       </span>
@@ -593,7 +593,7 @@ function ToggleSetting({
       />
       <span
         aria-hidden="true"
-        className="relative h-5 w-9 shrink-0 rounded-full border border-[var(--border-strong)] bg-[var(--surface-1)] shadow-inner transition-[background-color,border-color,box-shadow] duration-150 ease-in-out peer-checked:border-[var(--accent-border)] peer-checked:bg-[var(--accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--canvas-raised)] after:absolute after:top-[2px] after:left-[2px] after:size-4 after:rounded-full after:bg-[var(--text-muted)] after:shadow-sm after:transition-transform after:duration-150 peer-checked:after:translate-x-4 peer-checked:after:bg-[var(--canvas)]"
+        className="relative h-[18px] w-[34px] shrink-0 rounded-full border border-[var(--border-strong)] bg-[var(--surface-1)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)] transition-[background-color,border-color,box-shadow] duration-200 ease-in-out group-hover:border-[var(--border-strong)] peer-checked:border-[var(--accent-border)] peer-checked:bg-[var(--accent)] peer-checked:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--accent)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--canvas-raised)] peer-disabled:opacity-50 after:absolute after:top-[1.5px] after:left-[1.5px] after:size-[13px] after:rounded-full after:bg-[var(--text-muted)] after:shadow-[0_1px_3px_rgba(0,0,0,0.3)] after:transition-all after:duration-200 after:ease-in-out peer-checked:after:translate-x-[16px] peer-checked:after:bg-white peer-checked:after:shadow-[0_1px_3px_rgba(0,0,0,0.4)] peer-active:after:w-[15px]"
       />
     </label>
   );
