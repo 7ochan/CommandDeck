@@ -52,16 +52,11 @@ const developerHubSettingsSchema = z.object({
   showHistoryTab: z.boolean().default(true),
   deckScope: deckScopeSchema.default('workspace'),
 });
+import { DEFAULT_GEMINI_MODEL, SUPPORTED_AI_MODEL_IDS } from '../ai-models';
+
 export const aiModelSchema = z
-  .enum([
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gpt-4o-mini',
-    'gpt-4o',
-    'gpt-4.5-preview',
-  ])
-  .catch('gemini-2.0-flash');
+  .enum(SUPPORTED_AI_MODEL_IDS)
+  .catch(DEFAULT_GEMINI_MODEL);
 
 const aiSettingsSchema = z.object({
   enabled: z.boolean().default(false),

@@ -753,6 +753,16 @@ function ActiveWorkspaceLayout({
         isOpen={isAICommitOpen}
         onClose={() => setIsAICommitOpen(false)}
         onOpenSettingsToAI={() => openSettings('ai')}
+        onExecuteCommand={(command) => {
+          const term = activeTerminal();
+          const sent = term?.runCommand(command) ?? false;
+          if (sent) {
+            setTimeout(() => {
+              term?.focus();
+            }, 0);
+          }
+          return sent;
+        }}
       />
     </div>
   );

@@ -19,6 +19,11 @@ import {
   DIR_COLOR_PALETTES,
   applyAccentTheme,
 } from '@/features/terminal/terminal-presentation';
+import {
+  GEMINI_MODELS,
+  OPENAI_MODELS,
+  getDefaultModelForProvider,
+} from '@/shared/ai-models';
 import { DEFAULT_APP_SETTINGS } from '@/shared/types';
 
 const SECTIONS = [
@@ -784,8 +789,7 @@ function AISettingsPanel({
         value={draftSettings.ai.provider}
         onChange={(val) => {
           const provider = val as AIProviderId;
-          const defaultModel =
-            provider === 'openai' ? 'gpt-4o-mini' : 'gemini-2.0-flash';
+          const defaultModel = getDefaultModelForProvider(provider);
           updateDraft({ ai: { provider, model: defaultModel } });
           setApiKeyInput('');
           setTestStatus({ type: 'idle' });
@@ -801,31 +805,23 @@ function AISettingsPanel({
         </option>
       </SelectSetting>
 
-      {draftSettings.ai.provider === 'openai' ? (
-        <SelectSetting
-          label="AI Model"
-          description="Select the OpenAI model for generating commit messages."
-          value={draftSettings.ai.model}
-          onChange={(val) => updateDraft({ ai: { model: val } })}
-        >
-          <option value="gpt-4o-mini">GPT-4o Mini (Fast & Recommended)</option>
-          <option value="gpt-4o">GPT-4o (High Intelligence)</option>
-          <option value="gpt-4.5-preview">GPT-4.5 Preview</option>
-        </SelectSetting>
-      ) : (
-        <SelectSetting
-          label="AI Model"
-          description="Select the Google Gemini model for generating commit messages."
-          value={draftSettings.ai.model}
-          onChange={(val) => updateDraft({ ai: { model: val } })}
-        >
-          <option value="gemini-2.0-flash">
-            Gemini 2.0 Flash (Recommended)
+      <SelectSetting
+        label="AI Model"
+        description={`Select the ${
+          draftSettings.ai.provider === 'openai' ? 'OpenAI' : 'Google Gemini'
+        } model for generating commit messages.`}
+        value={draftSettings.ai.model}
+        onChange={(val) => updateDraft({ ai: { model: val } })}
+      >
+        {(draftSettings.ai.provider === 'openai'
+          ? OPENAI_MODELS
+          : GEMINI_MODELS
+        ).map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name} {m.isRecommended ? '(Recommended)' : ''}
           </option>
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-          <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-        </SelectSetting>
-      )}
+        ))}
+      </SelectSetting>
 
       <div className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-3 sm:gap-8">
         <span className="max-w-[24rem] min-w-0">

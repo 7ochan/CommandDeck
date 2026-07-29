@@ -17,6 +17,7 @@ type AICommitReviewDialogProps = {
   onClose: () => void;
   onOpenSettingsToAI?: () => void;
   onCommitSuccess?: (message: string) => void;
+  onExecuteCommand?: (command: string) => boolean;
 };
 
 export function AICommitReviewDialog({
@@ -25,6 +26,7 @@ export function AICommitReviewDialog({
   onClose,
   onOpenSettingsToAI,
   onCommitSuccess,
+  onExecuteCommand,
 }: AICommitReviewDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -141,19 +143,26 @@ export function AICommitReviewDialog({
     setStage('committing');
     setErrorMessage(null);
 
-    try {
-      const result = await executeGitCommitMessage(
-        editedCommitMessage,
-        workspacePath,
-      );
+    const formattedMessage = editedCommitMessage.trim();
+    const commandStr = `git commit -m ${JSON.stringify(formattedMessage)}`;
 
-      if (!result.success) {
-        setErrorMessage(result.error || 'Git commit failed.');
-        setStage('review');
-        return;
+    try {
+      const executedInTerminal = onExecuteCommand?.(commandStr) ?? false;
+
+      if (!executedInTerminal) {
+        const result = await executeGitCommitMessage(
+          formattedMessage,
+          workspacePath,
+        );
+
+        if (!result.success) {
+          setErrorMessage(result.error || 'Git commit failed.');
+          setStage('review');
+          return;
+        }
       }
 
-      onCommitSuccess?.(editedCommitMessage);
+      onCommitSuccess?.(formattedMessage);
       onClose();
     } catch (err) {
       setErrorMessage(
