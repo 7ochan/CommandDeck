@@ -53,7 +53,14 @@ const developerHubSettingsSchema = z.object({
   deckScope: deckScopeSchema.default('workspace'),
 });
 export const aiModelSchema = z
-  .enum(['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'])
+  .enum([
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gpt-4o-mini',
+    'gpt-4o',
+    'gpt-4.5-preview',
+  ])
   .catch('gemini-2.0-flash');
 
 const aiSettingsSchema = z.object({

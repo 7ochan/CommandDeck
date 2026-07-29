@@ -782,14 +782,17 @@ function AISettingsPanel({
         label="AI Provider"
         description="Choose the AI service used for commit message generation."
         value={draftSettings.ai.provider}
-        onChange={(val) =>
-          updateDraft({ ai: { provider: val as AIProviderId } })
-        }
+        onChange={(val) => {
+          const provider = val as AIProviderId;
+          const defaultModel =
+            provider === 'openai' ? 'gpt-4o-mini' : 'gemini-2.0-flash';
+          updateDraft({ ai: { provider, model: defaultModel } });
+          setApiKeyInput('');
+          setTestStatus({ type: 'idle' });
+        }}
       >
         <option value="gemini">Google Gemini AI</option>
-        <option value="openai" disabled>
-          OpenAI (Coming Soon)
-        </option>
+        <option value="openai">OpenAI</option>
         <option value="anthropic" disabled>
           Anthropic Claude (Coming Soon)
         </option>
@@ -798,21 +801,38 @@ function AISettingsPanel({
         </option>
       </SelectSetting>
 
-      <SelectSetting
-        label="AI Model"
-        description="Select the default model for generating commit messages."
-        value={draftSettings.ai.model}
-        onChange={(val) => updateDraft({ ai: { model: val } })}
-      >
-        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
-        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-      </SelectSetting>
+      {draftSettings.ai.provider === 'openai' ? (
+        <SelectSetting
+          label="AI Model"
+          description="Select the OpenAI model for generating commit messages."
+          value={draftSettings.ai.model}
+          onChange={(val) => updateDraft({ ai: { model: val } })}
+        >
+          <option value="gpt-4o-mini">GPT-4o Mini (Fast & Recommended)</option>
+          <option value="gpt-4o">GPT-4o (High Intelligence)</option>
+          <option value="gpt-4.5-preview">GPT-4.5 Preview</option>
+        </SelectSetting>
+      ) : (
+        <SelectSetting
+          label="AI Model"
+          description="Select the Google Gemini model for generating commit messages."
+          value={draftSettings.ai.model}
+          onChange={(val) => updateDraft({ ai: { model: val } })}
+        >
+          <option value="gemini-2.0-flash">
+            Gemini 2.0 Flash (Recommended)
+          </option>
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+          <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+        </SelectSetting>
+      )}
 
       <div className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-3 sm:gap-8">
         <span className="max-w-[24rem] min-w-0">
           <span className="block text-[12.5px] font-medium text-[var(--text-primary)]">
-            Gemini API Key
+            {draftSettings.ai.provider === 'openai'
+              ? 'OpenAI API Key'
+              : 'Gemini API Key'}
           </span>
           <span className="mt-0.5 block text-[11px] leading-4 text-[var(--text-muted)]">
             Stored securely using local operating system credential storage.
@@ -826,7 +846,9 @@ function AISettingsPanel({
               placeholder={
                 draftSettings.ai.hasApiKey
                   ? '••••••••••••••••'
-                  : 'Enter Gemini API Key'
+                  : draftSettings.ai.provider === 'openai'
+                    ? 'sk-...'
+                    : 'Enter Gemini API Key'
               }
               value={apiKeyInput}
               onChange={(e) => handleApiKeyChange(e.target.value)}

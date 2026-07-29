@@ -1,6 +1,7 @@
 import type { AIProviderId } from '@/shared/types';
 import type { AIProvider } from '../types';
 import { GeminiProvider } from './gemini-provider';
+import { OpenAIProvider } from './openai-provider';
 
 export class AIProviderRegistry {
   private static instance: AIProviderRegistry;
@@ -8,6 +9,7 @@ export class AIProviderRegistry {
 
   private constructor() {
     this.register(new GeminiProvider());
+    this.register(new OpenAIProvider());
   }
 
   static getInstance(): AIProviderRegistry {
