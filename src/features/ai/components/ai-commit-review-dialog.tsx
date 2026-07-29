@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { Icon } from '@/components/ui/icon';
 import { useSettings } from '@/features/settings/settings-provider';
+import { loadSettings } from '@/features/settings/api';
 import type { AICommitResult } from '../types';
 import {
   executeGitCommitMessage,
@@ -79,8 +80,18 @@ export function AICommitReviewDialog({
     setErrorMessage(null);
     setAiResult(null);
 
-    // 1. Check API Key
-    if (!settings.ai.hasApiKey) {
+    // 1. Check API Key dynamically from CredentialStore authoritative server state
+    let currentHasApiKey = settings.ai.hasApiKey;
+    try {
+      const latestSnapshot = await loadSettings();
+      if (latestSnapshot?.settings?.ai) {
+        currentHasApiKey = latestSnapshot.settings.ai.hasApiKey;
+      }
+    } catch {
+      // Fallback to local settings state if load error occurs
+    }
+
+    if (!currentHasApiKey && settings.ai.provider !== 'ollama') {
       setStage('no-key');
       return;
     }
@@ -115,7 +126,12 @@ export function AICommitReviewDialog({
       );
       setStage('error');
     }
-  }, [generateCommit, settings.ai.hasApiKey, workspacePath]);
+  }, [
+    generateCommit,
+    settings.ai.hasApiKey,
+    settings.ai.provider,
+    workspacePath,
+  ]);
 
   useEffect(() => {
     const dialog = dialogRef.current;

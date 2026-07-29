@@ -34,6 +34,10 @@ class AIService {
     return credentialStore.has(provider);
   }
 
+  getAllHasMap(): Record<string, boolean> {
+    return credentialStore.getAllHasMap();
+  }
+
   deleteApiKey(provider: AIProviderId): void {
     credentialStore.delete(provider);
   }

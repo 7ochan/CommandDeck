@@ -122,7 +122,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       saveQueueRef.current = saveQueueRef.current
         .catch(() => undefined)
         .then(() => saveSettings(settingsUpdate, stateUpdate))
-        .then(() => undefined)
+        .then((snapshot) => {
+          if (snapshot) {
+            setSettings(snapshot.settings);
+            setState(snapshot.state);
+          }
+        })
         .catch((error: unknown) => {
           setPersistenceError(errorMessage(error, 'Unable to save Settings.'));
         });
