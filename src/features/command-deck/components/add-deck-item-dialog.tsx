@@ -109,17 +109,17 @@ export function AddDeckItemDialog({
         onSubmit={submit}
         className="flex max-h-[calc(100dvh-3rem)] flex-col overflow-hidden"
       >
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--border-soft)] bg-[var(--surface-2)] px-4">
-          <div className="flex items-center gap-2">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-soft)] px-5">
+          <div className="flex items-center gap-2.5">
             <span
-              className="flex size-6 items-center justify-center rounded-md bg-[var(--surface-3)] text-[var(--accent)]"
+              className="cd-clay-tile cd-clay-tile--accent flex size-7.5 items-center justify-center rounded-sm"
               aria-hidden="true"
             >
-              <Icon name="plus" size={14} />
+              <Icon name="plus" size={15} />
             </span>
             <h2
               id={titleId}
-              className="text-[13px] font-semibold text-[var(--text-primary)]"
+              className="text-[14px] leading-5 font-semibold text-[var(--text-primary)]"
             >
               Add Deck Shortcut
             </h2>
@@ -128,7 +128,7 @@ export function AddDeckItemDialog({
           <button
             type="button"
             disabled={isSaving}
-            className="cd-icon-button cd-button--quiet size-7 text-[var(--text-muted)]"
+            className="cd-icon-button cd-button--quiet size-7.5 text-[var(--text-muted)]"
             aria-label="Cancel"
             onClick={onCancel}
           >
