@@ -717,6 +717,7 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
       right.developerHub.rememberLastSelectedTab &&
     left.developerHub.showHistoryTab === right.developerHub.showHistoryTab &&
     left.developerHub.deckScope === right.developerHub.deckScope &&
+    left.ai?.enabled === right.ai?.enabled &&
     left.ai?.provider === right.ai?.provider &&
     left.ai?.model === right.ai?.model &&
     left.ai?.hasApiKey === right.ai?.hasApiKey &&
@@ -771,6 +772,12 @@ function AISettingsPanel({
       title="AI Provider & API Configuration"
       description="Configure Google Gemini API credentials for the AI Commit Assistant."
     >
+      <ToggleSetting
+        label="Enable AI Commit Assistant"
+        description="Intelligently generate Conventional Commit messages and change summaries from git diffs."
+        checked={draftSettings.ai.enabled}
+        onChange={(enabled) => updateDraft({ ai: { enabled } })}
+      />
       <SelectSetting
         label="AI Provider"
         description="Choose the AI service used for commit message generation."

@@ -37,6 +37,7 @@ const KEYS = {
   rememberLastSelectedTab: 'developerHub.rememberLastSelectedTab',
   showHistoryTab: 'developerHub.showHistoryTab',
   deckScope: 'developerHub.deckScope',
+  aiEnabled: 'ai.enabled',
   aiProvider: 'ai.provider',
   aiModel: 'ai.model',
   keybindings: 'keybindings.customizations',
@@ -156,6 +157,12 @@ export class SettingsService {
           ),
         },
         ai: {
+          enabled: read(
+            values,
+            KEYS.aiEnabled,
+            booleanSchema,
+            DEFAULT_APP_SETTINGS.ai.enabled,
+          ),
           provider: read(
             values,
             KEYS.aiProvider,
@@ -296,6 +303,7 @@ function addDefinedSettings(
   );
   add(KEYS.showHistoryTab, update?.developerHub?.showHistoryTab);
   add(KEYS.deckScope, update?.developerHub?.deckScope);
+  add(KEYS.aiEnabled, update?.ai?.enabled);
   add(KEYS.aiProvider, update?.ai?.provider);
   add(KEYS.aiModel, update?.ai?.model);
   add(KEYS.keybindings, update?.keybindings);

@@ -290,11 +290,12 @@ function ActiveWorkspaceLayout({
   const runCommandAgain = useCallback(
     (command: string) => {
       const normalized = command.trim().toLowerCase();
-      if (
+      const isCommitAction =
         normalized === 'git commit' ||
         normalized.startsWith('git commit ') ||
-        normalized === 'ai:commit'
-      ) {
+        normalized === 'ai:commit';
+
+      if (isCommitAction && settings.ai.enabled) {
         setIsAICommitOpen(true);
         return true;
       }
@@ -306,7 +307,7 @@ function ActiveWorkspaceLayout({
       }, 0);
       return result;
     },
-    [activeTerminal],
+    [activeTerminal, settings.ai.enabled],
   );
 
   const handleCommandCompleted = useCallback(
