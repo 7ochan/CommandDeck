@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const { provider = 'gemini', diff, apiKey } = await request.json();
+    const { provider = 'gemini', diff, apiKey, model } = await request.json();
 
     if (!diff || diff.trim().length === 0) {
       return NextResponse.json(
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
       provider as AIProviderId,
       diff,
       apiKey,
+      model,
     );
 
     return NextResponse.json(result);

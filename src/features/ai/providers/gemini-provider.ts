@@ -5,6 +5,12 @@ import type {
   AITestConnectionResult,
 } from '../types';
 
+const RECOMMENDED_FALLBACK_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+];
+
 export class GeminiProvider implements AIProvider {
   readonly id = 'gemini';
   readonly name = 'Google Gemini AI';
@@ -12,17 +18,13 @@ export class GeminiProvider implements AIProvider {
   async generateCommit(
     diff: string,
     apiKey: string,
-    model: string = 'gemini-2.5-flash',
+    model: string = 'gemini-2.0-flash',
   ): Promise<AICommitResult> {
     if (!apiKey || apiKey.trim().length === 0) {
       throw new Error(
         'Gemini API key is missing. Please configure it in Settings -> AI Assistant.',
       );
     }
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-      model,
-    )}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
 
     const prepared = prepareDiffForAI(diff);
 
@@ -44,75 +46,118 @@ Return strictly valid JSON matching this exact schema:
 Code Base Changes (${prepared.isTruncated ? 'Intelligently Summarized' : 'Complete Diff'}):
 ${prepared.preparedDiff}`;
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: promptText }],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            temperature: 0.2,
+    // Try requested model first, then fallback models if 404 occurs
+    const targetModels = [
+      model,
+      ...RECOMMENDED_FALLBACK_MODELS.filter((m) => m !== model),
+    ];
+
+    let lastErrorMsg = '';
+    let usedFallback = false;
+    let actualModelUsed = model;
+
+    for (const currentModel of targetModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        currentModel,
+      )}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        }),
-      });
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: promptText }],
+              },
+            ],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              temperature: 0.2,
+            },
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        const status = response.status;
-        const msg = errorData?.error?.message || response.statusText;
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          const status = response.status;
+          const msg = errorData?.error?.message || response.statusText;
 
-        if (status === 400 || status === 403 || msg.includes('API_KEY')) {
+          // If model not found or no longer available, attempt fallback model
+          if (
+            status === 404 ||
+            msg.toLowerCase().includes('not found') ||
+            msg.toLowerCase().includes('no longer available')
+          ) {
+            lastErrorMsg = `The selected Gemini model (${currentModel}) is no longer available. Please choose another model in AI Settings.`;
+            usedFallback = true;
+            continue; // try next fallback model in loop
+          }
+
+          if (status === 400 || status === 403 || msg.includes('API_KEY')) {
+            throw new Error(
+              'Invalid Google Gemini API key. Please check your key in Settings -> AI Assistant.',
+            );
+          }
+
+          if (status === 429) {
+            throw new Error(
+              'Google Gemini API rate limit reached. Please wait a moment and try again.',
+            );
+          }
+
           throw new Error(
-            'Invalid Google Gemini API key. Please check your key in Settings -> AI Assistant.',
+            `Google Gemini API error (${status}): ${msg || 'Service temporarily unavailable'}`,
           );
         }
-        if (status === 429) {
-          throw new Error(
-            'Google Gemini API rate limit reached. Please wait a moment and try again.',
-          );
+
+        const data = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!rawText) {
+          throw new Error('Gemini API returned an empty response.');
         }
-        throw new Error(`Google Gemini API error (${status}): ${msg}`);
+
+        const parsed = JSON.parse(rawText);
+
+        const summary = Array.isArray(parsed.summary)
+          ? parsed.summary.map(String)
+          : ['Updated workspace files and code implementation'];
+
+        const commitMessage =
+          typeof parsed.commitMessage === 'string' &&
+          parsed.commitMessage.trim()
+            ? parsed.commitMessage.trim()
+            : 'chore: update codebase changes';
+
+        actualModelUsed = currentModel;
+
+        return {
+          summary,
+          commitMessage,
+          provider: 'gemini',
+          modelUsed: actualModelUsed,
+          fallbackNotice: usedFallback
+            ? `Selected model (${model}) was unavailable. Automatically generated using ${actualModelUsed}.`
+            : undefined,
+        };
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          !err.message.includes('no longer available')
+        ) {
+          throw err;
+        }
       }
-
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!rawText) {
-        throw new Error('Gemini API returned an empty response.');
-      }
-
-      const parsed = JSON.parse(rawText);
-
-      const summary = Array.isArray(parsed.summary)
-        ? parsed.summary.map(String)
-        : ['Updated workspace files and code implementation'];
-
-      const commitMessage =
-        typeof parsed.commitMessage === 'string' && parsed.commitMessage.trim()
-          ? parsed.commitMessage.trim()
-          : 'chore: update codebase changes';
-
-      return {
-        summary,
-        commitMessage,
-        provider: 'gemini',
-      };
-    } catch (err) {
-      if (err instanceof Error) {
-        throw err;
-      }
-      throw new Error(
-        'Failed to connect to Google Gemini API. Please check your network connection.',
-      );
     }
+
+    throw new Error(
+      lastErrorMsg ||
+        `The selected Gemini model (${model}) is no longer available. Please choose another model in AI Settings.`,
+    );
   }
 
   async testConnection(apiKey: string): Promise<AITestConnectionResult> {
@@ -123,40 +168,48 @@ ${prepared.preparedDiff}`;
       };
     }
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash?key=${encodeURIComponent(
-      apiKey.trim(),
-    )}`;
+    for (const testModel of RECOMMENDED_FALLBACK_MODELS) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(testModel)}?key=${encodeURIComponent(
+        apiKey.trim(),
+      )}`;
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
+      try {
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
 
-      if (response.ok) {
+        if (response.ok) {
+          return {
+            success: true,
+            message: `Connected successfully to Google Gemini API (using ${testModel}).`,
+          };
+        }
+
+        void response.json().catch(() => null);
+        const status = response.status;
+        if (status === 400 || status === 403) {
+          return {
+            success: false,
+            message:
+              'Invalid Google Gemini API key. Please check your key in Settings -> AI Assistant.',
+          };
+        }
+      } catch (err) {
         return {
-          success: true,
-          message: 'Connected successfully to Google Gemini API.',
+          success: false,
+          message:
+            err instanceof Error
+              ? err.message
+              : 'Failed to reach Google Gemini API.',
         };
       }
-
-      const data = await response.json().catch(() => null);
-      const message =
-        data?.error?.message ||
-        `Connection failed with status ${response.status}.`;
-
-      return {
-        success: false,
-        message,
-      };
-    } catch (err) {
-      return {
-        success: false,
-        message:
-          err instanceof Error
-            ? err.message
-            : 'Failed to reach Google Gemini API.',
-      };
     }
+
+    return {
+      success: false,
+      message:
+        'Unable to reach Google Gemini API. Please check your network connection.',
+    };
   }
 }

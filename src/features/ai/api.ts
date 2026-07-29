@@ -57,11 +57,12 @@ export async function generateAICommitMessage(
   diff: string,
   provider: AIProviderId = 'gemini',
   apiKey?: string,
+  model?: string,
 ): Promise<AICommitResult> {
   const response = await fetch('/api/ai/generate-commit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ diff, provider, apiKey }),
+    body: JSON.stringify({ diff, provider, apiKey, model }),
   });
 
   const data = await response.json();

@@ -55,6 +55,8 @@ export function AICommitReviewDialog({
         const result = await generateAICommitMessage(
           diff,
           settings.ai.provider,
+          undefined,
+          settings.ai.model,
         );
         setAiResult(result);
         setEditedCommitMessage(result.commitMessage);
@@ -68,7 +70,7 @@ export function AICommitReviewDialog({
         setStage('error');
       }
     },
-    [settings.ai.provider],
+    [settings.ai.provider, settings.ai.model],
   );
 
   const startWorkflow = useCallback(async () => {
@@ -305,6 +307,12 @@ export function AICommitReviewDialog({
           {/* Review & Edit State */}
           {(stage === 'review' || stage === 'committing') && aiResult && (
             <div className="space-y-4">
+              {aiResult.fallbackNotice && (
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] font-medium text-amber-400">
+                  {aiResult.fallbackNotice}
+                </div>
+              )}
+
               {errorMessage && (
                 <div className="rounded-md border border-[var(--danger)]/30 bg-[var(--danger-soft)] p-2.5 text-[11px] text-[var(--danger)]">
                   {errorMessage}

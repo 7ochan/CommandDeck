@@ -804,8 +804,9 @@ function AISettingsPanel({
         value={draftSettings.ai.model}
         onChange={(val) => updateDraft({ ai: { model: val } })}
       >
-        <option value="gemini-2.5-flash">Gemini 2.5 Flash (Recommended)</option>
-        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
       </SelectSetting>
 
       <div className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-3 sm:gap-8">

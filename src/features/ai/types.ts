@@ -9,6 +9,8 @@ export type AICommitResult = {
   commitMessage: string;
   summary: string[];
   provider: AIProviderId;
+  modelUsed?: string;
+  fallbackNotice?: string;
 };
 
 export type AITestConnectionResult = {

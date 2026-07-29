@@ -116,7 +116,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   ai: {
     enabled: false,
     provider: 'gemini',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.0-flash',
     hasApiKey: false,
   },
   keybindings: {},

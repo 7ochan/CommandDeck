@@ -4,6 +4,7 @@ import type {
   AITestConnectionResult,
 } from '../../features/ai/types';
 import type { AIProviderId } from '../../shared/types';
+import { getServerContainerIfInitialized } from '../runtime/server-container-registry';
 
 class AIService {
   private static instance: AIService;
@@ -31,19 +32,19 @@ class AIService {
   }
 
   hasApiKey(provider: AIProviderId): boolean {
-    const key = this.apiKeys.get(provider);
-    return Boolean(key && key.trim().length > 0);
+    const key = this.getApiKey(provider);
+    return key !== undefined && key.trim().length > 0;
   }
 
   async testConnection(
     providerId: AIProviderId,
-    apiKey?: string,
+    apiKeyOverride?: string,
   ): Promise<AITestConnectionResult> {
-    const keyToTest = apiKey ?? this.getApiKey(providerId);
+    const keyToTest = apiKeyOverride ?? this.getApiKey(providerId);
     if (!keyToTest) {
       return {
         success: false,
-        message: 'No API key configured.',
+        message: 'No API key provided or configured.',
       };
     }
 
@@ -55,6 +56,7 @@ class AIService {
     providerId: AIProviderId,
     diff: string,
     apiKeyOverride?: string,
+    modelOverride?: string,
   ): Promise<AICommitResult> {
     const apiKey = apiKeyOverride ?? this.getApiKey(providerId);
     if (!apiKey) {
@@ -63,8 +65,13 @@ class AIService {
       );
     }
 
+    const container = getServerContainerIfInitialized();
+    const snapshotModel =
+      container?.settingsService.getSnapshot().settings.ai.model;
+    const model = modelOverride ?? snapshotModel ?? 'gemini-2.0-flash';
+
     const provider = AIProviderRegistry.getInstance().get(providerId);
-    return provider.generateCommit(diff, apiKey);
+    return provider.generateCommit(diff, apiKey, model);
   }
 }
 

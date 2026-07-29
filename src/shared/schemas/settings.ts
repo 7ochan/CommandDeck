@@ -55,7 +55,7 @@ const developerHubSettingsSchema = z.object({
 const aiSettingsSchema = z.object({
   enabled: z.boolean().default(false),
   provider: aiProviderSchema.default('gemini'),
-  model: z.string().default('gemini-2.5-flash'),
+  model: z.string().default('gemini-2.0-flash'),
   hasApiKey: z.boolean().default(false),
 });
 const keybindingsSchema = z.record(z.string(), z.string());
