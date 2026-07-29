@@ -236,7 +236,7 @@ export function AddDeckItemDialog({
           <button
             type="submit"
             disabled={isSaving || !command.trim()}
-            className="cd-button h-8 px-3 text-[11px]"
+            className="cd-button cd-button--primary h-8 px-3 text-[11px]"
           >
             {isSaving ? 'Adding…' : 'Add Shortcut'}
           </button>
