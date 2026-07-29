@@ -19,6 +19,9 @@ copyright: 'Copyright © 2024 CommandDeck. All rights reserved.'
 # ─── Executable name ───────────────────────────────────────────────────────────
 executableName: CommandDeck
 
+# ─── Hooks ──────────────────────────────────────────────────────────────────────
+afterPack: scripts/after-pack.js
+
 # ─── Output directory ──────────────────────────────────────────────────────────
 directories:
   buildResources: electron/assets
@@ -94,8 +97,8 @@ mac:
   hardenedRuntime: true
   entitlements: electron/entitlements.mac.plist
   entitlementsInherit: electron/entitlements.mac.plist
-  gatekeeperAssess: false
-  # Skip signing for local packaging — set APPLE_ID env vars for notarization
+  # Disable built-in signing attempt if no Keychain certificate is found;
+  # scripts/after-pack.js guarantees deep ad-hoc signing with entitlements.
   identity: null
   target:
     - target: dmg
