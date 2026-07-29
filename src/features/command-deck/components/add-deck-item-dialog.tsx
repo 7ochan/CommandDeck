@@ -149,7 +149,7 @@ export function AddDeckItemDialog({
           <div>
             <label
               htmlFor="add-deck-name"
-              className="block text-[11px] font-medium text-[var(--text-muted)]"
+              className="block text-[12px] font-medium text-[var(--text-secondary)]"
             >
               Display Name
             </label>
@@ -169,7 +169,7 @@ export function AddDeckItemDialog({
             <div className="flex items-baseline justify-between gap-2">
               <label
                 htmlFor="add-deck-command"
-                className="block text-[11px] font-medium text-[var(--text-muted)]"
+                className="block text-[12px] font-medium text-[var(--text-secondary)]"
               >
                 Command string or template
               </label>
@@ -207,7 +207,7 @@ export function AddDeckItemDialog({
           <div>
             <label
               htmlFor="add-deck-description"
-              className="block text-[11px] font-medium text-[var(--text-muted)]"
+              className="block text-[12px] font-medium text-[var(--text-secondary)]"
             >
               Description (optional)
             </label>
