@@ -136,10 +136,10 @@ export function AddDeckItemDialog({
           </button>
         </header>
 
-        <div className="space-y-4 overflow-y-auto p-4">
+        <div className="cd-scrollbar space-y-4 overflow-y-auto px-5 py-4">
           {error && (
             <p
-              className="rounded-lg border border-[rgb(239_141_152_/_25%)] bg-[var(--danger-soft)] p-3 text-[11px] font-medium text-[var(--danger)]"
+              className="rounded-md border border-[var(--danger)]/30 bg-[var(--danger-soft)] p-2.5 text-[11px] font-medium text-[var(--danger)]"
               role="alert"
             >
               {error}
@@ -160,7 +160,7 @@ export function AddDeckItemDialog({
               placeholder="e.g. Run Dev Server"
               value={displayName}
               disabled={isSaving}
-              className="cd-input mt-1.5 h-9"
+              className="cd-input mt-1.5 h-8.5 w-full px-3 text-[11.5px]"
               onChange={(event) => setDisplayName(event.currentTarget.value)}
             />
           </div>
@@ -187,13 +187,13 @@ export function AddDeckItemDialog({
               value={command}
               disabled={isSaving}
               required
-              className="cd-input mt-1.5 p-2.5 font-mono text-[11px] leading-relaxed"
+              className="cd-input mt-1.5 w-full p-2.5 font-mono text-[11.5px] leading-5"
               onChange={(event) => setCommand(event.currentTarget.value)}
             />
 
             {parsedTemplate.isValid &&
               parsedTemplate.placeholders.length > 0 && (
-                <div className="mt-2.5 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-2)] p-2.5">
+                <div className="mt-2.5 rounded-md border border-[var(--border-soft)] bg-[var(--surface-2)] p-2.5">
                   <p className="text-[10px] font-medium text-[var(--text-subtle)]">
                     Template preview:
                   </p>
@@ -218,13 +218,13 @@ export function AddDeckItemDialog({
               placeholder="Brief summary of what this command does"
               value={description}
               disabled={isSaving}
-              className="cd-input mt-1.5 h-9"
+              className="cd-input mt-1.5 h-8.5 w-full px-3 text-[11.5px]"
               onChange={(event) => setDescription(event.currentTarget.value)}
             />
           </div>
         </div>
 
-        <footer className="flex h-12 shrink-0 items-center justify-end gap-2 border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-4">
+        <footer className="flex h-13 shrink-0 items-center justify-end gap-2 border-t border-[var(--border-soft)] bg-[var(--canvas-raised)] px-5">
           <button
             type="button"
             disabled={isSaving}
