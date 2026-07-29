@@ -15,7 +15,10 @@ import {
   type SettingsSnapshot,
 } from '../../shared/types/settings.js';
 import { aiService } from '../ai/ai-service';
-import { aiProviderSchema } from '../../shared/schemas/settings.js';
+import {
+  aiModelSchema,
+  aiProviderSchema,
+} from '../../shared/schemas/settings.js';
 import type {
   SettingsRepository,
   StoredSetting,
@@ -172,7 +175,7 @@ export class SettingsService {
           model: read(
             values,
             KEYS.aiModel,
-            stringSchema,
+            aiModelSchema,
             DEFAULT_APP_SETTINGS.ai.model,
           ),
           hasApiKey: aiService.hasApiKey(
@@ -226,7 +229,6 @@ export class SettingsService {
 }
 
 const booleanSchema = z.boolean();
-const stringSchema = z.string();
 const nullableWorkspaceIdSchema = z.string().min(1).max(200).nullable();
 const applicationThemeSchema = z.enum(APPLICATION_THEMES);
 const developerHubTabIdSchema = z.enum(DEVELOPER_HUB_TAB_IDS);

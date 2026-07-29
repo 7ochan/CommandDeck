@@ -52,10 +52,14 @@ const developerHubSettingsSchema = z.object({
   showHistoryTab: z.boolean().default(true),
   deckScope: deckScopeSchema.default('workspace'),
 });
+export const aiModelSchema = z
+  .enum(['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'])
+  .catch('gemini-2.0-flash');
+
 const aiSettingsSchema = z.object({
   enabled: z.boolean().default(false),
   provider: aiProviderSchema.default('gemini'),
-  model: z.string().default('gemini-2.0-flash'),
+  model: aiModelSchema,
   hasApiKey: z.boolean().default(false),
 });
 const keybindingsSchema = z.record(z.string(), z.string());
