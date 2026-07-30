@@ -27,6 +27,13 @@ directories:
   buildResources: electron/assets
   output: dist
 
+# ─── Concurrency ────────────────────────────────────────────────────────────────
+# Enforce sequential target building (1 job at a time) to prevent concurrent
+# GitHub release creation API race conditions (422 Unprocessable Entity) when
+# publishing multi-arch (arm64 + x64) macOS packages.
+concurrency:
+  jobs: 1
+
 # ─── Build inputs ──────────────────────────────────────────────────────────────
 #
 # What goes into the package:
