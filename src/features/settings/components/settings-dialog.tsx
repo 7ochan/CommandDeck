@@ -985,7 +985,8 @@ function AISettingsPanel({
                   )}
                 </div>
                 <p className="mt-0.5 text-[10.5px] text-[var(--text-muted)]">
-                  Stored securely using local operating system credential storage.
+                  Stored securely using local operating system credential
+                  storage.
                 </p>
               </div>
 
@@ -1028,7 +1029,8 @@ function AISettingsPanel({
                   </button>
                 </div>
                 <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                  Click <strong>Save</strong> in the footer to permanently remove this API key from credential storage.
+                  Click <strong>Save</strong> in the footer to permanently
+                  remove this API key from credential storage.
                 </p>
               </div>
             )}
@@ -1036,7 +1038,7 @@ function AISettingsPanel({
             {/* State: Key Configured (View Mode) */}
             {hasKey && pendingApiKey === undefined && mode === 'view' && (
               <div className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-2.5">
-                <div className="flex items-center gap-2 font-mono text-[12px] text-[var(--text-muted)] tracking-wider">
+                <div className="flex items-center gap-2 font-mono text-[12px] tracking-wider text-[var(--text-muted)]">
                   <Icon name="key" size={14} className="text-[var(--accent)]" />
                   <span>••••••••••••••••••••••••</span>
                 </div>
@@ -1065,53 +1067,59 @@ function AISettingsPanel({
             )}
 
             {/* State: Entry Mode or Replace Mode */}
-            {(!hasKey || mode === 'replace' || (pendingApiKey !== undefined && pendingApiKey !== '')) && pendingApiKey !== '' && (
-              <div className="mt-2 space-y-2">
-                <div className="relative flex items-center">
-                  <input
-                    type={showApiKey ? 'text' : 'password'}
-                    autoFocus={mode === 'replace'}
-                    placeholder={
-                      mode === 'replace'
-                        ? 'Enter replacement API key…'
-                        : activeProvider === 'openai'
-                          ? 'sk-...'
-                          : 'Enter Gemini API key…'
-                    }
-                    value={pendingApiKey ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      onPendingApiKeyChange(val);
-                    }}
-                    className="cd-input h-9 w-full px-3 pr-10 font-mono text-[11.5px]"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    title={showApiKey ? 'Hide API key' : 'Show API key'}
-                    onClick={() => setShowApiKey((v) => !v)}
-                  >
-                    <Icon name={showApiKey ? 'eye-off' : 'eye'} size={15} />
-                  </button>
-                </div>
-
-                {mode === 'replace' && (
-                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1">
-                    <span>Click <strong>Save</strong> in the footer to apply this replacement key.</span>
+            {(!hasKey ||
+              mode === 'replace' ||
+              (pendingApiKey !== undefined && pendingApiKey !== '')) &&
+              pendingApiKey !== '' && (
+                <div className="mt-2 space-y-2">
+                  <div className="relative flex items-center">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      autoFocus={mode === 'replace'}
+                      placeholder={
+                        mode === 'replace'
+                          ? 'Enter replacement API key…'
+                          : activeProvider === 'openai'
+                            ? 'sk-...'
+                            : 'Enter Gemini API key…'
+                      }
+                      value={pendingApiKey ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        onPendingApiKeyChange(val);
+                      }}
+                      className="cd-input h-9 w-full px-3 pr-10 font-mono text-[11.5px]"
+                    />
                     <button
                       type="button"
-                      className="cd-button cd-button--quiet h-7 text-[10.5px]"
-                      onClick={() => {
-                        onPendingApiKeyChange(undefined);
-                        setMode('view');
-                      }}
+                      className="absolute right-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                      title={showApiKey ? 'Hide API key' : 'Show API key'}
+                      onClick={() => setShowApiKey((v) => !v)}
                     >
-                      Cancel Replace
+                      <Icon name={showApiKey ? 'eye-off' : 'eye'} size={15} />
                     </button>
                   </div>
-                )}
-              </div>
-            )}
+
+                  {mode === 'replace' && (
+                    <div className="flex items-center justify-between pt-1 text-[11px] text-[var(--text-muted)]">
+                      <span>
+                        Click <strong>Save</strong> in the footer to apply this
+                        replacement key.
+                      </span>
+                      <button
+                        type="button"
+                        className="cd-button cd-button--quiet h-7 text-[10.5px]"
+                        onClick={() => {
+                          onPendingApiKeyChange(undefined);
+                          setMode('view');
+                        }}
+                      >
+                        Cancel Replace
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
 
           <div className="mx-2.5 my-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-3 text-[11.5px]">
@@ -1130,17 +1138,23 @@ function AISettingsPanel({
                 >
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      draftSettings.ai.providerStatus?.[activeProvider]?.connected
+                      draftSettings.ai.providerStatus?.[activeProvider]
+                        ?.connected
                         ? 'bg-[var(--success)]'
                         : 'bg-[var(--danger)]'
                     }`}
                   />
-                  {draftSettings.ai.providerStatus?.[activeProvider]?.connected ? 'Connected' : 'Not Connected'}
+                  {draftSettings.ai.providerStatus?.[activeProvider]?.connected
+                    ? 'Connected'
+                    : 'Not Connected'}
                 </span>
               </div>
               <span className="text-[10.5px] text-[var(--text-muted)]">
                 Last Verified:{' '}
-                {formatLastVerified(draftSettings.ai.providerStatus?.[activeProvider]?.lastVerifiedAt)}
+                {formatLastVerified(
+                  draftSettings.ai.providerStatus?.[activeProvider]
+                    ?.lastVerifiedAt,
+                )}
               </span>
             </div>
 

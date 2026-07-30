@@ -29,7 +29,13 @@ import {
   type UtilityProcess,
 } from 'electron';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+} from 'node:fs';
 import { createConnection } from 'node:net';
 import { homedir, platform } from 'node:os';
 import { join, dirname } from 'node:path';
@@ -285,16 +291,18 @@ function startServer(): Promise<void> {
     if (DEV) {
       const lockFile = join(projectRoot, '.next', 'dev', 'lock');
       if (existsSync(lockFile)) {
-        isServerAlreadyRunning().then((running) => {
-          if (!running) {
-            try {
-              rmSync(lockFile, { force: true });
-              console.log('[Electron] Cleaned up stale .next/dev/lock file.');
-            } catch {
-              // Non-fatal
+        isServerAlreadyRunning()
+          .then((running) => {
+            if (!running) {
+              try {
+                rmSync(lockFile, { force: true });
+                console.log('[Electron] Cleaned up stale .next/dev/lock file.');
+              } catch {
+                // Non-fatal
+              }
             }
-          }
-        }).catch(() => {});
+          })
+          .catch(() => {});
       }
 
       const tsxBin = join(projectRoot, 'node_modules', '.bin', 'tsx');
