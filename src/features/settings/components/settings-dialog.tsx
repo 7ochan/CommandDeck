@@ -97,11 +97,17 @@ export function SettingsDialog({
   const [draftSettings, setDraftSettings] = useState(settings);
   const [selectedSection, setSelectedSection] =
     useState<SettingsSection | null>(null);
+  const [pendingApiKey, setPendingApiKey] = useState<string | undefined>(
+    undefined,
+  );
   const activeSection =
     selectedSection ?? (isOpen && initialSection ? initialSection : 'general');
   const activeSectionDetails = SECTIONS.find(({ id }) => id === activeSection);
-  const hasChanges = !areSettingsEqual(draftSettings, settings);
-  const isDefaultDraft = areSettingsEqual(draftSettings, DEFAULT_APP_SETTINGS);
+  const hasChanges =
+    !areSettingsEqual(draftSettings, settings) || pendingApiKey !== undefined;
+  const isDefaultDraft =
+    areSettingsEqual(draftSettings, DEFAULT_APP_SETTINGS) &&
+    pendingApiKey === undefined;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -112,6 +118,7 @@ export function SettingsDialog({
 
     if (isOpen && !dialog.open) {
       setDraftSettings(settings);
+      setPendingApiKey(undefined);
       setSelectedSection(null);
       dialog.showModal();
     } else if (!isOpen && dialog.open) {
@@ -127,6 +134,7 @@ export function SettingsDialog({
   }, [isOpen, dirColor]);
 
   const handleClose = () => {
+    setPendingApiKey(undefined);
     applyAccentTheme(settings.terminal.dirColor);
     onClose();
   };
@@ -137,12 +145,27 @@ export function SettingsDialog({
     );
   };
 
-  const save = () => {
+  const save = async () => {
     if (!hasChanges || isLoading) {
       return;
     }
 
-    onSave(draftSettings);
+    let updatedDraft = draftSettings;
+
+    if (pendingApiKey !== undefined) {
+      const res = await setAIProviderApiKey(
+        draftSettings.ai.provider,
+        pendingApiKey,
+      );
+      if (res && typeof res.hasApiKey === 'boolean') {
+        updatedDraft = mergeAppSettings(draftSettings, {
+          ai: { hasApiKey: res.hasApiKey },
+        });
+      }
+      setPendingApiKey(undefined);
+    }
+
+    onSave(updatedDraft);
     onClose();
   };
 
@@ -540,6 +563,8 @@ export function SettingsDialog({
                   <AISettingsPanel
                     draftSettings={draftSettings}
                     updateDraft={updateDraft}
+                    pendingApiKey={pendingApiKey}
+                    onPendingApiKeyChange={setPendingApiKey}
                   />
                 )}
 
@@ -758,15 +783,18 @@ function formatLastVerified(timestamp?: number): string {
     return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
   return `${Math.floor(diffHours / 24)} days ago`;
 }
-
 function AISettingsPanel({
   draftSettings,
   updateDraft,
+  pendingApiKey,
+  onPendingApiKeyChange,
 }: {
   draftSettings: AppSettings;
   updateDraft: (update: AppSettingsUpdate) => void;
+  pendingApiKey: string | undefined;
+  onPendingApiKeyChange: (val: string | undefined) => void;
 }) {
-  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [mode, setMode] = useState<'view' | 'replace' | 'confirm-delete'>('view');
   const [showApiKey, setShowApiKey] = useState(false);
   const [testStatus, setTestStatus] = useState<{
     type: 'idle' | 'testing' | 'success' | 'error';
@@ -776,6 +804,7 @@ function AISettingsPanel({
   const activeProvider = draftSettings.ai.provider;
   const activeModel = draftSettings.ai.model;
   const providerStatus = draftSettings.ai.providerStatus?.[activeProvider];
+  const hasKey = draftSettings.ai.hasApiKey;
 
   useEffect(() => {
     let isMounted = true;
@@ -792,26 +821,14 @@ function AISettingsPanel({
     };
   }, [activeProvider]);
 
-  const handleApiKeyChange = (val: string) => {
-    setApiKeyInput(val);
-    void setAIProviderApiKey(activeProvider, val).then((res) => {
-      if (res && typeof res.hasApiKey === 'boolean') {
-        updateDraft({
-          ai: {
-            hasApiKey: res.hasApiKey,
-          },
-        });
-      }
-    });
-  };
-
   const handleProviderChange = (val: string) => {
     const provider = val as AIProviderId;
     const providerModels = draftSettings.ai.providerModels ?? {};
     const savedModel =
       providerModels[provider] || getDefaultModelForProvider(provider);
 
-    setApiKeyInput('');
+    onPendingApiKeyChange(undefined);
+    setMode('view');
     setTestStatus({ type: 'idle' });
 
     updateDraft({
@@ -826,26 +843,37 @@ function AISettingsPanel({
     });
   };
 
-  const handleModelChange = (val: string) => {
-    const providerModels = draftSettings.ai.providerModels ?? {};
-    updateDraft({
-      ai: {
-        model: val,
-        providerModels: {
-          ...providerModels,
-          [activeProvider]: val,
-        },
-      },
-    });
+  const handleConfirmDeleteKey = async () => {
+    try {
+      const res = await setAIProviderApiKey(activeProvider, '');
+      if (res && typeof res.hasApiKey === 'boolean') {
+        updateDraft({ ai: { hasApiKey: res.hasApiKey } });
+      } else {
+        updateDraft({ ai: { hasApiKey: false } });
+      }
+      onPendingApiKeyChange(undefined);
+      setMode('view');
+      setTestStatus({
+        type: 'success',
+        message: `API key for ${activeProvider === 'openai' ? 'OpenAI' : 'Google Gemini'} removed.`,
+      });
+    } catch (err) {
+      setTestStatus({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to delete API key.',
+      });
+    }
   };
 
   const handleTestConnection = async () => {
     setTestStatus({ type: 'testing' });
     try {
-      const result = await testAIConnection(
-        activeProvider,
-        apiKeyInput || undefined,
-      );
+      const keyToTest =
+        pendingApiKey !== undefined && pendingApiKey.trim().length > 0
+          ? pendingApiKey.trim()
+          : undefined;
+
+      const result = await testAIConnection(activeProvider, keyToTest);
       const timestamp = Date.now();
 
       const currentStatusMap = draftSettings.ai.providerStatus ?? {};
@@ -891,6 +919,19 @@ function AISettingsPanel({
         },
       });
     }
+  };
+
+  const handleModelChange = (val: string) => {
+    const providerModels = draftSettings.ai.providerModels ?? {};
+    updateDraft({
+      ai: {
+        model: val,
+        providerModels: {
+          ...providerModels,
+          [activeProvider]: val,
+        },
+      },
+    });
   };
 
   return (
@@ -940,46 +981,35 @@ function AISettingsPanel({
             )}
           </SelectSetting>
 
-          <div className="cd-settings-row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 rounded-md px-2.5 py-3 sm:gap-8">
-            <span className="max-w-[24rem] min-w-0">
-              <span className="block text-[12.5px] font-medium text-[var(--text-primary)]">
-                {activeProvider === 'openai'
-                  ? 'OpenAI API Key'
-                  : 'Gemini API Key'}
-              </span>
-              <span className="mt-0.5 block text-[11px] leading-4 text-[var(--text-muted)]">
-                Stored securely using local operating system credential storage.
-              </span>
-            </span>
-
-            <div className="flex shrink-0 items-center gap-2">
-              <div className="relative flex items-center">
-                <input
-                  type={showApiKey ? 'text' : 'password'}
-                  placeholder={
-                    draftSettings.ai.hasApiKey
-                      ? '••••••••••••••••'
-                      : activeProvider === 'openai'
-                        ? 'sk-...'
-                        : 'Enter Gemini API Key'
-                  }
-                  value={apiKeyInput}
-                  onChange={(e) => handleApiKeyChange(e.target.value)}
-                  className="cd-input h-8.5 w-52 px-2.5 pr-8 font-mono text-[11px]"
-                />
-                <button
-                  type="button"
-                  className="absolute right-2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                  title={showApiKey ? 'Hide API key' : 'Show API key'}
-                  onClick={() => setShowApiKey((v) => !v)}
-                >
-                  <Icon name={showApiKey ? 'eye-off' : 'eye'} size={14} />
-                </button>
+          <div className="cd-settings-row space-y-3 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-overlay)] p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[12.5px] font-semibold text-[var(--text-primary)]">
+                    {activeProvider === 'openai'
+                      ? 'OpenAI API Key'
+                      : 'Google Gemini API Key'}
+                  </span>
+                  {hasKey && mode === 'view' && pendingApiKey === undefined && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--success-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--success)]">
+                      <span className="size-1.5 rounded-full bg-[var(--success)]" />
+                      Key Configured
+                    </span>
+                  )}
+                  {pendingApiKey !== undefined && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--warning-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--warning)]">
+                      Unsaved Key Edits
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-[10.5px] text-[var(--text-muted)]">
+                  Stored securely using local operating system credential storage.
+                </p>
               </div>
 
               <button
                 type="button"
-                className="cd-button h-8.5 text-[11px] whitespace-nowrap"
+                className="cd-button h-8 shrink-0 text-[11px] whitespace-nowrap"
                 disabled={testStatus.type === 'testing'}
                 onClick={handleTestConnection}
               >
@@ -998,6 +1028,111 @@ function AISettingsPanel({
                 )}
               </button>
             </div>
+
+            {mode === 'confirm-delete' && (
+              <div className="mt-2 rounded-md border border-[var(--danger-border)] bg-[var(--danger-soft)] p-3 text-[11.5px]">
+                <p className="font-semibold text-[var(--danger)]">
+                  Remove API Key?
+                </p>
+                <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+                  This will permanently delete your saved {activeProvider === 'openai' ? 'OpenAI' : 'Google Gemini'} API key from local credential storage.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    className="cd-button cd-button--quiet text-[11px]"
+                    onClick={() => setMode('view')}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="cd-button bg-[var(--danger)] text-white hover:bg-red-600 text-[11px]"
+                    onClick={handleConfirmDeleteKey}
+                  >
+                    Confirm Delete
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {hasKey && pendingApiKey === undefined && mode === 'view' && (
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-2.5">
+                <div className="flex items-center gap-2 font-mono text-[12px] text-[var(--text-muted)] tracking-wider">
+                  <Icon name="key" size={14} className="text-[var(--accent)]" />
+                  <span>••••••••••••••••••••••••</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    className="cd-button cd-button--quiet h-7.5 px-2 text-[11px]"
+                    onClick={() => {
+                      onPendingApiKeyChange('');
+                      setMode('replace');
+                    }}
+                  >
+                    <Icon name="edit" size={12} />
+                    Replace
+                  </button>
+                  <button
+                    type="button"
+                    className="cd-button cd-button--quiet h-7.5 px-2 text-[11px] text-[var(--danger)] hover:text-red-400"
+                    onClick={() => setMode('confirm-delete')}
+                  >
+                    <Icon name="x" size={12} />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(!hasKey || mode === 'replace' || pendingApiKey !== undefined) && mode !== 'confirm-delete' && (
+              <div className="mt-2 space-y-2">
+                <div className="relative flex items-center">
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    autoFocus={mode === 'replace'}
+                    placeholder={
+                      mode === 'replace'
+                        ? 'Enter replacement API key…'
+                        : activeProvider === 'openai'
+                          ? 'sk-...'
+                          : 'Enter Gemini API key…'
+                    }
+                    value={pendingApiKey ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      onPendingApiKeyChange(val.length > 0 ? val : '');
+                    }}
+                    className="cd-input h-9 w-full px-3 pr-10 font-mono text-[11.5px]"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    title={showApiKey ? 'Hide API key' : 'Show API key'}
+                    onClick={() => setShowApiKey((v) => !v)}
+                  >
+                    <Icon name={showApiKey ? 'eye-off' : 'eye'} size={15} />
+                  </button>
+                </div>
+
+                {mode === 'replace' && (
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1">
+                    <span>Click <strong>Save</strong> in the footer to apply this replacement key.</span>
+                    <button
+                      type="button"
+                      className="cd-button cd-button--quiet h-7 text-[10.5px]"
+                      onClick={() => {
+                        onPendingApiKeyChange(undefined);
+                        setMode('view');
+                      }}
+                    >
+                      Cancel Replace
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="mx-2.5 my-2.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-3 text-[11.5px]">
