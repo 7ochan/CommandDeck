@@ -21,6 +21,7 @@ class AIService {
 
   setApiKey(provider: AIProviderId, key: string): void {
     if (!key || key.trim().length === 0) {
+      this.deleteApiKey(provider);
       return;
     }
     credentialStore.set(provider, key);
@@ -32,10 +33,6 @@ class AIService {
 
   hasApiKey(provider: AIProviderId): boolean {
     return credentialStore.has(provider);
-  }
-
-  getAllHasMap(): Record<string, boolean> {
-    return credentialStore.getAllHasMap();
   }
 
   deleteApiKey(provider: AIProviderId): void {

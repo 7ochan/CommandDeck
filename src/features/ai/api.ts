@@ -32,7 +32,7 @@ export async function executeGitCommitMessage(
 export async function setAIProviderApiKey(
   provider: AIProviderId,
   apiKey: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; hasApiKey?: boolean; error?: string }> {
   const response = await fetch('/api/ai/key', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

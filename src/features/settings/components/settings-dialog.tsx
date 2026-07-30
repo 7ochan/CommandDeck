@@ -777,16 +777,32 @@ function AISettingsPanel({
   const activeModel = draftSettings.ai.model;
   const providerStatus = draftSettings.ai.providerStatus?.[activeProvider];
 
+  useEffect(() => {
+    let isMounted = true;
+    void fetch(`/api/ai/key?provider=${encodeURIComponent(activeProvider)}`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (isMounted && res && typeof res.hasApiKey === 'boolean') {
+          updateDraft({ ai: { hasApiKey: res.hasApiKey } });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [activeProvider]);
+
   const handleApiKeyChange = (val: string) => {
     setApiKeyInput(val);
-    if (val.trim().length > 0) {
-      updateDraft({
-        ai: {
-          hasApiKey: true,
-        },
-      });
-      void setAIProviderApiKey(activeProvider, val.trim());
-    }
+    void setAIProviderApiKey(activeProvider, val).then((res) => {
+      if (res && typeof res.hasApiKey === 'boolean') {
+        updateDraft({
+          ai: {
+            hasApiKey: res.hasApiKey,
+          },
+        });
+      }
+    });
   };
 
   const handleProviderChange = (val: string) => {
@@ -794,6 +810,9 @@ function AISettingsPanel({
     const providerModels = draftSettings.ai.providerModels ?? {};
     const savedModel =
       providerModels[provider] || getDefaultModelForProvider(provider);
+
+    setApiKeyInput('');
+    setTestStatus({ type: 'idle' });
 
     updateDraft({
       ai: {
@@ -805,9 +824,6 @@ function AISettingsPanel({
         },
       },
     });
-
-    setApiKeyInput('');
-    setTestStatus({ type: 'idle' });
   };
 
   const handleModelChange = (val: string) => {

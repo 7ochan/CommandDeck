@@ -108,6 +108,7 @@ export class CredentialStore {
     if (!this.loaded) this.load();
     const trimmed = key.trim();
     if (!trimmed) {
+      this.delete(provider);
       return;
     }
     this.credentials.set(provider, trimmed);
@@ -125,15 +126,6 @@ export class CredentialStore {
     if (!this.loaded) this.load();
     const val = this.credentials.get(provider);
     return Boolean(val && val.trim().length > 0);
-  }
-
-  getAllHasMap(): Record<string, boolean> {
-    return {
-      gemini: this.has('gemini'),
-      openai: this.has('openai'),
-      anthropic: this.has('anthropic'),
-      ollama: true,
-    };
   }
 }
 

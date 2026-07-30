@@ -12,11 +12,11 @@ describe('CredentialStore', () => {
     expect(credentialStore.has('openai')).toBe(true);
   });
 
-  it('ignores empty strings on set to prevent accidental key deletion', () => {
+  it('deletes credential on set when given an empty or whitespace string', () => {
     credentialStore.set('gemini', 'AIza-valid-key');
     credentialStore.set('gemini', '   ');
 
-    expect(credentialStore.get('gemini')).toBe('AIza-valid-key');
-    expect(credentialStore.has('gemini')).toBe(true);
+    expect(credentialStore.get('gemini')).toBeUndefined();
+    expect(credentialStore.has('gemini')).toBe(false);
   });
 });

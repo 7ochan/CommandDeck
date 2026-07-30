@@ -4,10 +4,14 @@ import type { AIProviderId } from '../../../../shared/types/index.ts';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const hasApiKeyMap = aiService.getAllHasMap();
-    return NextResponse.json({ success: true, hasApiKeyMap });
+    const { searchParams } = new URL(request.url);
+    const provider = (searchParams.get('provider') ?? 'gemini') as AIProviderId;
+    return NextResponse.json({
+      success: true,
+      hasApiKey: aiService.hasApiKey(provider),
+    });
   } catch (err) {
     return NextResponse.json(
       {
@@ -22,12 +26,13 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { provider = 'gemini', apiKey } = await request.json();
-    if (typeof apiKey === 'string' && apiKey.trim().length > 0) {
-      aiService.setApiKey(provider as AIProviderId, apiKey);
+    const providerId = provider as AIProviderId;
+    if (typeof apiKey === 'string') {
+      aiService.setApiKey(providerId, apiKey);
     }
     return NextResponse.json({
       success: true,
-      hasApiKeyMap: aiService.getAllHasMap(),
+      hasApiKey: aiService.hasApiKey(providerId),
     });
   } catch (err) {
     return NextResponse.json(

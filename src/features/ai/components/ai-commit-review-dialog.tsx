@@ -80,12 +80,14 @@ export function AICommitReviewDialog({
     setErrorMessage(null);
     setAiResult(null);
 
-    // 1. Check API Key dynamically from CredentialStore authoritative server state
+    // 1. Check API Key dynamically from CredentialStore authoritative server state for active provider
     let currentHasApiKey = settings.ai.hasApiKey;
     try {
-      const latestSnapshot = await loadSettings();
-      if (latestSnapshot?.settings?.ai) {
-        currentHasApiKey = latestSnapshot.settings.ai.hasApiKey;
+      const keyRes = await fetch(
+        `/api/ai/key?provider=${encodeURIComponent(settings.ai.provider)}`,
+      ).then((r) => r.json());
+      if (keyRes && typeof keyRes.hasApiKey === 'boolean') {
+        currentHasApiKey = keyRes.hasApiKey;
       }
     } catch {
       // Fallback to local settings state if load error occurs
