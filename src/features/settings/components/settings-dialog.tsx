@@ -818,7 +818,7 @@ function AISettingsPanel({
     return () => {
       isMounted = false;
     };
-  }, [activeProvider]);
+  }, [activeProvider, updateDraft]);
 
   const handleProviderChange = (val: string) => {
     const provider = val as AIProviderId;

@@ -407,6 +407,15 @@ function startServer(): Promise<void> {
       // (.server/server.js) inside Electron's Node runtime as a headless background process,
       // completely bypassing the Electron GUI main process entry point.
       const serverScript = join(projectRoot, '.server', 'server.js');
+      if (!existsSync(serverScript)) {
+        reject(
+          new Error(
+            `CommandDeck server script is missing at: ${serverScript}.\n\n` +
+              `Ensure '.server/server.js' exists in the packaged app bundle.`,
+          ),
+        );
+        return;
+      }
       const args = ['--production'];
 
       console.log(

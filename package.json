@@ -91,6 +91,6 @@
   "build": {
     "appId": "com.commanddeck.app",
     "productName": "CommandDeck",
-    "extends": null
+    "extends": "./electron-builder.yml"
   }
 }

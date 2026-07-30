@@ -4,7 +4,6 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { Icon } from '@/components/ui/icon';
 import { useSettings } from '@/features/settings/settings-provider';
-import { loadSettings } from '@/features/settings/api';
 import type { AICommitResult } from '../types.ts';
 import {
   executeGitCommitMessage,
