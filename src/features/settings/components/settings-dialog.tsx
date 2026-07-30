@@ -794,7 +794,7 @@ function AISettingsPanel({
   pendingApiKey: string | undefined;
   onPendingApiKeyChange: (val: string | undefined) => void;
 }) {
-  const [mode, setMode] = useState<'view' | 'replace' | 'confirm-delete'>('view');
+  const [mode, setMode] = useState<'view' | 'replace'>('view');
   const [showApiKey, setShowApiKey] = useState(false);
   const [testStatus, setTestStatus] = useState<{
     type: 'idle' | 'testing' | 'success' | 'error';
@@ -803,7 +803,6 @@ function AISettingsPanel({
 
   const activeProvider = draftSettings.ai.provider;
   const activeModel = draftSettings.ai.model;
-  const providerStatus = draftSettings.ai.providerStatus?.[activeProvider];
   const hasKey = draftSettings.ai.hasApiKey;
 
   useEffect(() => {
@@ -841,28 +840,6 @@ function AISettingsPanel({
         },
       },
     });
-  };
-
-  const handleConfirmDeleteKey = async () => {
-    try {
-      const res = await setAIProviderApiKey(activeProvider, '');
-      if (res && typeof res.hasApiKey === 'boolean') {
-        updateDraft({ ai: { hasApiKey: res.hasApiKey } });
-      } else {
-        updateDraft({ ai: { hasApiKey: false } });
-      }
-      onPendingApiKeyChange(undefined);
-      setMode('view');
-      setTestStatus({
-        type: 'success',
-        message: `API key for ${activeProvider === 'openai' ? 'OpenAI' : 'Google Gemini'} removed.`,
-      });
-    } catch (err) {
-      setTestStatus({
-        type: 'error',
-        message: err instanceof Error ? err.message : 'Failed to delete API key.',
-      });
-    }
   };
 
   const handleTestConnection = async () => {
@@ -996,9 +973,14 @@ function AISettingsPanel({
                       Key Configured
                     </span>
                   )}
-                  {pendingApiKey !== undefined && (
+                  {pendingApiKey !== undefined && pendingApiKey !== '' && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-[var(--warning-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--warning)]">
                       Unsaved Key Edits
+                    </span>
+                  )}
+                  {pendingApiKey === '' && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--danger-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--danger)]">
+                      Pending Removal
                     </span>
                   )}
                 </div>
@@ -1029,33 +1011,29 @@ function AISettingsPanel({
               </button>
             </div>
 
-            {mode === 'confirm-delete' && (
+            {/* State: Pending Key Removal */}
+            {pendingApiKey === '' && (
               <div className="mt-2 rounded-md border border-[var(--danger-border)] bg-[var(--danger-soft)] p-3 text-[11.5px]">
-                <p className="font-semibold text-[var(--danger)]">
-                  Remove API Key?
-                </p>
-                <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                  This will permanently delete your saved {activeProvider === 'openai' ? 'OpenAI' : 'Google Gemini'} API key from local credential storage.
-                </p>
-                <div className="mt-3 flex gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-semibold text-[var(--danger)]">
+                    <Icon name="x" size={14} />
+                    <span>Scheduled for Removal</span>
+                  </div>
                   <button
                     type="button"
-                    className="cd-button cd-button--quiet text-[11px]"
-                    onClick={() => setMode('view')}
+                    className="cd-button cd-button--quiet h-6 text-[10.5px]"
+                    onClick={() => onPendingApiKeyChange(undefined)}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="cd-button bg-[var(--danger)] text-white hover:bg-red-600 text-[11px]"
-                    onClick={handleConfirmDeleteKey}
-                  >
-                    Confirm Delete
+                    Cancel Removal
                   </button>
                 </div>
+                <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
+                  Click <strong>Save</strong> in the footer to permanently remove this API key from credential storage.
+                </p>
               </div>
             )}
 
+            {/* State: Key Configured (View Mode) */}
             {hasKey && pendingApiKey === undefined && mode === 'view' && (
               <div className="mt-2 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-soft)] bg-[var(--canvas-raised)] p-2.5">
                 <div className="flex items-center gap-2 font-mono text-[12px] text-[var(--text-muted)] tracking-wider">
@@ -1077,16 +1055,17 @@ function AISettingsPanel({
                   <button
                     type="button"
                     className="cd-button cd-button--quiet h-7.5 px-2 text-[11px] text-[var(--danger)] hover:text-red-400"
-                    onClick={() => setMode('confirm-delete')}
+                    onClick={() => onPendingApiKeyChange('')}
                   >
                     <Icon name="x" size={12} />
-                    Delete
+                    Delete Key
                   </button>
                 </div>
               </div>
             )}
 
-            {(!hasKey || mode === 'replace' || pendingApiKey !== undefined) && mode !== 'confirm-delete' && (
+            {/* State: Entry Mode or Replace Mode */}
+            {(!hasKey || mode === 'replace' || (pendingApiKey !== undefined && pendingApiKey !== '')) && pendingApiKey !== '' && (
               <div className="mt-2 space-y-2">
                 <div className="relative flex items-center">
                   <input
@@ -1102,7 +1081,7 @@ function AISettingsPanel({
                     value={pendingApiKey ?? ''}
                     onChange={(e) => {
                       const val = e.target.value;
-                      onPendingApiKeyChange(val.length > 0 ? val : '');
+                      onPendingApiKeyChange(val);
                     }}
                     className="cd-input h-9 w-full px-3 pr-10 font-mono text-[11.5px]"
                   />
@@ -1144,24 +1123,24 @@ function AISettingsPanel({
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ${
-                    providerStatus?.connected
+                    draftSettings.ai.providerStatus?.[activeProvider]?.connected
                       ? 'bg-[var(--success-soft)] text-[var(--success)]'
                       : 'bg-[var(--danger-soft)] text-[var(--danger)]'
                   }`}
                 >
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      providerStatus?.connected
+                      draftSettings.ai.providerStatus?.[activeProvider]?.connected
                         ? 'bg-[var(--success)]'
                         : 'bg-[var(--danger)]'
                     }`}
                   />
-                  {providerStatus?.connected ? 'Connected' : 'Not Connected'}
+                  {draftSettings.ai.providerStatus?.[activeProvider]?.connected ? 'Connected' : 'Not Connected'}
                 </span>
               </div>
               <span className="text-[10.5px] text-[var(--text-muted)]">
                 Last Verified:{' '}
-                {formatLastVerified(providerStatus?.lastVerifiedAt)}
+                {formatLastVerified(draftSettings.ai.providerStatus?.[activeProvider]?.lastVerifiedAt)}
               </span>
             </div>
 
