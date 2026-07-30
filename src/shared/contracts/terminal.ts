@@ -1,7 +1,7 @@
 import type {
   CommandCompletedPayload,
   CommandStartedPayload,
-} from '../types/command';
+} from '../types/command.ts';
 
 export const TERMINAL_PROTOCOL_VERSION = 3 as const;
 export const TERMINAL_WEBSOCKET_PATH = '/ws/terminal';

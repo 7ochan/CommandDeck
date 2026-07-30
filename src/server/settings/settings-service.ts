@@ -14,7 +14,7 @@ import {
   type AppSettingsUpdate,
   type SettingsSnapshot,
 } from '../../shared/types/settings.js';
-import { aiService } from '../ai/ai-service';
+import { aiService } from '../ai/ai-service.js';
 import {
   aiModelSchema,
   aiProviderModelsSchema,

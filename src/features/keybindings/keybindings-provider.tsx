@@ -18,13 +18,13 @@ import {
   isMacPlatform,
   matchesShortcut,
   normalizeShortcutString,
-} from './registry';
+} from './registry.ts';
 import type {
   ActionDefinition,
   KeybindingMap,
   RegisteredAction,
   ShortcutConflict,
-} from './types';
+} from './types.ts';
 
 type KeybindingsContextType = {
   actions: RegisteredAction[];

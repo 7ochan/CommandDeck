@@ -1,7 +1,7 @@
 import type { AIProviderId } from '@/shared/types';
-import type { AIProvider } from '../types';
-import { GeminiProvider } from './gemini-provider';
-import { OpenAIProvider } from './openai-provider';
+import type { AIProvider } from '../types.ts';
+import { GeminiProvider } from './gemini-provider.ts';
+import { OpenAIProvider } from './openai-provider.ts';
 
 export class AIProviderRegistry {
   private static instance: AIProviderRegistry;

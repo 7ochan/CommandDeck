@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import { validateCommandTemplate } from '../command-template/index.ts';
-import type { CommandDeckItem } from '../types/deck';
-import { workspaceIdSchema } from './workspace';
+import type { CommandDeckItem } from '../types/deck.ts';
+import { workspaceIdSchema } from './workspace.ts';
 
 export const commandDeckItemSchema: z.ZodType<CommandDeckItem> = z.object({
   deckItemId: z.string().min(1),

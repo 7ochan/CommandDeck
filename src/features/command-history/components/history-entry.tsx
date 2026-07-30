@@ -7,10 +7,10 @@ import {
   getHistoryNavigationDirection,
   shouldRerunSelectedHistoryEntry,
   type HistoryNavigationDirection,
-} from '../history-list-behavior';
-import type { CommandHistoryEntry as CommandHistoryEntryModel } from '../types';
-import { HighlightedText } from './highlighted-text';
-import { HistoryEntryActions } from './history-entry-actions';
+} from '../history-list-behavior.ts';
+import type { CommandHistoryEntry as CommandHistoryEntryModel } from '../types.ts';
+import { HighlightedText } from './highlighted-text.tsx';
+import { HistoryEntryActions } from './history-entry-actions.tsx';
 
 type HistoryEntryProps = {
   entry: CommandHistoryEntryModel;

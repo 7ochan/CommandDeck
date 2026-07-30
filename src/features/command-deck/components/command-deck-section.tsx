@@ -3,8 +3,8 @@
 import { useMemo, useState, type DragEvent } from 'react';
 
 import { Icon } from '@/components/ui/icon';
-import type { CommandDeckItem, CommandDeckItemUpdate } from '../types';
-import { CommandDeckItem as CommandDeckItemView } from './command-deck-item';
+import type { CommandDeckItem, CommandDeckItemUpdate } from '../types.ts';
+import { CommandDeckItem as CommandDeckItemView } from './command-deck-item.tsx';
 
 type CommandDeckSectionProps = {
   items: CommandDeckItem[];

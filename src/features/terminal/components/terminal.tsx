@@ -21,9 +21,9 @@ import {
   sendTerminalInput,
   sendTerminalResize,
   selectTerminalWorkspace,
-} from '../terminal-client';
-import { TerminalCommandSections } from '../terminal-command-sections';
-import { getTerminalPresentationOptions } from '../terminal-presentation';
+} from '../terminal-client.ts';
+import { TerminalCommandSections } from '../terminal-command-sections.ts';
+import { getTerminalPresentationOptions } from '../terminal-presentation.ts';
 
 export type TerminalConnectionStatus =
   | 'connecting'

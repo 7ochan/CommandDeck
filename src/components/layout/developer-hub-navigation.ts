@@ -1,4 +1,4 @@
-import type { DeveloperHubTab } from './developer-hub-tabs';
+import type { DeveloperHubTab } from './developer-hub-tabs.ts';
 
 const PENDING_DEVELOPER_HUB_TAB_KEY = 'commanddeck:developer-hub-tab';
 const OPEN_DEVELOPER_HUB_TAB_EVENT = 'commanddeck:open-developer-hub-tab';

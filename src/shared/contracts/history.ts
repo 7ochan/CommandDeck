@@ -1,7 +1,7 @@
 import type {
   CommandHistoryEntry,
   CommandHistoryQuery,
-} from '../types/command';
+} from '../types/command.ts';
 
 export type CommandHistoryRequest = CommandHistoryQuery;
 

@@ -15,8 +15,8 @@ import { useRegisterWorkspacePaletteActions } from '@/features/workspaces/comman
 import { useWorkspaces } from '@/features/workspaces/hooks/use-workspaces';
 import type { WorkspaceSummary } from '@/shared/types';
 
-import { queuePendingTimelineExecution } from '../pending-execution';
-import { WorkspaceTimeline } from './workspace-timeline';
+import { queuePendingTimelineExecution } from '../pending-execution.ts';
+import { WorkspaceTimeline } from './workspace-timeline.tsx';
 
 export function WorkspaceTimelinePage() {
   const workspacesState = useWorkspaces();

@@ -12,11 +12,11 @@ import {
 } from 'react';
 
 import { useKeybindings } from '@/features/keybindings/keybindings-provider';
-import { CommandPalette } from './components/command-palette';
+import { CommandPalette } from './components/command-palette.tsx';
 import type {
   CommandPaletteAction,
   RegisteredCommandPaletteAction,
-} from './types';
+} from './types.ts';
 
 type RegisterActions = (
   sourceId: string,

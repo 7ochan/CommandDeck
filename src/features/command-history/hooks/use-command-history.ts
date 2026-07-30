@@ -13,13 +13,13 @@ import type {
   CommandHistoryStatus,
 } from '@/shared/types';
 
-import { loadCommandHistory } from '../api';
+import { loadCommandHistory } from '../api.ts';
 import {
   loadSelectedHistoryEntryId,
   resolveRestoredHistoryEntryId,
   saveSelectedHistoryEntryId,
-} from '../selection-storage';
-import type { CommandHistoryEntry } from '../types';
+} from '../selection-storage.ts';
+import type { CommandHistoryEntry } from '../types.ts';
 
 type CommandHistoryState = {
   entries: CommandHistoryEntry[];

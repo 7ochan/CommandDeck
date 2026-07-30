@@ -1,8 +1,8 @@
-import type { CommandDeckService } from '../commands/deck-service';
-import type { CommandHistoryService } from '../commands/history-service';
-import type { TerminalGateway } from '../websocket/terminal-gateway';
-import type { WorkspaceService } from '../workspaces/workspace-service';
-import type { SettingsService } from '../settings/settings-service';
+import type { CommandDeckService } from '../commands/deck-service.ts';
+import type { CommandHistoryService } from '../commands/history-service.ts';
+import type { TerminalGateway } from '../websocket/terminal-gateway.ts';
+import type { WorkspaceService } from '../workspaces/workspace-service.ts';
+import type { SettingsService } from '../settings/settings-service.ts';
 
 const CONTAINER_KEY = '__commandDeckServerContainer__';
 

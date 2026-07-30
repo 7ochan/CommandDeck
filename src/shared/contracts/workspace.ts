@@ -1,4 +1,4 @@
-import type { WorkspaceSummary } from '../types/workspace';
+import type { WorkspaceSummary } from '../types/workspace.ts';
 
 export type WorkspacesResponse = {
   workspaces: WorkspaceSummary[];

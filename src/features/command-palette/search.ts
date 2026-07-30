@@ -1,4 +1,4 @@
-import type { RegisteredCommandPaletteAction } from './types';
+import type { RegisteredCommandPaletteAction } from './types.ts';
 
 export const COMMAND_PALETTE_RESULT_LIMIT = 100;
 

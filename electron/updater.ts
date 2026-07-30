@@ -1,7 +1,11 @@
 import { app, dialog, shell, nativeImage, BrowserWindow } from 'electron';
-import { join } from 'path';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 import { UpdateService } from './update-service.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let updateServiceInstance: UpdateService | null = null;
 

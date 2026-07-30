@@ -9,7 +9,7 @@ import {
   formatTimelineDateTime,
   formatTimelineDuration,
   formatTimelineTime,
-} from '../format';
+} from '../format.ts';
 
 type TimelineEventProps = {
   entry: CommandHistoryEntry;

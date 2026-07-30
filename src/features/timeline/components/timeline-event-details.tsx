@@ -3,8 +3,8 @@ import { Icon } from '@/components/ui/icon';
 import { getCommandHistoryStatus } from '@/shared/history-status';
 import type { CommandHistoryEntry } from '@/shared/types';
 
-import { formatTimelineDateTime, formatTimelineDuration } from '../format';
-import { StatusLabel } from './timeline-event';
+import { formatTimelineDateTime, formatTimelineDuration } from '../format.ts';
+import { StatusLabel } from './timeline-event.tsx';
 
 type TimelineEventDetailsProps = {
   entry: CommandHistoryEntry | null;

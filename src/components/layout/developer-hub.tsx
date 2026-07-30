@@ -28,11 +28,11 @@ import {
   DEVELOPER_HUB_TABS,
   getDeveloperHubTabForKey,
   type DeveloperHubTab,
-} from './developer-hub-tabs';
+} from './developer-hub-tabs.ts';
 import {
   consumePendingDeveloperHubTab,
   subscribeToDeveloperHubTabRequests,
-} from './developer-hub-navigation';
+} from './developer-hub-navigation.ts';
 
 type DeveloperHubProps = {
   deckItems: CommandDeckItem[];

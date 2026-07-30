@@ -3,9 +3,9 @@
 import { useEffect, useId, useState } from 'react';
 
 import { Icon } from '@/components/ui/icon';
-import { useKeybindings } from '../keybindings-provider';
-import { eventToShortcutString, formatShortcutDisplay } from '../registry';
-import { ACTION_CATEGORIES } from '../types';
+import { useKeybindings } from '../keybindings-provider.tsx';
+import { eventToShortcutString, formatShortcutDisplay } from '../registry.ts';
+import { ACTION_CATEGORIES } from '../types.ts';
 
 export function KeyboardShortcutsSection() {
   const {

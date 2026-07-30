@@ -5,10 +5,10 @@ import { memo, useId, useMemo, useState, type KeyboardEvent } from 'react';
 import { parseCommandTemplate } from '@/shared/command-template';
 import { Icon, type IconName } from '@/components/ui/icon';
 
-import type { CommandDeckItem as CommandDeckItemModel } from '../types';
-import { CommandTemplateHighlight } from './command-template-highlight';
-import { EditDeckItemDialog } from './edit-deck-item-dialog';
-import { ExecuteCommandTemplateDialog } from './execute-command-template-dialog';
+import type { CommandDeckItem as CommandDeckItemModel } from '../types.ts';
+import { CommandTemplateHighlight } from './command-template-highlight.tsx';
+import { EditDeckItemDialog } from './edit-deck-item-dialog.tsx';
+import { ExecuteCommandTemplateDialog } from './execute-command-template-dialog.tsx';
 
 type CommandDeckItemProps = {
   item: CommandDeckItemModel;

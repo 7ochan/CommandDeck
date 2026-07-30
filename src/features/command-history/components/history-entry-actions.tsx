@@ -3,8 +3,8 @@
 import { useState } from 'react';
 
 import { Icon, type IconName } from '@/components/ui/icon';
-import { copyCommandText } from '../clipboard';
-import type { CommandHistoryEntry } from '../types';
+import { copyCommandText } from '../clipboard.ts';
+import type { CommandHistoryEntry } from '../types.ts';
 
 type HistoryEntryActionsProps = {
   entry: CommandHistoryEntry;

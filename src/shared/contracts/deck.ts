@@ -1,4 +1,4 @@
-import type { CommandDeckItem, CommandDeckItemUpdate } from '../types/deck';
+import type { CommandDeckItem, CommandDeckItemUpdate } from '../types/deck.ts';
 
 export type CommandDeckResponse = {
   items: CommandDeckItem[];

@@ -12,7 +12,7 @@ import {
   loadCommandDeck,
   removeCommandDeckItem,
   updateCommandDeckItem,
-} from '../api';
+} from '../api.ts';
 
 type CommandDeckState = {
   items: CommandDeckItem[];

@@ -1,9 +1,9 @@
-import { prepareDiffForAI } from '../diff-preparation';
+import { prepareDiffForAI } from '../diff-preparation.ts';
 import type {
   AICommitResult,
   AIProvider,
   AITestConnectionResult,
-} from '../types';
+} from '../types.ts';
 
 export class OpenAIProvider implements AIProvider {
   readonly id = 'openai';

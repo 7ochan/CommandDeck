@@ -11,7 +11,7 @@ import {
   TERMINAL_SCROLLBACK_RANGE,
   type AppSettings,
   type AppSettingsState,
-} from '../types/settings';
+} from '../types/settings.ts';
 
 export const terminalFontSizeSchema = z
   .number()
@@ -53,7 +53,7 @@ const developerHubSettingsSchema = z.object({
   showHistoryTab: z.boolean().default(true),
   deckScope: deckScopeSchema.default('workspace'),
 });
-import { DEFAULT_GEMINI_MODEL, SUPPORTED_AI_MODEL_IDS } from '../ai-models';
+import { DEFAULT_GEMINI_MODEL, SUPPORTED_AI_MODEL_IDS } from '../ai-models.ts';
 
 export const aiModelSchema = z
   .enum(SUPPORTED_AI_MODEL_IDS)

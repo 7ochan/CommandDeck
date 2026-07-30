@@ -25,7 +25,7 @@ import { useSettings } from '@/features/settings/settings-provider';
 import { AICommitReviewDialog } from '@/features/ai/components/ai-commit-review-dialog';
 import type { CommandCompletedPayload, WorkspaceSummary } from '@/shared/types';
 
-import { DeveloperHub } from './developer-hub';
+import { DeveloperHub } from './developer-hub.tsx';
 
 const CONNECTION_STATUS_PRESENTATION: Record<
   TerminalConnectionStatus,

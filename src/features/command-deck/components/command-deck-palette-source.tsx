@@ -6,8 +6,8 @@ import { useRegisterCommandPaletteActions } from '@/features/command-palette/com
 import type { CommandPaletteAction } from '@/features/command-palette/types';
 import { parseCommandTemplate } from '@/shared/command-template';
 
-import type { CommandDeckItem } from '../types';
-import { ExecuteCommandTemplateDialog } from './execute-command-template-dialog';
+import type { CommandDeckItem } from '../types.ts';
+import { ExecuteCommandTemplateDialog } from './execute-command-template-dialog.tsx';
 
 type CommandDeckPaletteSourceProps = {
   items: CommandDeckItem[];

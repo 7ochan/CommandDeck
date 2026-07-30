@@ -1,5 +1,5 @@
 import type { AIProviderId } from '@/shared/types';
-import type { AICommitResult, AITestConnectionResult } from './types';
+import type { AICommitResult, AITestConnectionResult } from './types.ts';
 
 export async function fetchWorkspaceGitDiff(cwd?: string): Promise<{
   diff: string;

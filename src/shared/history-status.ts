@@ -2,7 +2,7 @@ import type {
   CommandCompletedPayload,
   CommandHistoryQuery,
   CommandHistoryStatus,
-} from './types/command';
+} from './types/command.ts';
 
 export const COMMAND_HISTORY_STATUSES = [
   'success',

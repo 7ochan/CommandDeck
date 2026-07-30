@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { aiService } from '../../../../server/ai/ai-service';
-import type { AIProviderId } from '../../../../shared/types';
+import { aiService } from '../../../../server/ai/ai-service.ts';
+import type { AIProviderId } from '../../../../shared/types/index.ts';
 
 export const dynamic = 'force-dynamic';
 

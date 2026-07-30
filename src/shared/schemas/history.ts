@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import type { CommandHistoryEntry } from '../types/command';
-import { workspaceIdSchema } from './workspace';
+import type { CommandHistoryEntry } from '../types/command.ts';
+import { workspaceIdSchema } from './workspace.ts';
 
 export const commandCompletionReasonSchema = z.enum(['shell', 'session-exit']);
 

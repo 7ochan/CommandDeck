@@ -21,14 +21,14 @@ import {
 } from '@/shared/types';
 
 import { KeybindingsProvider } from '@/features/keybindings/keybindings-provider';
-import { loadSettings, saveSettings } from './api';
-import { SettingsDialog } from './components/settings-dialog';
+import { loadSettings, saveSettings } from './api.ts';
+import { SettingsDialog } from './components/settings-dialog.tsx';
 import { applyAccentTheme } from '@/features/terminal/terminal-presentation';
 import {
   mergeAppSettings,
   resolveApplicationTheme,
   type ResolvedTheme,
-} from './settings-state';
+} from './settings-state.ts';
 
 type SettingsContextValue = {
   settings: AppSettings;

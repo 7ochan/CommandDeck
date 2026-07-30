@@ -1,6 +1,6 @@
 import { memo } from 'react';
 
-import { getHighlightedTextSegments } from '../highlight';
+import { getHighlightedTextSegments } from '../highlight.ts';
 
 type HighlightedTextProps = {
   text: string;

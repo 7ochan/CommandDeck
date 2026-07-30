@@ -11,9 +11,9 @@ import type {
   CommandHistoryStatus,
 } from '@/shared/types';
 
-import { groupHistoryIntoActivitySessions } from '../activity-sessions';
-import { ActivitySession } from './activity-session';
-import { TimelineEventDetails } from './timeline-event-details';
+import { groupHistoryIntoActivitySessions } from '../activity-sessions.ts';
+import { ActivitySession } from './activity-session.tsx';
+import { TimelineEventDetails } from './timeline-event-details.tsx';
 
 type WorkspaceTimelineProps = {
   entries: CommandHistoryEntry[];

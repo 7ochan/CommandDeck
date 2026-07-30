@@ -11,9 +11,9 @@ import {
 } from 'react';
 
 import { Icon, type IconName } from '@/components/ui/icon';
-import { buildCommandPaletteIndex, searchCommandPalette } from '../search';
-import { getNavigatedCommandPaletteIndex } from '../keyboard';
-import type { RegisteredCommandPaletteAction } from '../types';
+import { buildCommandPaletteIndex, searchCommandPalette } from '../search.ts';
+import { getNavigatedCommandPaletteIndex } from '../keyboard.ts';
+import type { RegisteredCommandPaletteAction } from '../types.ts';
 
 type CommandPaletteProps = {
   actions: RegisteredCommandPaletteAction[];

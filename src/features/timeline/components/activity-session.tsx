@@ -1,13 +1,13 @@
 import { memo, useState } from 'react';
 
 import { Icon } from '@/components/ui/icon';
-import type { ActivitySession as ActivitySessionModel } from '../activity-sessions';
+import type { ActivitySession as ActivitySessionModel } from '../activity-sessions.ts';
 import {
   formatTimelineDateTime,
   formatTimelineDuration,
   formatTimelineTime,
-} from '../format';
-import { TimelineEvent } from './timeline-event';
+} from '../format.ts';
+import { TimelineEvent } from './timeline-event.tsx';
 
 const EVENT_RENDER_BATCH_SIZE = 100;
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { WorkspaceSummary } from '../types/workspace';
+import type { WorkspaceSummary } from '../types/workspace.ts';
 
 export const workspaceIdSchema = z.string().min(1).max(200);
 export const workspaceNameSchema = z.string().trim().min(1).max(80);

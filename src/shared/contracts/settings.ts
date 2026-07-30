@@ -2,7 +2,7 @@ import type {
   AppSettingsStateUpdate,
   AppSettingsUpdate,
   SettingsSnapshot,
-} from '../types/settings';
+} from '../types/settings.ts';
 
 export type SettingsResponse = SettingsSnapshot;
 

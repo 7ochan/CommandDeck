@@ -1,11 +1,11 @@
-import { AIProviderRegistry } from '../../features/ai/providers/ai-provider-registry';
+import { AIProviderRegistry } from '../../features/ai/providers/ai-provider-registry.ts';
 import type {
   AICommitResult,
   AITestConnectionResult,
-} from '../../features/ai/types';
-import type { AIProviderId } from '../../shared/types';
-import { getServerContainerIfInitialized } from '../runtime/server-container-registry';
-import { credentialStore } from './credential-store';
+} from '../../features/ai/types.ts';
+import type { AIProviderId } from '../../shared/types/index.ts';
+import { getServerContainerIfInitialized } from '../runtime/server-container-registry.ts';
+import { credentialStore } from './credential-store.ts';
 
 class AIService {
   private static instance: AIService;

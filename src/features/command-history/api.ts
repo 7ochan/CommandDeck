@@ -2,7 +2,7 @@ import type { CommandHistoryResponse } from '@/shared/contracts';
 import { commandHistoryResponseSchema } from '@/shared/schemas';
 import type { CommandHistoryQuery } from '@/shared/types';
 
-import { buildCommandHistoryUrl } from './query';
+import { buildCommandHistoryUrl } from './query.ts';
 
 export async function loadCommandHistory(
   workspaceId: string,

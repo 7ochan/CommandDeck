@@ -10,7 +10,7 @@ import {
   deleteWorkspace as deleteWorkspaceRequest,
   loadWorkspaces,
   renameWorkspace as renameWorkspaceRequest,
-} from '../api';
+} from '../api.ts';
 type WorkspacesState = {
   workspaces: WorkspaceSummary[];
   activeWorkspace: WorkspaceSummary | null;

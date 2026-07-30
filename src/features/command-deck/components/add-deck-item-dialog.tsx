@@ -11,7 +11,7 @@ import {
 
 import { parseCommandTemplate } from '@/shared/command-template';
 import { Icon } from '@/components/ui/icon';
-import { CommandTemplateHighlight } from './command-template-highlight';
+import { CommandTemplateHighlight } from './command-template-highlight.tsx';
 
 type AddDeckItemDialogProps = {
   isOpen: boolean;

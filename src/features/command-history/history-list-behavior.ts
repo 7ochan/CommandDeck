@@ -1,4 +1,4 @@
-import type { CommandHistoryEntry } from './types';
+import type { CommandHistoryEntry } from './types.ts';
 
 export const HISTORY_LIST_NEAR_TOP_PX = 80;
 

@@ -1,4 +1,4 @@
-import type { ActionDefinition } from './types';
+import type { ActionDefinition } from './types.ts';
 
 export const DEFAULT_ACTIONS: ReadonlyArray<ActionDefinition> = [
   // Application

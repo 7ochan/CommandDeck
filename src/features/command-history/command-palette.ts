@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useRegisterCommandPaletteActions } from '@/features/command-palette/command-palette-provider';
 import type { CommandPaletteAction } from '@/features/command-palette/types';
 
-import type { CommandHistoryEntry } from './types';
+import type { CommandHistoryEntry } from './types.ts';
 
 type HistoryPaletteRegistration = {
   entries: CommandHistoryEntry[];

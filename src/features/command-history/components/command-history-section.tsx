@@ -18,10 +18,10 @@ import {
   isNearHistoryListTop,
   shouldClearHistorySelection,
   type HistoryNavigationDirection,
-} from '../history-list-behavior';
-import type { CommandHistoryEntry as CommandHistoryEntryModel } from '../types';
-import { CommandHistoryEntry } from './history-entry';
-import { HistorySearchControls } from './history-search-controls';
+} from '../history-list-behavior.ts';
+import type { CommandHistoryEntry as CommandHistoryEntryModel } from '../types.ts';
+import { CommandHistoryEntry } from './history-entry.tsx';
+import { HistorySearchControls } from './history-search-controls.tsx';
 
 type CommandHistorySectionProps = {
   entries: CommandHistoryEntryModel[];

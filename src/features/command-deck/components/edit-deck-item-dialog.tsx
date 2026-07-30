@@ -12,8 +12,8 @@ import {
 import { parseCommandTemplate } from '@/shared/command-template';
 import { Icon } from '@/components/ui/icon';
 
-import type { CommandDeckItem, CommandDeckItemUpdate } from '../types';
-import { CommandTemplateHighlight } from './command-template-highlight';
+import type { CommandDeckItem, CommandDeckItemUpdate } from '../types.ts';
+import { CommandTemplateHighlight } from './command-template-highlight.tsx';
 
 type EditDeckItemDialogProps = {
   item: CommandDeckItem;
