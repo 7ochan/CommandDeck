@@ -49,6 +49,7 @@ asar: false
 files:
   - .electron/**/*
   - .next/**/*
+  - '!.next/cache/**'
   - .server/**/*
   - public/**/*
   - package.json
@@ -129,8 +130,6 @@ dmg:
 # ─── Windows ───────────────────────────────────────────────────────────────────
 win:
   icon: electron/assets/icon.ico
-  # Skip signing for local packaging — set CSC_LINK env var for signing
-  certificateSubjectName: null
   target:
     - target: nsis
       arch: x64
@@ -152,9 +151,10 @@ linux:
     - target: AppImage
       arch: x64
   desktop:
-    Name: CommandDeck
-    Comment: 'A local-first visual terminal workspace'
-    Categories: Development;Utility;TerminalEmulator;
+    entry:
+      Name: CommandDeck
+      Comment: 'A local-first visual terminal workspace'
+      Categories: Development;Utility;TerminalEmulator;
 
 # ─── Publish (GitHub Releases for electron-updater) ───────────────────────────
 publish:
