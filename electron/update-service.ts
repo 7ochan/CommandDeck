@@ -21,6 +21,7 @@ export interface UpdateServiceDependencies {
   getSettings?: () =>
     | Promise<{ general?: { checkForUpdatesAutomatically?: boolean } }>
     | { general?: { checkForUpdatesAutomatically?: boolean } };
+  icon?: MessageBoxOptions['icon'];
   logger?: {
     info: (...args: unknown[]) => void;
     warn: (...args: unknown[]) => void;
@@ -69,6 +70,7 @@ export class UpdateService {
   private readonly getSettings?: () =>
     | Promise<{ general?: { checkForUpdatesAutomatically?: boolean } }>
     | { general?: { checkForUpdatesAutomatically?: boolean } };
+  private readonly icon?: MessageBoxOptions['icon'];
   private readonly logger: {
     info: (...args: unknown[]) => void;
     warn: (...args: unknown[]) => void;
@@ -85,6 +87,7 @@ export class UpdateService {
     this.openExternal = deps.openExternal;
     this.showMessageBox = deps.showMessageBox;
     this.getSettings = deps.getSettings;
+    this.icon = deps.icon;
     this.logger = deps.logger ?? console;
   }
 
@@ -178,14 +181,22 @@ export class UpdateService {
 
     if (isNew) {
       if (this.showMessageBox) {
+        const curVer = this.currentVersion.startsWith('v')
+          ? this.currentVersion
+          : `v${this.currentVersion}`;
+        const newVer = latestVersionStr.startsWith('v')
+          ? latestVersionStr
+          : `v${latestVersionStr}`;
+
         const result = await this.showMessageBox({
           type: 'info',
           title: 'Update Available',
-          message: 'Update Available',
-          detail: `CommandDeck ${latestVersionStr} is available.\n\nYou are currently using ${this.currentVersion}.\n\nWould you like to view the latest release?`,
+          message: 'A new version of CommandDeck is available.',
+          detail: `Current Version:\n${curVer}\n\nLatest Version:\n${newVer}\n\nWould you like to view the release notes?`,
           buttons: ['View Release', 'Later'],
           defaultId: 0,
           cancelId: 1,
+          ...(this.icon ? { icon: this.icon } : {}),
         });
 
         if (result.response === 0 && this.openExternal) {

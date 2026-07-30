@@ -135,8 +135,9 @@ describe('UpdateService', () => {
       expect.objectContaining({
         type: 'info',
         title: 'Update Available',
+        message: 'A new version of CommandDeck is available.',
         buttons: ['View Release', 'Later'],
-        detail: expect.stringContaining('CommandDeck 0.1.6 is available.'),
+        detail: expect.stringContaining('Latest Version:\nv0.1.6'),
       }),
     );
     expect(openExternal).toHaveBeenCalledWith(releaseUrl);
