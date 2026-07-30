@@ -882,13 +882,35 @@ function createWindow(): void {
     mainWindow.maximize();
   }
 
-  // Open external links in the system browser, not inside Electron
+  // Open external HTTP/HTTPS links in the system browser, denying unexpected protocols
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith(APP_URL)) {
-      void shell.openExternal(url);
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          void shell.openExternal(url);
+        }
+      } catch {
+        // Ignore invalid URLs
+      }
       return { action: 'deny' };
     }
     return { action: 'allow' };
+  });
+
+  // Prevent top-level frame navigation away from the application URL
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith(APP_URL)) {
+      event.preventDefault();
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+          void shell.openExternal(url);
+        }
+      } catch {
+        // Ignore invalid URLs
+      }
+    }
   });
 
   // Show window and destroy the loading splash once the page is ready
