@@ -308,6 +308,18 @@ export function SettingsDialog({
                           })
                         }
                       />
+                      <ToggleSetting
+                        label="Check for updates automatically"
+                        description="Asynchronously check GitHub for new releases on startup."
+                        checked={
+                          draftSettings.general.checkForUpdatesAutomatically
+                        }
+                        onChange={(checkForUpdatesAutomatically) =>
+                          updateDraft({
+                            general: { checkForUpdatesAutomatically },
+                          })
+                        }
+                      />
                     </SettingsGroup>
 
                     <SettingsGroup
@@ -712,6 +724,8 @@ function areSettingsEqual(left: AppSettings, right: AppSettings): boolean {
     left.general.showRightSidebar === right.general.showRightSidebar &&
     left.general.hoverToRevealSidebars ===
       right.general.hoverToRevealSidebars &&
+    left.general.checkForUpdatesAutomatically ===
+      right.general.checkForUpdatesAutomatically &&
     left.terminal.fontSize === right.terminal.fontSize &&
     left.terminal.cursorStyle === right.terminal.cursorStyle &&
     left.terminal.cursorBlink === right.terminal.cursorBlink &&

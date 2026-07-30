@@ -57,6 +57,7 @@ export type AppSettings = {
     showLeftSidebar: boolean;
     showRightSidebar: boolean;
     hoverToRevealSidebars: boolean;
+    checkForUpdatesAutomatically: boolean;
   };
   terminal: {
     fontSize: number;
@@ -107,6 +108,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
     showLeftSidebar: true,
     showRightSidebar: true,
     hoverToRevealSidebars: true,
+    checkForUpdatesAutomatically: true,
   },
   terminal: {
     fontSize: 14,

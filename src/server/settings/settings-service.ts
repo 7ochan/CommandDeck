@@ -33,6 +33,7 @@ const KEYS = {
   showLeftSidebar: 'general.showLeftSidebar',
   showRightSidebar: 'general.showRightSidebar',
   hoverToRevealSidebars: 'general.hoverToRevealSidebars',
+  checkForUpdatesAutomatically: 'general.checkForUpdatesAutomatically',
   terminalFontSize: 'terminal.fontSize',
   terminalCursorStyle: 'terminal.cursorStyle',
   terminalCursorBlink: 'terminal.cursorBlink',
@@ -101,6 +102,12 @@ export class SettingsService {
             KEYS.hoverToRevealSidebars,
             booleanSchema,
             DEFAULT_APP_SETTINGS.general.hoverToRevealSidebars,
+          ),
+          checkForUpdatesAutomatically: read(
+            values,
+            KEYS.checkForUpdatesAutomatically,
+            booleanSchema,
+            DEFAULT_APP_SETTINGS.general.checkForUpdatesAutomatically,
           ),
         },
         terminal: {
@@ -309,6 +316,10 @@ function addDefinedSettings(
   add(KEYS.showLeftSidebar, update?.general?.showLeftSidebar);
   add(KEYS.showRightSidebar, update?.general?.showRightSidebar);
   add(KEYS.hoverToRevealSidebars, update?.general?.hoverToRevealSidebars);
+  add(
+    KEYS.checkForUpdatesAutomatically,
+    update?.general?.checkForUpdatesAutomatically,
+  );
   add(KEYS.terminalFontSize, update?.terminal?.fontSize);
   add(KEYS.terminalCursorStyle, update?.terminal?.cursorStyle);
   add(KEYS.terminalCursorBlink, update?.terminal?.cursorBlink);

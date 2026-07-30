@@ -38,6 +38,7 @@ const generalSettingsSchema = z.object({
   showLeftSidebar: z.boolean().default(true),
   showRightSidebar: z.boolean().default(true),
   hoverToRevealSidebars: z.boolean().default(true),
+  checkForUpdatesAutomatically: z.boolean().default(true),
 });
 const terminalSettingsSchema = z.object({
   fontSize: terminalFontSizeSchema,

@@ -989,8 +989,8 @@ function createWindow(): void {
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.on('ready', async () => {
-  // Initialize auto-updater
-  initAutoUpdater(stopServer, () => mainWindow);
+  // Initialize update service
+  initAutoUpdater(APP_URL, () => mainWindow);
 
   // Register IPC handlers and build the menu before anything else so they
   // are ready the instant the window opens — no async gap.
