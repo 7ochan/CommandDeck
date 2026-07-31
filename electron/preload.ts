@@ -9,7 +9,8 @@
  * directly.
  */
 
-import { contextBridge, ipcRenderer } from 'electron';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { contextBridge, ipcRenderer } = require('electron');
 
 // ─── IPC channel names (must match main.ts) ───────────────────────────────────
 
