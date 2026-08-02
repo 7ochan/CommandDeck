@@ -42,3 +42,14 @@ Command Deck is structured into modular layers:
 - `src/`: Next.js frontend user interface, layout components, and UI views.
 - `server.ts`: Custom backend server for process management and API routes.
 - `docs/`: Product master documentation and architectural vision guides.
+
+## Available Scripts
+
+- `npm run dev` - Start the Next.js development server and Electron app
+- `npm run build` - Build the application for production release
+- `npm run lint` - Run ESLint checks across the codebase
+- `npm run test` - Execute unit and integration tests
+
+## License
+
+MIT License. See LICENSE file for details.
