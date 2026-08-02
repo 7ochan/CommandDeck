@@ -33,3 +33,12 @@ Command Deck is a modern visual terminal workspace designed for developers to ma
    ```bash
    npm run dev
    ```
+
+## Project Architecture
+
+Command Deck is structured into modular layers:
+
+- `electron/`: Main process and preload scripts for Electron desktop integration.
+- `src/`: Next.js frontend user interface, layout components, and UI views.
+- `server.ts`: Custom backend server for process management and API routes.
+- `docs/`: Product master documentation and architectural vision guides.
